@@ -1,0 +1,104 @@
+.board {
+  position: absolute;
+  /* Tiles are positioned in board-local px. */
+}
+
+/*
+ * Outline: white, behind the tiles, extends tileSpacing px outward on all sides
+ * (SetFullStretch(rt, tileSpacing) → offsetMin −m, offsetMax +m).
+ */
+.outline {
+  position: absolute;
+  background: var(--colour-board-outline);
+  pointer-events: none;
+}
+
+.tile {
+  position: absolute;
+  left: 0;
+  top: 0;
+  appearance: none;
+  border: 0;
+  padding: 0;
+  background-color: var(--map-kohl);
+  background-repeat: no-repeat;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  /*
+   * 140 ms OutCubic, compositor-only. `transform` and nothing else — animating
+   * left/top would re-run layout on nine 4K elements every frame.
+   */
+  transition: transform var(--duration-tile-slide) var(--ease-out-cubic);
+  will-change: transform;
+}
+
+/* The 9th slice, painted into the empty slot on win. Never interactive. */
+.revealedSlice {
+  position: absolute;
+  left: 0;
+  top: 0;
+  background-repeat: no-repeat;
+  background-color: var(--map-kohl);
+  pointer-events: none;
+}
+
+.arrow {
+  position: absolute;
+  left: 0;
+  top: 0;
+  appearance: none;
+  border: 0;
+  padding: 0;
+  background-color: transparent;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  /*
+   * Idle pulse: scale 1 → 1.06 over 250 ms, linear, DOTween Yoyo + SetLoops(-1)
+   * → alternate + infinite. The scale composes with the translate3d that places
+   * the arrow, so both live in one `transform` via an inner keyframe on scale
+   * only — hence `transform-box`/origin centring below.
+   */
+  animation: arrow-pulse var(--duration-arrow-pulse) linear infinite alternate;
+  transform-origin: center center;
+}
+
+/*
+ * The element's own transform carries the position, so the pulse cannot also use
+ * `transform` without overwriting it. `scale` is a separate, composable property.
+ */
+@keyframes arrow-pulse {
+  from {
+    scale: 1;
+  }
+  to {
+    scale: 1.06;
+  }
+}
+
+.titleContainer {
+  position: absolute;
+  pointer-events: none;
+}
+
+/*
+ * Artwork title: floats 10 px above the board's top edge, left-aligned and
+ * vertically centred in its 100 px band (TMP Left|Middle), truncating rather
+ * than ellipsising.
+ */
+.artworkTitle {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  font-family: var(--font-display);
+  font-weight: 700;
+  line-height: 1;
+  overflow: hidden;
+  overflow-wrap: break-word;
+  pointer-events: none;
+  -webkit-font-smoothing: antialiased;
+}

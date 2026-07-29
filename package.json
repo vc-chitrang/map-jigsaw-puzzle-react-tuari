@@ -1,0 +1,44 @@
+{
+  "name": "map-jigsaw-puzzle",
+  "private": true,
+  "version": "0.1.2",
+  "description": "MAP Sliding Puzzle kiosk — React + Tauri port of the Unity build",
+  "type": "module",
+  "scripts": {
+    "copy:assets": "powershell -ExecutionPolicy Bypass -File scripts/copy-assets.ps1",
+    "build:fonts": "powershell -ExecutionPolicy Bypass -File scripts/build-fonts.ps1",
+    "build:icons": "powershell -ExecutionPolicy Bypass -File scripts/make-icon.ps1 && tauri icon src-tauri/icon-source.png",
+    "extract:api-config": "powershell -ExecutionPolicy Bypass -File scripts/extract-api-config.ps1",
+    "predev": "npm run copy:assets",
+    "dev": "vite",
+    "prebuild": "npm run copy:assets",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "tauri": "tauri",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "diff:pixels": "node scripts/pixel-diff.mjs",
+    "bump:version": "powershell -ExecutionPolicy Bypass -File scripts/bump-version.ps1",
+    "typecheck": "tsc -b --noEmit false --emitDeclarationOnly false --pretty"
+  },
+  "dependencies": {
+    "@tauri-apps/api": "^2.11.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "socket.io-client": "^4.8.3"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.11.4",
+    "@types/node": "^26.1.2",
+    "@types/react": "^18.3.31",
+    "@types/react-dom": "^18.3.7",
+    "@vitejs/plugin-react": "^6.0.4",
+    "pixelmatch": "^7.2.0",
+    "pngjs": "^7.0.0",
+    "typescript": "^5.9.3",
+    "vite": "^8.1.5",
+    "vitest": "^4.1.10"
+  }
+}

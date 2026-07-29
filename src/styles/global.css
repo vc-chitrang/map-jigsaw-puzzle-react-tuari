@@ -1,0 +1,76 @@
+@import './tokens.css';
+@import './fonts.css';
+
+/* ---- Reset ---- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+}
+
+/* ---- Kiosk lockdown (CSS half; JS half in src/kiosk/lockdown.ts) ---- */
+html,
+body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+  background: var(--map-kohl);
+  color: var(--colour-text);
+  font-family: var(--font-display);
+  /* No double-tap zoom, no 300 ms tap delay. */
+  touch-action: manipulation;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+#root {
+  width: 100%;
+  height: 100%;
+}
+
+*:not(input):not(textarea) {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* The search field is the one place text selection and a caret are wanted. */
+input,
+textarea {
+  -webkit-user-select: text;
+  user-select: text;
+  font-family: inherit;
+}
+
+img {
+  /* Unity `preserveAspect` → object-fit: contain, applied per element.
+     Here: never let an image drag out of the app. */
+  -webkit-user-drag: none;
+  user-select: none;
+}
+
+/* Production hides the cursor: the kiosk is touch-only and a stray arrow on a
+   4K display is visible from across the gallery. */
+html[data-cursor='hidden'],
+html[data-cursor='hidden'] * {
+  cursor: none;
+}
+
+/* Respect nothing about OS font scaling — this is a fixed-geometry kiosk
+   (ADR-007). Reduced motion is honoured, however: the arrow pulse is the only
+   infinite animation and a visitor with vestibular sensitivity gains nothing
+   from it. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}

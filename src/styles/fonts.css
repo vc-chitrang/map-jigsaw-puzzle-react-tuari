@@ -1,0 +1,26 @@
+/*
+ * Conduit ITC — the only typeface in the port (client directive).
+ * Generated from the Unity sources by `npm run build:fonts`:
+ *   UI/fonts/Conduit ITC Regular.otf → ConduitITC-Regular.woff2
+ *   UI/fonts/ConduitITC-Bold.ttf     → ConduitITC-Bold.woff2
+ *
+ * Both weights are declared against the SAME family so `font-weight: 700`
+ * selects the real Bold face. Browsers otherwise synthesise a faux bold that
+ * does not match the Unity SDF atlas (pixel-perfect-replication.md §4.8).
+ */
+
+@font-face {
+  font-family: 'Conduit ITC';
+  font-style: normal;
+  font-weight: 400;
+  font-display: block; /* Kiosk: never paint fallback metrics, even briefly. */
+  src: url('/fonts/ConduitITC-Regular.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Conduit ITC';
+  font-style: normal;
+  font-weight: 700;
+  font-display: block;
+  src: url('/fonts/ConduitITC-Bold.woff2') format('woff2');
+}

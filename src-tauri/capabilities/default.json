@@ -1,0 +1,13 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Kiosk capability set. Deliberately minimal — the renderer gets window control (for the staff exit hatch) and nothing else. Filesystem, shell and process access stay unavailable so a compromised web view cannot reach the host.",
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    "core:window:allow-close",
+    "core:window:allow-set-fullscreen",
+    "core:window:allow-is-fullscreen",
+    "log:default"
+  ]
+}

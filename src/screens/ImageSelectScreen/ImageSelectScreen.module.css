@@ -1,0 +1,148 @@
+/* Reference px throughout — inside <ScaledCanvas>. */
+
+.screen {
+  overflow: hidden;
+}
+
+.background {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+}
+
+.logo {
+  object-fit: contain;
+  pointer-events: none;
+}
+
+.iconButton {
+  appearance: none;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.iconButton img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* The description band sits above the panel's top edge, so nothing may clip. */
+.panel {
+  overflow: visible;
+  border-radius: 24px;
+}
+
+.description {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-weight: 700;
+  line-height: 1.2;
+  text-align: center;
+  pointer-events: none;
+}
+
+.choice {
+  appearance: none;
+  border: 0;
+  padding: 0;
+  border-radius: 24px;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  overflow: visible;
+}
+
+.choice:active {
+  filter: brightness(1.25);
+}
+
+.choiceIcon {
+  object-fit: contain;
+  pointer-events: none;
+}
+
+.choiceLabel {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-weight: 700;
+  line-height: 1.2;
+  text-align: center;
+  /* The label is authored with an explicit newline. */
+  white-space: pre-line;
+  pointer-events: none;
+}
+
+/* Transparent overlay that carries the caption band above the button. */
+.choiceCaption {
+  display: block;
+  overflow: visible;
+}
+
+.captionText {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-weight: 700;
+  line-height: 1.2;
+  text-align: center;
+  pointer-events: none;
+}
+
+.divider {
+  object-fit: contain;
+  pointer-events: none;
+}
+
+.qrPanel {
+  overflow: visible;
+}
+
+.qrFill {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/*
+ * QRCodeImage stretches with a +100 px overhang on each axis in the scene
+ * (`sizeDelta = (100,100)`), i.e. it deliberately spills past the pill. Inset
+ * negatively to match.
+ *
+ * Width and height are explicit: `width: auto` on a REPLACED element resolves to
+ * the intrinsic size (the QR sprite is 1024²) and the right/bottom insets are then
+ * ignored, which renders it at 1024 px inside a 682 px panel.
+ */
+.qrCode {
+  position: absolute;
+  inset: -50px;
+  width: calc(100% + 100px);
+  height: calc(100% + 100px);
+  object-fit: contain;
+  pointer-events: none;
+}
+
+.qrOffline {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 24px;
+  color: var(--map-sharbati);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 40px;
+  text-align: center;
+  text-transform: uppercase;
+  pointer-events: none;
+}

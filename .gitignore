@@ -1,0 +1,30 @@
+# dependencies / build output
+node_modules/
+dist/
+dist-ssr/
+src-tauri/target/
+src-tauri/gen/
+*.tsbuildinfo
+
+# SECRETS — never commit. See docs/decisions.md ADR-009.
+.env
+.env.*
+!.env.example
+src-tauri/.env
+src-tauri/.env.*
+!src-tauri/.env.example
+
+# Generated assets — reproduced by `npm run copy:assets` / `npm run build:fonts`
+public/assets/
+public/fonts/
+
+# Pixel-parity captures (large binaries, regenerate locally)
+captures/
+
+# editor / os
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+*.log

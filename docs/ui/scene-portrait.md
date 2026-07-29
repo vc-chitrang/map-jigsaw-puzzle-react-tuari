@@ -1,0 +1,930 @@
+# Scene element spec — Portrait
+
+> Auto-generated from `MAP_PuzzleScene_Portrait.unity` by `extract_ui.py`.
+> Values are Unity RectTransform values in **reference-resolution pixels**.
+> `pos` = anchoredPosition, `size` = sizeDelta. Anchors are normalized (0..1).
+
+- **OnScreenKeyboard**
+  - `RectTransform` scale=(1, 1, 1)
+  - `OnScreenKeyboard`
+- **Utility**
+  - `RectTransform` scale=(1, 1, 1)
+  - **SocketConnection**
+    - `RectTransform` scale=(1, 1, 1)
+    - `SocketConnection`
+  - **ImageDownloader**
+    - `RectTransform` scale=(1, 1, 1)
+    - `ImageDownloader`
+- **Main Camera**
+  - `RectTransform` scale=(1, 1, 1)
+- **QuitOnDoubleEsc**
+  - `RectTransform` scale=(1, 1, 1)
+  - `QuitOnDoubleEsc`
+- **PuzzleCanvas**
+  - `RectTransform` anchorMin=(0, 0) anchorMax=(0, 0) pos=(0, 0) size=(0, 0) pivot=(0, 0) scale=(0, 0, 0)
+  - `CanvasScaler` ref=(2160, 3840) scaleMode=1 matchMode=0 match=0.5
+  - **[E][E/D]Puzzle_Screen**
+    - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+    - `Image` sprite=Background_Portrait.png color=#FFFFFF (a=1)
+    - **[X]Mockup**  _(inactive)_
+      - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+      - `Image` sprite=None color=#FFFFFF (a=0.3922)
+    - **AppLogo**
+      - `RectTransform` anchorMin=(0.3969, 0.8821) anchorMax=(0.6031, 0.9494) pos=(0, 0) size=(0, 0) pivot=(0.5, 1) scale=(1, 1, 1)
+      - `Image` sprite=Map Logo.png color=#FFFFFF (a=1) preserveAspect
+    - **BackButton**
+      - `RectTransform` anchorMin=(0, 0.5) anchorMax=(0, 0.5) pos=(40, 60) size=(124, 124) pivot=(0, 0.5) scale=(1, 1, 1)
+      - `Image` sprite=HomeButton.png color=#FFFFFF (a=1)
+      - `Button` transition=ColorTint
+    - **ArrowLayer**
+      - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+      - **EmptySlotOverlay**
+        - `RectTransform` anchorMin=(0.5, 0.5) anchorMax=(0.5, 0.5) pos=(0, 0) size=(160, 160) pivot=(0.5, 0.5) scale=(1, 1, 1)
+    - **BoardPanel**
+      - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+    - **[D][E/D]PreviewPanel**  _(inactive)_
+      - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+      - `Image` sprite=None color=#000000 (a=0.86)
+      - **PreviewImage**
+        - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, -1680) pivot=(0.5, 0.5) scale=(1, 1, 1)
+      - **ClosePreviewButton**  _(inactive)_
+        - `RectTransform` anchorMin=(1, 1) anchorMax=(1, 1) pos=(-120, -76) size=(190, 60) pivot=(1, 1) scale=(1, 1, 1)
+        - `Image` sprite=None color=#BF3B33 (a=0.97)
+        - `Button` transition=ColorTint
+        - **Label**
+          - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+          - `TMP_Text` font=LiberationSans SDF.asset size=24 color=#FFFFFF (a=1) text="Close"
+    - **Footer**
+      - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+      - **Start Puzzle**
+        - `RectTransform` anchorMin=(0.5, 0.5) anchorMax=(0.5, 0.5) pos=(0, -377) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+        - `TMP_Text` font=ConduitITC-Bold SDF.asset size=83 color=#E7B639 (a=1) text="TAP THE TILES TO SOLVE THE PUZZLE"
+      - **[E/D]StartPuzzleButton**
+        - `RectTransform` anchorMin=(0.233, 0.3202) anchorMax=(0.4766, 0.3707) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+        - `Image` sprite=StartButton.png color=#FFFFFF (a=1)
+        - `Button` transition=SpriteSwap pressedSprite=StartButton-pressed.png
+        - `ButtonPressOffset`
+        - **Start-text**
+          - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+          - `TMP_Text` font=ConduitITC-Bold SDF.asset size=112 color=#FFFFFF (a=1) text="START"
+      - **[E/D]TimerBackground**  _(inactive)_
+        - `RectTransform` anchorMin=(0.5, 0.5) anchorMax=(0.5, 0.5) pos=(-313.65, -593.5649) size=(526, 194) pivot=(0.5, 0.5) scale=(1, 1, 1)
+        - `Image` sprite=TimerBackground.png color=#FFFFFF (a=1)
+        - **Timer**
+          - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+          - `TMP_Text` font=ConduitITC-Bold SDF.asset size=100 color=#FFFFFF (a=1) text="00:00"
+      - **HighScoreBackground**
+        - `RectTransform` anchorMin=(0.5669, 0.3262) anchorMax=(0.7175, 0.3565) pos=(0, 0) size=(0., 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+        - `Image` sprite=Circle_9Sliced.png color=#67797F (a=1)
+        - **Procedural Image**
+          - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+          - `Image` sprite=None color=#FFFFFF (a=1)
+          - `OnlyOneEdgeModifier`
+        - **HighScoreTitleText**
+          - `RectTransform` anchorMin=(0, 1) anchorMax=(1, 1) pos=(0, 4.4) size=(0, 40) pivot=(0.5, 0) scale=(1, 1, 1)
+          - `TMP_Text` font=ConduitITC-Bold SDF.asset size=48 color=#FFFFFF (a=1) text="HIGH SCORE"
+        - **HighScoreText**
+          - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+          - `TMP_Text` font=ConduitITC-Bold SDF.asset size=82 color=#FFFFFF (a=1) text="--:--"
+      - **ResetButton**
+        - `RectTransform` anchorMin=(0.1311, 0.2476) anchorMax=(0.3302, 0.294) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+        - `Image` sprite=ResetButton.png color=#FFFFFF (a=1) preserveAspect
+        - `Button` transition=SpriteSwap pressedSprite=ResetButton-Pressed.png
+        - `ButtonPressOffset`
+        - **button-text**
+          - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+          - `TMP_Text` font=ConduitITC-Bold SDF.asset size=68 color=#FFFFFF (a=1) text="RESET"
+        - **icon**
+          - `RectTransform` anchorMin=(0.2272, 0.336) anchorMax=(0.3784, 0.7011) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+          - `Image` sprite=rotate-right.png color=#FFFFFF (a=1) preserveAspect
+      - **PreviewButton**
+        - `RectTransform` anchorMin=(0.4005, 0.2476) anchorMax=(0.5995, 0.294) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+        - `Image` sprite=PreviewButton.png color=#FFFFFF (a=1) preserveAspect
+        - `Button` transition=SpriteSwap pressedSprite=PreviewButton-pressed.png
+        - `UIPressHandler`
+        - `ButtonPressOffset`
+        - **button-text**
+          - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(-0., 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+          - `TMP_Text` font=ConduitITC-Bold SDF.asset size=68 color=#FFFFFF (a=1) text="preview"
+        - **icon (1)**
+          - `RectTransform` anchorMin=(0.146, 0.3367) anchorMax=(0.3088, 0.73) pos=(0, 0) size=(-0., 0) pivot=(0, 0.5) scale=(1, 1, 1)
+          - `Image` sprite=Group.png color=#FFFFFF (a=1) preserveAspect
+      - **NewImageButton**
+        - `RectTransform` anchorMin=(0.6708, 0.2476) anchorMax=(0.8699, 0.294) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+        - `Image` sprite=NewImageButton.png color=#FFFFFF (a=1) preserveAspect
+        - `Button` transition=SpriteSwap pressedSprite=NewImageButton-pressed.png
+        - `ButtonPressOffset`
+        - **button-text**
+          - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+          - `TMP_Text` font=ConduitITC-Bold SDF.asset size=68 color=#FFFFFF (a=1) text="new image"
+        - **icon (2)**
+          - `RectTransform` anchorMin=(0.0958, 0.336) anchorMax=(0.2586, 0.7292) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+          - `Image` sprite=new image icon.png color=#FFFFFF (a=1) preserveAspect
+    - **[X]Header**  _(inactive)_
+      - `RectTransform` anchorMin=(0.5, 1) anchorMax=(0.5, 1) pos=(0, -36) size=(940, 160) pivot=(0.5, 1) scale=(1, 1, 1)
+      - `Image` sprite=None color=#000000 (a=0.38)
+      - **Title**  _(inactive)_
+        - `RectTransform` anchorMin=(0, 0.5) anchorMax=(1, 1) pos=(0, -15) size=(-72, -30) pivot=(0.5, 0.5) scale=(1, 1, 1)
+        - `TMP_Text` font=LiberationSans SDF.asset size=42 color=#FFFFFF (a=1) text="Sliding Puzzle"
+      - **Status**  _(inactive)_
+        - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 0.55) pos=(0, 4) size=(-72, -24) pivot=(0.5, 0.5) scale=(1, 1, 1)
+        - `TMP_Text` font=LiberationSans SDF.asset size=28 color=#E0EBF5 (a=1) text="Arrange the picture"
+  - **[D][E/D]ImageSelectOrUploadScreen**  _(inactive)_
+    - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+    - `Image` sprite=Background_Portrait.png color=#FFFFFF (a=1)
+    - **[X]Mockup**  _(inactive)_
+      - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+      - `Image` sprite=None color=#FFFFFF (a=1)
+    - **Container**
+      - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+      - **AppLogo (3)**
+        - `RectTransform` anchorMin=(0.3969, 0.8821) anchorMax=(0.6031, 0.9494) pos=(0, 0) size=(0, 0) pivot=(0.5, 1) scale=(1, 1, 1)
+        - `Image` sprite=Map Logo.png color=#FFFFFF (a=1) preserveAspect
+      - **BalckBG**
+        - `RectTransform` anchorMin=(0.0778, 0.1708) anchorMax=(0.9258, 0.7904) pos=(0, 0) size=(0., 0.) pivot=(0.5, 0.5) scale=(1, 1, 1)
+        - `Image` sprite=None color=#000000 (a=0.5098)
+        - `UniformModifier`
+        - **Description**
+          - `RectTransform` anchorMin=(0, 1) anchorMax=(1, 1) pos=(0, 195.6) size=(0, 146) pivot=(0.5, 1) scale=(1, 1, 1)
+          - `TMP_Text` font=ConduitITC-Bold SDF.asset size=52 color=#DFDFDF (a=1) text="Choose one of the following modes to add images to the puzzl"
+        - **MapCollectionButton**
+          - `RectTransform` anchorMin=(0.5, 0.5) anchorMax=(0.5, 0.5) pos=(0, 552) size=(682, 682) pivot=(0.5, 0.5) scale=(1, 1, 1)
+          - `Button` transition=ColorTint
+          - `Image` sprite=None color=#212121 (a=1)
+          - `UniformModifier`
+          - **Text (TMP)**
+            - `RectTransform` anchorMin=(0.5, 0) anchorMax=(0.5, 0) pos=(0, 150.18) size=(0, 0) pivot=(0.5, 0) scale=(1, 1, 1)
+            - `TMP_Text` font=ConduitITC-Bold SDF.asset size=52 color=#E1E1E1 (a=1) text="Add from\nMAP's collection"
+          - **icon**
+            - `RectTransform` anchorMin=(0.5, 0.5) anchorMax=(0.5, 0.5) pos=(0, 87) size=(162, 162) pivot=(0.5, 0.5) scale=(1, 1, 1)
+            - `Image` sprite=gallery-add.png color=#FFFFFF (a=1) preserveAspect
+          - **Text (TMP)**
+            - `RectTransform` anchorMin=(0, 1) anchorMax=(1, 1) pos=(0, 132) size=(0, 50) pivot=(0.5, 1) scale=(1, 1, 1)
+            - `TMP_Text` font=ConduitITC-Bold SDF.asset size=52 color=#DFDFDF (a=1) text=""Browse and select from MAP\u2019s collection""
+        - **QRScanBackground**
+          - `RectTransform` anchorMin=(0.5, 0.5) anchorMax=(0.5, 0.5) pos=(0, -629.0093) size=(682, 682) pivot=(0.5, 0.5) scale=(1, 1, 1)
+          - `Image` sprite=Circle_9Sliced.png color=#FFFFFF (a=1)
+          - **Text (TMP) (2)**
+            - `RectTransform` anchorMin=(0, 1) anchorMax=(1, 1) pos=(0, 154) size=(0, 50) pivot=(0.5, 1) scale=(1, 1, 1)
+            - `TMP_Text` font=ConduitITC-Bold SDF.asset size=52 color=#DFDFDF (a=1) text="Scan the QR code to upload your own image"
+          - **QRCodeImage**
+            - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(100, 100) pivot=(0.5, 0.5) scale=(1, 1, 1)
+            - `Image` sprite=QR_Code_1-1024.png color=#FFFFFF (a=1)
+        - **hr**
+          - `RectTransform` anchorMin=(0.5, 0.5) anchorMax=(0.5, 0.5) pos=(0, 68) size=(2, 142) pivot=(0.5, 0.5) scale=(1, 1, 1)
+          - `Image` sprite=VerticalLine.png color=#FFFFFF (a=1) preserveAspect
+      - **BackButton (1)**
+        - `RectTransform` anchorMin=(0, 0.5) anchorMax=(0, 0.5) pos=(40, 60) size=(124, 124) pivot=(0, 0.5) scale=(1, 1, 1)
+        - `Image` sprite=BackButton.png color=#FFFFFF (a=1) preserveAspect
+        - `Button` transition=ColorTint
+  - **[D][E/D]Browse_And_Discover_Screen**  _(inactive)_
+    - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+    - `Image` sprite=Background_Portrait.png color=#FFFFFF (a=1)
+    - `CollectionUIManager`
+    - **Mockup**  _(inactive)_
+      - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+      - `Image` sprite=None color=#FFFFFF (a=1)
+    - **Container**
+      - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+      - **AppLogo (1)**
+        - `RectTransform` anchorMin=(0.3969, 0.8821) anchorMax=(0.6031, 0.9494) pos=(0, 0) size=(0, 0) pivot=(0.5, 1) scale=(1, 1, 1)
+        - `Image` sprite=Map Logo.png color=#FFFFFF (a=1) preserveAspect
+      - **BackButton**
+        - `RectTransform` anchorMin=(0, 0.5) anchorMax=(0, 0.5) pos=(40, 60) size=(124, 124) pivot=(0, 0.5) scale=(1, 1, 1)
+        - `Image` sprite=BackButton.png color=#FFFFFF (a=0.85) preserveAspect
+        - `Button` transition=ColorTint
+      - **SearchBar**
+        - `RectTransform` anchorMin=(0.0918, 0.8391) anchorMax=(0.8958, 0.8573) pos=(0, 0) size=(0., 0) pivot=(0.5, 1) scale=(1, 1, 1)
+        - **SearchInputField**
+          - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+          - `Button` transition=ColorTint
+          - `Image` sprite=None color=#FFFFFF (a=1)
+          - `FreeModifier`
+          - **Text Area**
+            - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(-20, 0) size=(-80, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+            - **Placeholder**
+              - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+              - `TMP_Text` font=Conduit ITC Regular SDF.asset size=34 color=#808080 (a=0.7) text="Search..."
+            - **Text**
+              - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+              - `TMP_Text` font=Conduit ITC Regular SDF.asset size=34 color=#262626 (a=1) text=""\u200B""
+          - **ClearSearchBtn**
+            - `RectTransform` anchorMin=(1, 0) anchorMax=(1, 1) pos=(-15, 0) size=(50, 0) pivot=(1, 0.5) scale=(1, 1, 1)
+            - `Image` sprite=cross.png color=#FFFFFF (a=1) preserveAspect
+            - `Button` transition=ColorTint
+          - **outline**
+            - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(-0.0001, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+            - `Image` sprite=None color=#CCCCCC (a=1)
+            - `FreeModifier`
+        - **SearchButton**
+          - `RectTransform` anchorMin=(1, 0) anchorMax=(1, 1) pos=(0, 0) size=(70, 0) pivot=(0, 0.5) scale=(1, 1, 1)
+          - `Image` sprite=SearchButton.png color=#FFFFFF (a=1) preserveAspect
+          - `Button` transition=ColorTint
+      - **FilterBar**
+        - `RectTransform` anchorMin=(0.0918, 0.787) anchorMax=(0.9274, 0.8052) pos=(0, 0) size=(0, 0) pivot=(0.5, 1) scale=(1, 1, 1)
+        - **Title**
+          - `RectTransform` anchorMin=(0, 1) anchorMax=(0, 1) pos=(0, 92) size=(0, 0) pivot=(0, 1) scale=(1, 1, 1)
+          - `TMP_Text` font=Conduit ITC Regular SDF.asset size=42 color=#FFFFFF (a=1) text="Filter By"
+        - **ClearFiltersBtn**
+          - `RectTransform` anchorMin=(1, 1) anchorMax=(1, 1) pos=(0, 18.77) size=(300, 70) pivot=(1, 0) scale=(1, 1, 1)
+          - `Image` sprite=None color=#FFFFFF (a=0)
+          - `Button` transition=ColorTint
+          - **Label**
+            - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+            - `TMP_Text` font=Conduit ITC Regular SDF.asset size=24 color=#FFFFFF (a=1) text="Clear Filters"
+        - **FilterDropdowns**
+          - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+          - **DepartmentDD**
+            - `RectTransform` anchorMin=(0, 1) anchorMax=(0, 1) pos=(166.0828, -35) size=(332.1656, 70) pivot=(0.5, 0.5) scale=(1, 1, 1)
+            - `Button` transition=ColorTint
+            - `Image` sprite=None color=#FFFFFF (a=1)
+            - `UniformModifier`
+            - **Label**
+              - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+              - `TMP_Text` font=Conduit ITC Regular SDF.asset size=30 color=#000000 (a=1) text="Department"
+            - **Arrow**
+              - `RectTransform` anchorMin=(1, 0.5) anchorMax=(1, 0.5) pos=(-15, 0) size=(30, 30) pivot=(1, 0.5) scale=(1, 1, 1)
+              - `Image` sprite=DropDownArrow.png color=#FFFFFF (a=1) preserveAspect
+            - **Template**  _(inactive)_
+              - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 0) pos=(0, -4) size=(0, 400) pivot=(0.5, 1) scale=(1, 1, 1)
+              - `Image` sprite=None color=#FFFFFF (a=1)
+              - `UniformModifier`
+              - **Viewport**
+                - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+                - `Image` sprite=None color=#000000 (a=0)
+                - **Content**
+                  - `RectTransform` anchorMin=(0, 1) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 1) scale=(1, 1, 1)
+                  - **Item**
+                    - `RectTransform` anchorMin=(0, 1) anchorMax=(1, 1) pos=(0, 0) size=(0, 60) pivot=(0.5, 1) scale=(1, 1, 1)
+                    - `Image` sprite=None color=#000000 (a=0)
+                    - `Button` transition=ColorTint
+                    - **Item Label**
+                      - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+                      - `TMP_Text` font=Conduit ITC Regular SDF.asset size=30 color=#000000 (a=1)
+                    - **Item Checkmark**
+                      - `RectTransform` anchorMin=(1, 0.5) anchorMax=(1, 0.5) pos=(-15, 0) size=(36, 36) pivot=(1, 0.5) scale=(1, 1, 1)
+                      - `TMP_Text` font=ConduitITC-Bold SDF.asset size=30 color=#000000 (a=1) text=""\u2713""
+            - **outline (1)**
+              - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+              - `Image` sprite=None color=#CCCCCC (a=1)
+              - `OnlyOneEdgeModifier`
+          - **ClassificationDD**
+            - `RectTransform` anchorMin=(0, 1) anchorMax=(0, 1) pos=(534.2484, -35) size=(332.1656, 70) pivot=(0.5, 0.5) scale=(1, 1, 1)
+            - `Button` transition=ColorTint
+            - `Image` sprite=None color=#FFFFFF (a=1)
+            - `UniformModifier`
+            - **Label**
+              - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+              - `TMP_Text` font=Conduit ITC Regular SDF.asset size=30 color=#000000 (a=1) text="Classification"
+            - **Arrow**
+              - `RectTransform` anchorMin=(1, 0.5) anchorMax=(1, 0.5) pos=(-15, 0) size=(30, 30) pivot=(1, 0.5) scale=(1, 1, 1)
+              - `Image` sprite=DropDownArrow.png color=#FFFFFF (a=1) preserveAspect
+            - **Template**  _(inactive)_
+              - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 0) pos=(0, -4) size=(0, 400) pivot=(0.5, 1) scale=(1, 1, 1)
+              - `Image` sprite=None color=#FFFFFF (a=1)
+              - `UniformModifier`
+              - **Viewport**
+                - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+                - `Image` sprite=None color=#000000 (a=0)
+                - **Content**
+                  - `RectTransform` anchorMin=(0, 1) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 1) scale=(1, 1, 1)
+                  - **Item**
+                    - `RectTransform` anchorMin=(0, 1) anchorMax=(1, 1) pos=(0, 0) size=(0, 60) pivot=(0.5, 1) scale=(1, 1, 1)
+                    - `Image` sprite=None color=#000000 (a=0)
+                    - `Button` transition=ColorTint
+                    - **Item Label**
+                      - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+                      - `TMP_Text` font=Conduit ITC Regular SDF.asset size=30 color=#000000 (a=1)
+                    - **Item Checkmark**
+                      - `RectTransform` anchorMin=(1, 0.5) anchorMax=(1, 0.5) pos=(-15, 0) size=(36, 36) pivot=(1, 0.5) scale=(1, 1, 1)
+                      - `TMP_Text` font=ConduitITC-Bold SDF.asset size=30 color=#000000 (a=1) text=""\u2713""
+            - **outline (1)**
+              - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+              - `Image` sprite=None color=#CCCCCC (a=1)
+              - `OnlyOneEdgeModifier`
+          - **ArtistDD**
+            - `RectTransform` anchorMin=(0, 1) anchorMax=(0, 1) pos=(902.4141, -35) size=(332.1656, 70) pivot=(0.5, 0.5) scale=(1, 1, 1)
+            - `Button` transition=ColorTint
+            - `Image` sprite=None color=#FFFFFF (a=1)
+            - `UniformModifier`
+            - **Label**
+              - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+              - `TMP_Text` font=Conduit ITC Regular SDF.asset size=30 color=#000000 (a=1) text="Artist/Maker"
+            - **Arrow**
+              - `RectTransform` anchorMin=(1, 0.5) anchorMax=(1, 0.5) pos=(-15, 0) size=(30, 30) pivot=(1, 0.5) scale=(1, 1, 1)
+              - `Image` sprite=DropDownArrow.png color=#FFFFFF (a=1) preserveAspect
+            - **Template**  _(inactive)_
+              - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 0) pos=(0, -4) size=(0, 400) pivot=(0.5, 1) scale=(1, 1, 1)
+              - `Image` sprite=None color=#FFFFFF (a=1)
+              - `UniformModifier`
+              - **Viewport**
+                - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+                - `Image` sprite=None color=#000000 (a=0)
+                - **Content**
+                  - `RectTransform` anchorMin=(0, 1) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 1) scale=(1, 1, 1)
+                  - **Item**
+                    - `RectTransform` anchorMin=(0, 1) anchorMax=(1, 1) pos=(0, 0) size=(0, 60) pivot=(0.5, 1) scale=(1, 1, 1)
+                    - `Image` sprite=None color=#000000 (a=0)
+                    - `Button` transition=ColorTint
+                    - **Item Label**
+                      - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+                      - `TMP_Text` font=Conduit ITC Regular SDF.asset size=30 color=#000000 (a=1)
+                    - **Item Checkmark**
+                      - `RectTransform` anchorMin=(1, 0.5) anchorMax=(1, 0.5) pos=(-15, 0) size=(36, 36) pivot=(1, 0.5) scale=(1, 1, 1)
+                      - `TMP_Text` font=ConduitITC-Bold SDF.asset size=30 color=#000000 (a=1) text=""\u2713""
+            - **outline (1)**
+              - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+              - `Image` sprite=None color=#CCCCCC (a=1)
+              - `OnlyOneEdgeModifier`
+          - **CultureDD**
+            - `RectTransform` anchorMin=(0, 1) anchorMax=(0, 1) pos=(1270.5796, -35) size=(332.1656, 70) pivot=(0.5, 0.5) scale=(1, 1, 1)
+            - `Button` transition=ColorTint
+            - `Image` sprite=None color=#FFFFFF (a=1)
+            - `UniformModifier`
+            - **Label**
+              - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+              - `TMP_Text` font=Conduit ITC Regular SDF.asset size=30 color=#000000 (a=1) text="Place of origin"
+            - **Arrow**
+              - `RectTransform` anchorMin=(1, 0.5) anchorMax=(1, 0.5) pos=(-15, 0) size=(30, 30) pivot=(1, 0.5) scale=(1, 1, 1)
+              - `Image` sprite=DropDownArrow.png color=#FFFFFF (a=1) preserveAspect
+            - **Template**  _(inactive)_
+              - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 0) pos=(0, -4) size=(0, 400) pivot=(0.5, 1) scale=(1, 1, 1)
+              - `Image` sprite=None color=#FFFFFF (a=1)
+              - `UniformModifier`
+              - **Viewport**
+                - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+                - `Image` sprite=None color=#000000 (a=0)
+                - **Content**
+                  - `RectTransform` anchorMin=(0, 1) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 1) scale=(1, 1, 1)
+                  - **Item**
+                    - `RectTransform` anchorMin=(0, 1) anchorMax=(1, 1) pos=(0, 0) size=(0, 60) pivot=(0.5, 1) scale=(1, 1, 1)
+                    - `Image` sprite=None color=#000000 (a=0)
+                    - `Button` transition=ColorTint
+                    - **Item Label**
+                      - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+                      - `TMP_Text` font=Conduit ITC Regular SDF.asset size=30 color=#000000 (a=1)
+                    - **Item Checkmark**
+                      - `RectTransform` anchorMin=(1, 0.5) anchorMax=(1, 0.5) pos=(-15, 0) size=(36, 36) pivot=(1, 0.5) scale=(1, 1, 1)
+                      - `TMP_Text` font=ConduitITC-Bold SDF.asset size=30 color=#000000 (a=1) text=""\u2713""
+            - **outline (1)**
+              - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+              - `Image` sprite=None color=#CCCCCC (a=1)
+              - `OnlyOneEdgeModifier`
+          - **DateDD**
+            - `RectTransform` anchorMin=(0, 1) anchorMax=(0, 1) pos=(1638.7452, -35) size=(332.1656, 70) pivot=(0.5, 0.5) scale=(1, 1, 1)
+            - `Button` transition=ColorTint
+            - `Image` sprite=None color=#FFFFFF (a=1)
+            - `UniformModifier`
+            - **Label**
+              - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+              - `TMP_Text` font=Conduit ITC Regular SDF.asset size=30 color=#000000 (a=1) text="Date"
+            - **Arrow**
+              - `RectTransform` anchorMin=(1, 0.5) anchorMax=(1, 0.5) pos=(-15, 0) size=(30, 30) pivot=(1, 0.5) scale=(1, 1, 1)
+              - `Image` sprite=DropDownArrow.png color=#FFFFFF (a=1) preserveAspect
+            - **Template**  _(inactive)_
+              - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 0) pos=(0, -4) size=(0, 400) pivot=(0.5, 1) scale=(1, 1, 1)
+              - `Image` sprite=None color=#FFFFFF (a=1)
+              - `UniformModifier`
+              - **Viewport**
+                - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+                - `Image` sprite=None color=#000000 (a=0)
+                - **Content**
+                  - `RectTransform` anchorMin=(0, 1) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 1) scale=(1, 1, 1)
+                  - **Item**
+                    - `RectTransform` anchorMin=(0, 1) anchorMax=(1, 1) pos=(0, 0) size=(0, 60) pivot=(0.5, 1) scale=(1, 1, 1)
+                    - `Image` sprite=None color=#000000 (a=0)
+                    - `Button` transition=ColorTint
+                    - **Item Label**
+                      - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+                      - `TMP_Text` font=Conduit ITC Regular SDF.asset size=30 color=#000000 (a=1)
+                    - **Item Checkmark**
+                      - `RectTransform` anchorMin=(1, 0.5) anchorMax=(1, 0.5) pos=(-15, 0) size=(36, 36) pivot=(1, 0.5) scale=(1, 1, 1)
+                      - `TMP_Text` font=ConduitITC-Bold SDF.asset size=30 color=#000000 (a=1) text=""\u2713""
+            - **outline (1)**
+              - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+              - `Image` sprite=None color=#CCCCCC (a=1)
+              - `OnlyOneEdgeModifier`
+      - **ResultInfoBar**
+        - `RectTransform` anchorMin=(0.0918, 0.7566) anchorMax=(0.9274, 0.7836) pos=(0, 0) size=(0, 0) pivot=(0.5, 1) scale=(1, 1, 1)
+        - **ResultCountText**
+          - `RectTransform` anchorMin=(0, 0) anchorMax=(0.3831, 1) pos=(0, 0) size=(0, 0) pivot=(0, 0.5) scale=(1, 1, 1)
+          - `TMP_Text` font=Conduit ITC Regular SDF.asset size=32 color=#FFFFFF (a=1) text="Loading..."
+        - **ResultsPerPage**  _(inactive)_
+          - `RectTransform` anchorMin=(0, 0) anchorMax=(0, 1) pos=(0, 0) size=(400, 0) pivot=(0, 0.5) scale=(1, 1, 1)
+          - `TMP_Text` font=LiberationSans SDF.asset size=24 color=#FFFFFF (a=1) text="Results Per Page"
+        - **PerPageDD**
+          - `RectTransform` anchorMin=(0.535, 0.2001) anchorMax=(0.6823, 0.7999) pos=(0, 0) size=(0, 0) pivot=(1, 0.5) scale=(1, 1, 1)
+          - `Button` transition=ColorTint
+          - `Image` sprite=None color=#FFFFFF (a=1)
+          - `UniformModifier`
+          - **Label**
+            - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+            - `TMP_Text` font=Conduit ITC Regular SDF.asset size=30 color=#000000 (a=1) text="20"
+          - **Arrow**
+            - `RectTransform` anchorMin=(1, 0.5) anchorMax=(1, 0.5) pos=(-15, 0) size=(30, 30) pivot=(1, 0.5) scale=(1, 1, 1)
+            - `Image` sprite=DropDownArrow.png color=#FFFFFF (a=1) preserveAspect
+          - **Template**  _(inactive)_
+            - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 0) pos=(0, -4) size=(0, 400) pivot=(0.5, 1) scale=(1, 1, 1)
+            - `Image` sprite=None color=#FFFFFF (a=1)
+            - `UniformModifier`
+            - **Viewport**
+              - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+              - `Image` sprite=None color=#000000 (a=0)
+              - **Content**
+                - `RectTransform` anchorMin=(0, 1) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 1) scale=(1, 1, 1)
+                - **Item**
+                  - `RectTransform` anchorMin=(0, 1) anchorMax=(1, 1) pos=(0, 0) size=(0, 60) pivot=(0.5, 1) scale=(1, 1, 1)
+                  - `Image` sprite=None color=#000000 (a=0)
+                  - `Button` transition=ColorTint
+                  - **Item Label**
+                    - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+                    - `TMP_Text` font=Conduit ITC Regular SDF.asset size=30 color=#000000 (a=1)
+                  - **Item Checkmark**
+                    - `RectTransform` anchorMin=(1, 0.5) anchorMax=(1, 0.5) pos=(-15, 0) size=(36, 36) pivot=(1, 0.5) scale=(1, 1, 1)
+                    - `TMP_Text` font=ConduitITC-Bold SDF.asset size=30 color=#000000 (a=1) text=""\u2713""
+          - **outline (1)**
+            - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+            - `Image` sprite=None color=#CCCCCC (a=1)
+            - `OnlyOneEdgeModifier`
+          - **SortBy**
+            - `RectTransform` anchorMin=(0, 0.5) anchorMax=(0, 0.5) pos=(-10, 0) size=(0, 0) pivot=(1, 0.5) scale=(1, 1, 1)
+            - `TMP_Text` font=Conduit ITC Regular SDF.asset size=24 color=#FFFFFF (a=1) text="Results Per Page"
+        - **SortByDD**
+          - `RectTransform` anchorMin=(0.7705, 0.2001) anchorMax=(0.9473, 0.7999) pos=(0, 0) size=(0, 0) pivot=(1, 0.5) scale=(1, 1, 1)
+          - `Button` transition=ColorTint
+          - `Image` sprite=None color=#FFFFFF (a=1)
+          - `UniformModifier`
+          - **Label**
+            - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+            - `TMP_Text` font=Conduit ITC Regular SDF.asset size=30 color=#000000 (a=1) text="Department"
+          - **Arrow**
+            - `RectTransform` anchorMin=(1, 0.5) anchorMax=(1, 0.5) pos=(-15, 0) size=(30, 30) pivot=(1, 0.5) scale=(1, 1, 1)
+            - `Image` sprite=DropDownArrow.png color=#FFFFFF (a=1) preserveAspect
+          - **Template**  _(inactive)_
+            - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 0) pos=(0, -4) size=(0, 400) pivot=(0.5, 1) scale=(1, 1, 1)
+            - `Image` sprite=None color=#FFFFFF (a=1)
+            - `UniformModifier`
+            - **Viewport**
+              - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+              - `Image` sprite=None color=#000000 (a=0)
+              - **Content**
+                - `RectTransform` anchorMin=(0, 1) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 1) scale=(1, 1, 1)
+                - **Item**
+                  - `RectTransform` anchorMin=(0, 1) anchorMax=(1, 1) pos=(0, 0) size=(0, 60) pivot=(0.5, 1) scale=(1, 1, 1)
+                  - `Image` sprite=None color=#000000 (a=0)
+                  - `Button` transition=ColorTint
+                  - **Item Label**
+                    - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+                    - `TMP_Text` font=Conduit ITC Regular SDF.asset size=30 color=#000000 (a=1)
+                  - **Item Checkmark**
+                    - `RectTransform` anchorMin=(1, 0.5) anchorMax=(1, 0.5) pos=(-15, 0) size=(36, 36) pivot=(1, 0.5) scale=(1, 1, 1)
+                    - `TMP_Text` font=ConduitITC-Bold SDF.asset size=30 color=#000000 (a=1) text=""\u2713""
+          - **outline (1)**
+            - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+            - `Image` sprite=None color=#CCCCCC (a=1)
+            - `OnlyOneEdgeModifier`
+          - **SortBy**
+            - `RectTransform` anchorMin=(0, 0.5) anchorMax=(0, 0.5) pos=(-10, 0) size=(0, 0) pivot=(1, 0.5) scale=(1, 1, 1)
+            - `TMP_Text` font=Conduit ITC Regular SDF.asset size=24 color=#FFFFFF (a=1) text="Sort By"
+        - **GridViewButton**
+          - `RectTransform` anchorMin=(1, 0.5) anchorMax=(1, 0.5) pos=(0, 0) size=(60, 60) pivot=(1, 0.5) scale=(1, 1, 1)
+          - `Image` sprite=GridView.png color=#FFFFFF (a=1) preserveAspect
+      - **CardScrollViewContainer**
+        - `RectTransform` anchorMin=(0.0918, 0.0841) anchorMax=(0.9274, 0.7566) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+        - `Image` sprite=None color=#000000 (a=1)
+        - **CardScrollView**
+          - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(-200, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+          - `Image` sprite=None color=#000000 (a=1)
+          - **CardGrid**
+            - `RectTransform` anchorMin=(0, 1) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 1) scale=(1, 1, 1)
+        - **PrevButton**
+          - `RectTransform` anchorMin=(0, 0) anchorMax=(0, 1) pos=(0, 275.5) size=(100, -2001) pivot=(0, 0.5) scale=(1, 1, 1)
+          - `Image` sprite=None color=#FFFFFF (a=0)
+          - `Button` transition=ColorTint
+          - **Arrow**
+            - `RectTransform` anchorMin=(0.5, 0.5) anchorMax=(0.5, 0.5) pos=(0, 0) size=(60, 60) pivot=(0.5, 0.5) scale=(1, 1, 1)
+            - `Image` sprite=Arrow.png color=#FFFFFF (a=1) preserveAspect
+        - **NextButton**
+          - `RectTransform` anchorMin=(1, 0) anchorMax=(1, 1) pos=(0, 275.5) size=(100, -2001) pivot=(1, 0.5) scale=(1, 1, 1)
+          - `Image` sprite=None color=#FFFFFF (a=0)
+          - `Button` transition=ColorTint
+          - **Arrow (1)**
+            - `RectTransform` anchorMin=(0.5, 0.5) anchorMax=(0.5, 0.5) pos=(0, 0) size=(60, 60) pivot=(0.5, 0.5) scale=(-1, 1, 1)
+            - `Image` sprite=Arrow.png color=#FFFFFF (a=1) preserveAspect
+      - **PaginationBar**
+        - `RectTransform` anchorMin=(0.1163, 0.0446) anchorMax=(0.9018, 0.0706) pos=(0, -20) size=(-1646.6301, -100.) pivot=(0.5, 1) scale=(1, 1, 1)
+        - **PageNumbers**
+          - `RectTransform` anchorMin=(0, 1) anchorMax=(0, 1) pos=(0, 0.) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+        - **PageInfoText**
+          - `RectTransform` anchorMin=(0, 1) anchorMax=(0, 1) pos=(50, 0.) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+          - `TMP_Text` font=Conduit ITC Regular SDF.asset size=42 color=#FFFFFF (a=1)
+  - **[D][E/D]Crop_Image_Screen**  _(inactive)_
+    - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+    - `Image` sprite=Background_Portrait.png color=#FFFFFF (a=1)
+    - `ImageCropper`
+    - `ImageZoomController`
+    - `CropGridResizer`
+    - `CropScreenController`
+    - **[X]Mockup**  _(inactive)_
+      - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+      - `Image` sprite=None color=#FFFFFF (a=1)
+    - **Container**
+      - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+      - **AppLogo (2)**
+        - `RectTransform` anchorMin=(0.3969, 0.8821) anchorMax=(0.6031, 0.9494) pos=(0, 0) size=(0, 0) pivot=(0.5, 1) scale=(1, 1, 1)
+        - `Image` sprite=Map Logo.png color=#FFFFFF (a=1) preserveAspect
+      - **CropAreaBackground**
+        - `RectTransform` anchorMin=(0.148, 0.4359) anchorMax=(0.852, 0.8319) pos=(0, -0.0001) size=(0, -0.0001) pivot=(0.5, 0.5) scale=(1, 1, 1)
+        - `Image` sprite=None color=#000000 (a=1)
+        - **ImageToCrop**
+          - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+          - `Image` sprite=None color=#FFFFFF (a=1) preserveAspect
+        - **CropAreaRefrenceGrid**
+          - `RectTransform` anchorMin=(0.5, 0.5) anchorMax=(0.5, 0.5) pos=(0, 0) size=(500, 500) pivot=(0.5, 0.5) scale=(1, 1, 1)
+          - `Image` sprite=CropRefrenceFrame.png color=#FFFFFF (a=1)
+        - **Description**
+          - `RectTransform` anchorMin=(0.0717, 1.0977) anchorMax=(0.9283, 1.1389) pos=(0, 0) size=(0, 0) pivot=(0.5, 1) scale=(1, 1, 1)
+          - `TMP_Text` font=ConduitITC-Bold SDF.asset size=50 color=#FFFFFF (a=1) text="Select the part of painting for your Puzzle"
+        - **RotateClockwiseImageButton**
+          - `RectTransform` anchorMin=(0.5, 0) anchorMax=(0.5, 0) pos=(100, -160) size=(120, 120) pivot=(0.5, 0) scale=(1, 1, 1)
+          - `Image` sprite=Circle_9Sliced.png color=#000000 (a=1)
+          - `Button` transition=ColorTint
+          - **icon**
+            - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(-16, -16) pivot=(0.5, 0.5) scale=(-1, 1, 1)
+            - `Image` sprite=rotating-arrow-to-the-right.png color=#F4A200 (a=1) preserveAspect
+        - **RotateAntiClockwiseImageButton**
+          - `RectTransform` anchorMin=(0.5, 0) anchorMax=(0.5, 0) pos=(-100, -160) size=(120, 120) pivot=(0.5, 0) scale=(1, 1, 1)
+          - `Image` sprite=Circle_9Sliced.png color=#000000 (a=1)
+          - `Button` transition=ColorTint
+          - **icon**
+            - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(-16, -16) pivot=(0.5, 0.5) scale=(1, 1, 1)
+            - `Image` sprite=rotating-arrow-to-the-right.png color=#F4A200 (a=1) preserveAspect
+      - **BalckBG**  _(inactive)_
+        - `RectTransform` anchorMin=(0.0949, 0.1823) anchorMax=(0.9051, 0.8594) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+        - `Image` sprite=None color=#000000 (a=0.5098)
+        - `UniformModifier`
+      - **CropIAndStartButton**
+        - `RectTransform` anchorMin=(0.376, 0.2454) anchorMax=(0.624, 0.299) pos=(0, 0) size=(0, 0) pivot=(0.5, 0) scale=(1, 1, 1)
+        - `Image` sprite=StartButton.png color=#FFFFFF (a=1) preserveAspect
+        - `Button` transition=SpriteSwap pressedSprite=StartButton-pressed.png
+        - `ButtonPressOffset`
+        - **Start-text (1)**
+          - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+          - `TMP_Text` font=ConduitITC-Bold SDF.asset size=100 color=#FFFFFF (a=1) text="START"
+      - **BackButton**
+        - `RectTransform` anchorMin=(0, 0.5) anchorMax=(0, 0.5) pos=(40, 60) size=(124, 124) pivot=(0, 0.5) scale=(1, 1, 1)
+        - `Image` sprite=BackButton.png color=#FFFFFF (a=1) preserveAspect
+        - `Button` transition=ColorTint
+      - **[X]DisableButtons**  _(inactive)_
+        - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+        - **ResetZoomButton**
+          - `RectTransform` anchorMin=(0.5, 0) anchorMax=(0.5, 0) pos=(0, 230.7998) size=(500, 150) pivot=(0.5, 0) scale=(1, 1, 1)
+          - `Button` transition=ColorTint
+          - `Image` sprite=None color=#993333 (a=1)
+          - **ResetLabel**
+            - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+            - `TMP_Text` font=LiberationSans SDF.asset size=72 color=#FFFFFF (a=1) autoSize[18..72] text="Reset"
+        - **ZoomSlider**
+          - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 0) pos=(0, 100) size=(-200, 24) pivot=(0.5, 0) scale=(1, 1, 1)
+          - `Button` transition=ColorTint
+          - **Background**
+            - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+            - `Image` sprite=00000000… color=#FFFFFF (a=1)
+          - **Fill Area**
+            - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+            - **Fill**
+              - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+              - `Image` sprite=00000000… color=#FFFFFF (a=1)
+          - **Handle Slide Area**
+            - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+            - **Handle**
+              - `RectTransform` anchorMin=(1, 0) anchorMax=(1, 1) pos=(0, 0) size=(50, 100) pivot=(0.5, 0.5) scale=(1, 1, 1)
+              - `Image` sprite=00000000… color=#FFFFFF (a=1) preserveAspect
+  - **[D][E/D]WinScreen**  _(inactive)_
+    - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+    - `WinScreen`
+    - **Background**
+      - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+      - `Image` sprite=Background_Portrait.png color=#000000 (a=0)
+      - **Popup**
+        - `RectTransform` anchorMin=(0.1528, 0.474) anchorMax=(0.8472, 0.7865) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+        - `Image` sprite=None color=#64787E (a=0.5882)
+        - `UniformModifier`
+        - **DesignMask**
+          - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+          - `Image` sprite=Circle_9Sliced.png color=#FFFFFF (a=1)
+          - **PatternDesign**
+            - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+            - `Image` sprite=None color=#007CC4 (a=0.3922)
+        - **Outline**
+          - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+          - `Image` sprite=None color=#FFFFFF (a=1)
+          - `OnlyOneEdgeModifier`
+        - **YouWinBG**
+          - `RectTransform` anchorMin=(0.5, 1) anchorMax=(0.5, 1) pos=(0, -100) size=(500, 150) pivot=(0.5, 1) scale=(1, 1, 1)
+          - `Image` sprite=None color=#D0006F (a=1)
+          - `UniformModifier`
+          - **You WinText**
+            - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+            - `TMP_Text` font=ConduitITC-Bold SDF.asset size=80 color=#FFFFFF (a=1) autoSize[18..80] text="You Win!"
+        - **YourScoreBG**
+          - `RectTransform` anchorMin=(0.5, 0.5) anchorMax=(0.5, 0.5) pos=(20, 100) size=(400, 130) pivot=(0, 0.5) scale=(1, 1, 1)
+          - `Image` sprite=None color=#88A35C (a=1)
+          - `UniformModifier`
+          - **YourScoreValue**
+            - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+            - `TMP_Text` font=ConduitITC-Bold SDF.asset size=80 color=#FFFFFF (a=1) autoSize[20..80] text="00:00"
+        - **HighScoreBG**
+          - `RectTransform` anchorMin=(0.5, 0.5) anchorMax=(0.5, 0.5) pos=(20, -100) size=(400, 130) pivot=(0, 0.5) scale=(1, 1, 1)
+          - `Image` sprite=None color=#64787E (a=1)
+          - `UniformModifier`
+          - **HighScoreValue**
+            - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+            - `TMP_Text` font=ConduitITC-Bold SDF.asset size=80 color=#FFFFFF (a=1) autoSize[20..80] text="00:00"
+          - **Outline (1)**
+            - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+            - `Image` sprite=None color=#FFFFFF (a=1)
+            - `OnlyOneEdgeModifier`
+        - **YourScoreText**
+          - `RectTransform` anchorMin=(0.5, 0.5) anchorMax=(0.5, 0.5) pos=(0, 100) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+          - `TMP_Text` font=ConduitITC-Bold SDF.asset size=60 color=#FFFFFF (a=1) text="Your Score:"
+        - **HighScoreText**
+          - `RectTransform` anchorMin=(0.5, 0.5) anchorMax=(0.5, 0.5) pos=(0, -100) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+          - `TMP_Text` font=ConduitITC-Bold SDF.asset size=60 color=#FFFFFF (a=1) text="High Score Time:"
+        - **PlayAgainButton**
+          - `RectTransform` anchorMin=(0.5, 0) anchorMax=(0.5, 0) pos=(0, 100) size=(530, 178) pivot=(0.5, 0) scale=(1, 1, 1)
+          - `Image` sprite=PlayAgainButton.png color=#FFFFFF (a=1) preserveAspect
+          - `Button` transition=SpriteSwap pressedSprite=PlayAgainButton-Pressed.png
+          - `ButtonPressOffset`
+          - **Text (TMP)**
+            - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+            - `TMP_Text` font=ConduitITC-Bold SDF.asset size=82 color=#FFFFFF (a=1) text="Play Again?"
+  - **[X][D][E/D]QRScanScreen**  _(inactive)_
+    - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+    - `Image` sprite=Background_Portrait.png color=#FFFFFF (a=1)
+    - **Mockup**  _(inactive)_
+      - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+      - `Image` sprite=None color=#FFFFFF (a=1)
+    - **Container**
+      - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+      - **AppLogo (3)**
+        - `RectTransform` anchorMin=(0.3969, 0.8821) anchorMax=(0.6031, 0.9494) pos=(0, 0) size=(0, 0) pivot=(0.5, 1) scale=(1, 1, 1)
+        - `Image` sprite=Map Logo.png color=#FFFFFF (a=1) preserveAspect
+      - **BalckBG**
+        - `RectTransform` anchorMin=(0.0949, 0.1823) anchorMax=(0.9051, 0.8594) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+        - `Image` sprite=None color=#000000 (a=0.5098)
+        - `UniformModifier`
+        - **QRImageBG**
+          - `RectTransform` anchorMin=(0.0248, 0.3417) anchorMax=(0.9752, 0.9814) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+          - `Image` sprite=None color=#000000 (a=1)
+          - **QRImage**
+            - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+            - `Image` sprite=QR_Code_1-1024.png color=#FFFFFF (a=1) preserveAspect
+        - **Description**
+          - `RectTransform` anchorMin=(0.5, 0) anchorMax=(0.5, 0) pos=(0, 400) size=(1030, 164) pivot=(0.5, 0) scale=(1, 1, 1)
+          - `TMP_Text` font=Conduit ITC Regular SDF.asset size=52 color=#FFFFFF (a=1) text="Upload from your Mobile Gallery"
+      - **BackButton (1)**
+        - `RectTransform` anchorMin=(0, 0.5) anchorMax=(0, 0.5) pos=(40, 60) size=(124, 124) pivot=(0, 0.5) scale=(1, 1, 1)
+        - `Image` sprite=BackButton.png color=#FFFFFF (a=1) preserveAspect
+        - `Button` transition=ColorTint
+  - **[X]Artwork Focus Screen**  _(inactive)_
+    - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+    - `Image` sprite=None color=#14141F (a=1)
+    - `ArtworkFocusScreenController`
+    - **CardInfoPanel**
+      - `RectTransform` anchorMin=(0.5, 0.5) anchorMax=(0.5, 0.5) pos=(0, 32.6877) size=(1630.0549, 1893.6199) pivot=(0.5, 0.5) scale=(1, 1, 1)
+      - `Image` sprite=None color=#000000 (a=1)
+      - **CardTitleText**
+        - `RectTransform` anchorMin=(0, 1) anchorMax=(0, 1) pos=(98.7, -66) size=(0, 0) pivot=(0, 1) scale=(1, 1, 1)
+        - `TMP_Text` font=LiberationSans SDF.asset size=45.25 color=#FFFFFF (a=1) text="Title"
+      - **CardArtistText**
+        - `RectTransform` anchorMin=(0, 1) anchorMax=(0, 1) pos=(98.7, -217) size=(0, 0) pivot=(0, 1) scale=(1, 1, 1)
+        - `TMP_Text` font=LiberationSans SDF.asset size=45.25 color=#CCCCCC (a=1) text="Artist"
+      - **CardAccessionText**
+        - `RectTransform` anchorMin=(0, 1) anchorMax=(0, 1) pos=(98.7, -286) size=(0, 0) pivot=(0, 1) scale=(1, 1, 1)
+        - `TMP_Text` font=LiberationSans SDF.asset size=45.25 color=#A6A6A6 (a=1) text="Accession"
+      - **ArtworkImage**
+        - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(6.3463, -136.2151) size=(-184.2086, -515.7587) pivot=(0.5, 0.5) scale=(1, 1, 1)
+        - `Image` sprite=None color=#FFFFFF (a=1) preserveAspect
+    - **StartButton**
+      - `RectTransform` anchorMin=(0.5, 0) anchorMax=(0.5, 0) pos=(0, 389) size=(500, 200) pivot=(0.5, 0) scale=(1, 1, 1)
+      - `Image` sprite=None color=#86A45A (a=1)
+      - `Button` transition=ColorTint
+      - **StartLabel**
+        - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+        - `TMP_Text` font=LiberationSans SDF.asset size=44 color=#FFFFFF (a=1) text="START"
+    - **BackButton**
+      - `RectTransform` anchorMin=(0, 1) anchorMax=(0, 1) pos=(40, 60) size=(124, 124) pivot=(0, 1) scale=(1, 1, 1)
+      - `Image` sprite=None color=#262626 (a=0.85)
+      - `Button` transition=ColorTint
+      - **Label**
+        - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+        - `TMP_Text` font=LiberationSans SDF.asset size=38 color=#FFFFFF (a=1) text=""\u2190 Back""
+- **APIHandler**
+  - `RectTransform` scale=(1, 1, 1)
+  - `APICall`
+  - `APIHandler`
+  - **LoginHandler**
+    - `RectTransform` scale=(1, 1, 1)
+    - `LoginHandler`
+- **GameManager**
+  - `RectTransform` scale=(1, 1, 1)
+  - `GameManager`
+  - `UIManager`
+  - `ScreenManager`
+- **EventSystem**
+  - `RectTransform` scale=(1, 1, 1)
+- **Popup**
+  - `RectTransform` anchorMin=(0, 0) anchorMax=(0, 0) pos=(0, 0) size=(0, 0) pivot=(0, 0) scale=(0, 0, 0)
+  - `PopupManager`
+  - `CanvasScaler` ref=(2160, 3840) scaleMode=1 matchMode=2 match=0
+  - `Loom`
+  - **Panel_Background [E/D]**  _(inactive)_
+    - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+    - `Image` sprite=00000000… color=#1A1616 (a=0.767)
+    - `Button` transition=ColorTint
+  - **Popup - BGImage [E/D]**  _(inactive)_
+    - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(2, 2, 2)
+    - `Image` sprite=None color=#000000 (a=0.7529)
+    - `FreeModifier`
+    - **Custom PopUp [E]**
+      - `RectTransform` anchorMin=(0.5, 0.5) anchorMax=(0.5, 0.5) pos=(0, 0) size=(800, 450) pivot=(0.5, 0.5) scale=(0.5, 0.5, 1)
+      - `UniformModifier`
+      - `Image` sprite=None color=#000000 (a=1)
+      - **SignImage**
+        - `RectTransform` anchorMin=(0, 1) anchorMax=(0, 1) pos=(400, -80.1421) size=(64, 64) pivot=(0.5, 1) scale=(1, 1, 1)
+        - `Image` sprite=exclamation-mark.png color=#FFFFFF (a=1) preserveAspect
+      - **Text (TMP)**
+        - `RectTransform` anchorMin=(0, 1) anchorMax=(0, 1) pos=(400, -176.1421) size=(500, 90.69) pivot=(0.5, 1) scale=(1, 1, 1)
+        - `TMP_Text` font=LiberationSans SDF.asset size=40 color=#FFFFFF (a=1) text="Free up storage to store the recording"
+      - **ButtonParent**
+        - `RectTransform` anchorMin=(0, 1) anchorMax=(0, 1) pos=(400, -369.8579) size=(700, 71.0258) pivot=(0.5, 0) scale=(1, 1, 1)
+        - **Left**
+          - `RectTransform` anchorMin=(0, 1) anchorMax=(0, 1) pos=(100, -65.5129) size=(200, 60) pivot=(0.5, 0) scale=(1, 1, 1)
+          - `Button` transition=ColorTint
+          - `ExpandTMP`
+          - `Image` sprite=None color=#FFFFFF (a=1)
+          - `FreeModifier`
+          - **Text (TMP)**
+            - `RectTransform` anchorMin=(0.5, 0.5) anchorMax=(0.5, 0.5) pos=(0, 0) size=(129.31, 60) pivot=(0.5, 0.5) scale=(1, 1, 1)
+            - `TMP_Text` font=LiberationSans SDF.asset size=40 color=#000000 (a=1) autoSize[0..40] text="asdasd"
+        - **Right**
+          - `RectTransform` anchorMin=(0, 1) anchorMax=(0, 1) pos=(350, -65.5129) size=(200, 60) pivot=(0.5, 0) scale=(1, 1, 1)
+          - `Button` transition=ColorTint
+          - `ExpandTMP`
+          - `Image` sprite=None color=#59FF00 (a=1)
+          - `FreeModifier`
+          - **Text (TMP)**
+            - `RectTransform` anchorMin=(0.5, 0.5) anchorMax=(0.5, 0.5) pos=(0, 0) size=(129.31, 60) pivot=(0.5, 0.5) scale=(1, 1, 1)
+            - `TMP_Text` font=LiberationSans SDF.asset size=40 color=#000000 (a=1) autoSize[0..40] text="asdasd"
+        - **Third**
+          - `RectTransform` anchorMin=(0, 1) anchorMax=(0, 1) pos=(600, -65.5129) size=(200, 60) pivot=(0.5, 0) scale=(1, 1, 1)
+          - `Button` transition=ColorTint
+          - `ExpandTMP`
+          - `Image` sprite=None color=#FFFFFF (a=1)
+          - `FreeModifier`
+          - **Text (TMP)**
+            - `RectTransform` anchorMin=(0.5, 0.5) anchorMax=(0.5, 0.5) pos=(0, 0) size=(129.31, 60) pivot=(0.5, 0.5) scale=(1, 1, 1)
+            - `TMP_Text` font=LiberationSans SDF.asset size=40 color=#000000 (a=1) autoSize[0..40] text="asdasd"
+  - **Loading - BGImage [E/D]**  _(inactive)_
+    - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(2, 2, 2)
+    - `Image` sprite=00000000… color=#000000 (a=0.7294)
+    - **Text (TMP)**  _(inactive)_
+      - `RectTransform` anchorMin=(0.5, 0.5) anchorMax=(0.5, 0.5) pos=(0, -148.55) size=(200, 50) pivot=(0.5, 0.5) scale=(1, 1, 1)
+      - `TMP_Text` font=LiberationSans SDF.asset size=39.7 color=#FFFFFF (a=1) autoSize[18..72] text="Loading..."
+    - **Image**
+      - `RectTransform` anchorMin=(0.5, 0.5) anchorMax=(0.5, 0.5) pos=(0, 0) size=(100, 100) pivot=(0.5, 0.5) scale=(1, 1, 1)
+      - `Image` sprite=frame-1.png color=#FFFFFF (a=1)
+    - **Spinner 4**  _(inactive)_
+      - `RectTransform` anchorMin=(0.5, 0.5) anchorMax=(0.5, 0.5) pos=(0, 0) size=(100, 100) pivot=(0.5, 0.5) scale=(1, 1, 1)
+      - **spinner_4_1**
+        - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+        - `Image` sprite=Icons Spritesheet.png color=#FFFFFF (a=1)
+      - **spinner_4_2**
+        - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+        - `Image` sprite=Icons Spritesheet.png color=#FFFFFF (a=1)
+      - **spinner_4_3**
+        - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+        - `Image` sprite=Icons Spritesheet.png color=#FFFFFF (a=1)
+      - **spinner_4_4**
+        - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+        - `Image` sprite=Icons Spritesheet.png color=#FFFFFF (a=1)
+      - **spinner_4_5**
+        - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+        - `Image` sprite=Icons Spritesheet.png color=#FFFFFF (a=1)
+      - **spinner_4_6**
+        - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+        - `Image` sprite=Icons Spritesheet.png color=#FFFFFF (a=1)
+      - **spinner_4_7**
+        - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+        - `Image` sprite=Icons Spritesheet.png color=#FFFFFF (a=1)
+      - **spinner_4_8**
+        - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+        - `Image` sprite=Icons Spritesheet.png color=#FFFFFF (a=1)
+      - **spinner_4_9**
+        - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+        - `Image` sprite=Icons Spritesheet.png color=#FFFFFF (a=1)
+      - **spinner_4_10**
+        - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+        - `Image` sprite=Icons Spritesheet.png color=#FFFFFF (a=1)
+      - **spinner_4_11**
+        - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+        - `Image` sprite=Icons Spritesheet.png color=#FFFFFF (a=1)
+      - **spinner_4_12**
+        - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+        - `Image` sprite=Icons Spritesheet.png color=#FFFFFF (a=1)
+  - **ToastPanel [E/D]**  _(inactive)_
+    - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+    - `Image` sprite=00000000… color=#FFFFFF (a=0.392)
+    - **Procedural Image**
+      - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 0) pos=(0, 95) size=(-100, 80) pivot=(0.5, 0) scale=(1, 1, 1)
+      - `Image` sprite=None color=#000000 (a=0.6039)
+      - `UniformModifier`
+      - **ToastMessage**
+        - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+        - `TMP_Text` font=b02d8700… size=25 color=#FFFFFF (a=1) autoSize[18..25]
+  - **Notification [E]**  _(inactive)_
+    - `RectTransform` anchorMin=(0, 1) anchorMax=(1, 1) pos=(0, 0) size=(0, 682.9) pivot=(0.5, 1) scale=(1, 1, 1)
+    - **Notification template [D]**
+      - `RectTransform` anchorMin=(0.5, 1) anchorMax=(0.5, 1) pos=(0, 0) size=(600, 115) pivot=(0.5, 1) scale=(1, 1, 1)
+      - `NotificationTemplate`
+      - **Panel**
+        - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+        - `Image` sprite=5338ce3f… color=#FFFFFF (a=1)
+      - **Name**
+        - `RectTransform` anchorMin=(0, 1) anchorMax=(0, 1) pos=(300, -25) size=(600, 50) pivot=(0.5, 0.5) scale=(1, 1, 1)
+        - `Image` sprite=None color=#FFFFFF (a=1)
+        - `FreeModifier`
+        - `ExpandTMP`
+        - **Text (TMP) - Name**
+          - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, -15.71) pivot=(0.5, 0.5) scale=(1, 1, 1)
+          - `TMP_Text` font=b02d8700… size=32 color=#20FF00 (a=1) text="asdasdasdasd"
+      - **Message**
+        - `RectTransform` anchorMin=(0, 1) anchorMax=(0, 1) pos=(15, -55) size=(570, 60) pivot=(0, 1) scale=(1, 1, 1)
+        - `ExpandTMP`
+        - **Text (TMP) - Message**
+          - `RectTransform` anchorMin=(0.5, 0.5) anchorMax=(0.5, 0.5) pos=(0, 0) size=(570, 55.72) pivot=(0.5, 0.5) scale=(1, 1, 1)
+          - `TMP_Text` font=b02d8700… size=26 color=#FFFFFF (a=1) text="Request to get ore: 5. Currently filled: 1730, Capacity: "
+  - **[D][E/D]ProgressPanel**  _(inactive)_
+    - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+    - `Image` sprite=None color=#000000 (a=0.5882)
+    - **Spinner 4**  _(inactive)_
+      - `RectTransform` anchorMin=(0.5, 0.5) anchorMax=(0.5, 0.5) pos=(0, 200) size=(150, 150) pivot=(0.5, 0.5) scale=(2, 2, 2)
+      - **spinner_4_1**
+        - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+        - `Image` sprite=Icons Spritesheet.png color=#FFFFFF (a=1)
+      - **spinner_4_2**
+        - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+        - `Image` sprite=Icons Spritesheet.png color=#FFFFFF (a=1)
+      - **spinner_4_3**
+        - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+        - `Image` sprite=Icons Spritesheet.png color=#FFFFFF (a=1)
+      - **spinner_4_4**
+        - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+        - `Image` sprite=Icons Spritesheet.png color=#FFFFFF (a=1)
+      - **spinner_4_5**
+        - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+        - `Image` sprite=Icons Spritesheet.png color=#FFFFFF (a=1)
+      - **spinner_4_6**
+        - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+        - `Image` sprite=Icons Spritesheet.png color=#FFFFFF (a=1)
+      - **spinner_4_7**
+        - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+        - `Image` sprite=Icons Spritesheet.png color=#FFFFFF (a=1)
+      - **spinner_4_8**
+        - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+        - `Image` sprite=Icons Spritesheet.png color=#FFFFFF (a=1)
+      - **spinner_4_9**
+        - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+        - `Image` sprite=Icons Spritesheet.png color=#FFFFFF (a=1)
+      - **spinner_4_10**
+        - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+        - `Image` sprite=Icons Spritesheet.png color=#FFFFFF (a=1)
+      - **spinner_4_11**
+        - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+        - `Image` sprite=Icons Spritesheet.png color=#FFFFFF (a=1)
+      - **spinner_4_12**
+        - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+        - `Image` sprite=Icons Spritesheet.png color=#FFFFFF (a=1)
+    - **ProgressSlider**
+      - `RectTransform` anchorMin=(0.5, 0.5) anchorMax=(0.5, 0.5) pos=(0, 0) size=(500, 20) pivot=(0.5, 0.5) scale=(1, 1, 1)
+      - `Button` transition=None
+      - **Background**
+        - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+        - `Image` sprite=None color=#545454 (a=1)
+        - `UniformModifier`
+      - **Fill Area**
+        - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+        - **Fill**
+          - `RectTransform` anchorMin=(0, 0) anchorMax=(0, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+          - `Image` sprite=None color=#319F02 (a=1)
+          - `UniformModifier`
+      - **Handle Slide Area**
+        - `RectTransform` anchorMin=(0, 0) anchorMax=(1, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+        - **Handle**
+          - `RectTransform` anchorMin=(0, 0) anchorMax=(0, 1) pos=(0, 0) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+          - `Image` sprite=None color=#FFFFFF (a=1)
+          - `UniformModifier`
+    - **ProgressText**
+      - `RectTransform` anchorMin=(0.5, 0.5) anchorMax=(0.5, 0.5) pos=(0, -80) size=(0, 0) pivot=(0.5, 0.5) scale=(1, 1, 1)
+      - `TMP_Text` font=ConduitITC-Bold SDF.asset size=52 color=#FFFFFF (a=1) text="100%"

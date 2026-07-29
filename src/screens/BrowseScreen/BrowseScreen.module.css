@@ -1,0 +1,505 @@
+/* Reference px throughout — this subtree lives inside <ScaledCanvas>. */
+
+.screen {
+  overflow: hidden;
+}
+
+.background {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+}
+
+.logo {
+  object-fit: contain;
+  pointer-events: none;
+}
+
+.iconButton {
+  appearance: none;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.iconButton img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* ---- Search bar ------------------------------------------------------------ */
+.searchBar {
+  /* The search button hangs off the right edge, so nothing may clip here. */
+  overflow: visible;
+}
+
+.searchField {
+  position: absolute;
+  inset: 0;
+  background: var(--map-white);
+  border: 2px solid;
+  border-radius: 8px;
+  overflow: visible;
+}
+
+.searchInput {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: transparent;
+  font-family: var(--font-display);
+  font-weight: 400;
+  line-height: 1;
+}
+
+.searchInput::placeholder {
+  color: rgb(128 128 128 / 0.7);
+}
+
+.searchInput:focus {
+  outline: none;
+}
+
+.searchClear,
+.searchSubmit {
+  appearance: none;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.searchClear img,
+.searchSubmit img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* ---- Filter bar ------------------------------------------------------------ */
+.filterBar {
+  overflow: visible;
+}
+
+.filterTitle {
+  display: flex;
+  align-items: flex-end;
+  font-family: var(--font-display);
+  font-weight: 400;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.clearFilters {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font-family: var(--font-display);
+  font-weight: 400;
+  text-align: right;
+  touch-action: manipulation;
+}
+
+.clearFilters:disabled {
+  opacity: var(--disabled-alpha);
+  cursor: default;
+}
+
+/* ---- Dropdown -------------------------------------------------------------- */
+.dropdownRoot {
+  /* The popup must escape the control's box. */
+  overflow: visible;
+}
+
+.dropdownControl {
+  position: absolute;
+  inset: 0;
+  appearance: none;
+  padding: 0;
+  background: var(--map-white);
+  border: 2px solid #cccccc;
+  border-radius: 8px;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.dropdownControl:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.dropdownLabel {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  font-family: var(--font-display);
+  font-weight: 400;
+  line-height: 1;
+  /* Never let a long artist name run under the chevron. */
+  padding-right: 56px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  pointer-events: none;
+}
+
+/* A chosen value reads as emphasis, matching the filter being active. */
+.dropdownLabelActive {
+  font-weight: 700;
+}
+
+.dropdownArrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  object-fit: contain;
+  pointer-events: none;
+}
+
+.dropdownPopup {
+  position: absolute;
+  left: 0;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--map-white);
+  border: 2px solid #cccccc;
+  border-radius: 8px;
+  /* Above the result bar and the grid below it. */
+  z-index: 50;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgb(0 0 0 / 0.35);
+}
+
+.dropdownSearchRow {
+  position: relative;
+  flex: 0 0 auto;
+  border-bottom: 2px solid #eeeeee;
+}
+
+.dropdownSearch {
+  width: 100%;
+  height: 72px;
+  padding: 0 64px 0 18px;
+  border: 0;
+  background: transparent;
+  font-family: var(--font-display);
+  font-weight: 400;
+  color: #262626;
+}
+
+.dropdownSearch:focus {
+  outline: none;
+}
+
+.dropdownSearchClear {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 48px;
+  height: 48px;
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: #666666;
+  font-size: 36px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.dropdownList {
+  flex: 1 1 auto;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow-y: auto;
+  /* Kiosk: momentum scrolling, no bounce past the ends. */
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+}
+
+.dropdownItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  height: var(--row-height, 60px);
+  padding: 0 18px;
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: #000000;
+  font-family: var(--font-display);
+  font-weight: 400;
+  text-align: left;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.dropdownItem:active {
+  background: #eeeeee;
+}
+
+.dropdownTick {
+  flex: 0 0 auto;
+  font-weight: 700;
+}
+
+.dropdownEmpty {
+  padding: 18px;
+  color: #808080;
+  font-family: var(--font-display);
+}
+
+/* ---- Result bar ------------------------------------------------------------ */
+.resultBar {
+  overflow: visible;
+}
+
+.resultCount {
+  display: flex;
+  align-items: center;
+  font-family: var(--font-display);
+  font-weight: 400;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.sortWrapper {
+  overflow: visible;
+}
+
+.sortLabel {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  font-family: var(--font-display);
+  font-weight: 400;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/*
+ * A native <select> for sort. Unlike the five filter dropdowns it has five short,
+ * fixed options and needs no search, so the native control is the right tool —
+ * and its popup is drawn by the OS, which sidesteps clipping entirely.
+ */
+.sortSelect {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  padding: 0 48px 0 18px;
+  appearance: none;
+  background: var(--map-white);
+  border: 2px solid #cccccc;
+  border-radius: 8px;
+  color: #000000;
+  font-family: var(--font-display);
+  font-weight: 400;
+  cursor: pointer;
+}
+
+/* ---- Card grid ------------------------------------------------------------- */
+.cardContainer {
+  background: var(--map-kohl);
+}
+
+.cardScroll {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+}
+
+.cardGrid {
+  display: grid;
+  align-content: start;
+  padding: 24px;
+}
+
+.pageArrow {
+  appearance: none;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.pageArrow:disabled {
+  opacity: var(--disabled-alpha);
+  cursor: default;
+}
+
+.pageArrow img {
+  object-fit: contain;
+}
+
+/* NextButton mirrors the same sprite (Unity uses scale.x = −1). */
+.arrowFlipped {
+  transform: scaleX(-1);
+}
+
+/* ---- Card ------------------------------------------------------------------ */
+.card {
+  display: flex;
+  flex-direction: column;
+  appearance: none;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.card:active .cardImageBox {
+  /* Touch feedback; the Unity card has no pressed sprite. */
+  transform: scale(0.98);
+}
+
+.cardImageBox {
+  position: relative;
+  display: block;
+  /* Square cells (UpdateGridCellSize makes cellSize square). */
+  aspect-ratio: 1 / 1;
+  width: 100%;
+  background: #111111;
+  overflow: hidden;
+  transition: transform 120ms var(--ease-out-cubic);
+}
+
+.cardImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 200ms linear;
+}
+
+.cardImageLoaded {
+  opacity: 1;
+}
+
+.cardSpinner {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 56px;
+  height: 56px;
+  margin: -28px 0 0 -28px;
+  border: 6px solid rgb(255 255 255 / 0.2);
+  border-top-color: var(--map-aamras);
+  border-radius: 50%;
+  animation: card-spin 900ms linear infinite;
+}
+
+@keyframes card-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.cardImageFailed {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(45deg, transparent 48%, rgb(255 255 255 / 0.25) 48% 52%, transparent 52%),
+    #1a1a1a;
+}
+
+.cardCaption {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 6px;
+  padding: 14px 4px 0;
+  overflow: hidden;
+}
+
+.cardTitle,
+.cardMeta {
+  font-family: var(--font-display);
+  font-weight: 400;
+  line-height: 1.15;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.cardTitle {
+  color: var(--map-white);
+}
+
+.cardMeta {
+  color: rgb(255 255 255 / 0.7);
+  -webkit-line-clamp: 1;
+}
+
+/* ---- Empty / error state --------------------------------------------------- */
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 40px;
+  height: 100%;
+  padding: 60px;
+  text-align: center;
+}
+
+.emptyMessage {
+  max-width: 1200px;
+  color: var(--map-white);
+  font-family: var(--font-display);
+  font-size: 44px;
+  line-height: 1.3;
+}
+
+.retryButton {
+  appearance: none;
+  border: 2px solid var(--map-aamras);
+  border-radius: 8px;
+  padding: 20px 56px;
+  background: transparent;
+  color: var(--map-aamras);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 40px;
+  text-transform: uppercase;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+/* ---- Pagination ------------------------------------------------------------ */
+.paginationBar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pageInfo {
+  font-family: var(--font-display);
+  font-weight: 400;
+  white-space: nowrap;
+}

@@ -1,0 +1,59 @@
+/*
+ * Design tokens — MAP Brand Style Guide v1.0 (docs/brand-color/Brand-color.png).
+ *
+ * Every colour in the app comes from here, so a brand review is a one-file edit
+ * (docs/ui-spec.md §11).
+ *
+ * COLOUR MODE — brand vs Unity parity, see docs/decisions.md ADR-010.
+ * The shipping Unity build uses two near-amber values that are NOT brand amber.
+ * Brand is authoritative for the port, but pixel-diffing against a Unity capture
+ * needs the legacy values or those elements report a false failure. Add
+ * `data-color-mode="unity"` on <html> to switch; the default is brand.
+ */
+
+:root {
+  /* ---- MAP brand palette (authoritative) ---- */
+  --map-kohl: #000000;      /* Primary            — BLACK          */
+  --map-aamras: #ffa300;    /* Secondary — amber  — PANTONE 137 C  */
+  --map-baingani: #500778;  /* Secondary — purple — PANTONE 2607 C */
+  --map-ferozi: #5cb8b2;    /* Secondary — teal   — PANTONE 7472 C */
+  --map-sharbati: #d50032;  /* Secondary — crimson— PANTONE 199 C  */
+  --map-gulabi: #d0006f;    /* Secondary — magenta— PANTONE 226 C  */
+  --map-white: #ffffff;
+
+  /* ---- Semantic roles ---- */
+  --colour-text: var(--map-white);
+  --colour-artwork-title: var(--map-aamras);   /* Unity code: #DCB63C */
+  --colour-caption: var(--map-aamras);         /* Unity code: #E7B639 */
+  --colour-board-outline: var(--map-white);
+  --colour-preview-backdrop: rgb(0 0 0 / 0.86);
+
+  /* Slate tint of the high-score badge (Circle_9Sliced.png). Not in the brand
+     palette; kept as-is because the palette has no neutral grey. Task Q3. */
+  --colour-highscore-badge: #67797f;
+
+  /* ---- Typography ---- */
+  /* Conduit ITC only — client directive. `serif` fallback is deliberate: a
+     silent fallback to a look-alike sans would hide a missing-font failure. */
+  --font-display: 'Conduit ITC', serif;
+
+  /* ---- Interaction (docs/game-logic.md §11) ---- */
+  --disabled-alpha: 0.3;
+  --press-offset: 10px;
+
+  /* ---- Animation: DOTween easing → cubic-bezier (pixel-perfect §6) ---- */
+  --ease-out-cubic: cubic-bezier(0.215, 0.61, 0.355, 1);
+  --ease-out-quad: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --ease-in-quad: cubic-bezier(0.55, 0.085, 0.68, 0.53);
+
+  --duration-tile-slide: 140ms;
+  --duration-arrow-pulse: 250ms;
+  --duration-screen-fade: 200ms;
+  --duration-crop-rotate: 300ms;
+}
+
+/* Legacy Unity colours — for pixel-diff runs only. */
+:root[data-color-mode='unity'] {
+  --colour-artwork-title: #dcb63c;
+  --colour-caption: #e7b639;
+}

@@ -1,0 +1,113 @@
+/* All lengths are reference px — this subtree lives inside <ScaledCanvas>. */
+
+.screen {
+  overflow: hidden;
+}
+
+.background {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  /* Full-stretch Image with a white tint: no scaling mode, just fill. */
+  object-fit: cover;
+  pointer-events: none;
+}
+
+.logo {
+  /* Unity `preserveAspect`. */
+  object-fit: contain;
+  pointer-events: none;
+}
+
+/*
+ * A zero-sized rect: the box collapses to a point and the label is centred on it
+ * with its own transform, the way TMP grows text around an unsized rect.
+ */
+.caption {
+  pointer-events: none;
+}
+
+.caption span {
+  font-family: var(--font-display);
+  font-weight: 700;
+  line-height: 1;
+  text-align: center;
+}
+
+/* ---- Timer (gameplay) — mutually exclusive with START ---- */
+.timer {
+  pointer-events: none;
+}
+
+.timerBackground {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.timerValue {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---- High-score badge ---- */
+.highScore {
+  pointer-events: none;
+}
+
+/*
+ * Circle_9Sliced.png is both 9-sliced (uniform 255 px border) and tinted
+ * #67797F. `border-image` cannot be tinted, so the sprite becomes a 9-sliced
+ * MASK over a solid fill. `-webkit-mask-box-image` is the Chromium spelling of
+ * `mask-border`, and WebView2 is Chromium.
+ */
+.highScoreFill {
+  position: absolute;
+  inset: 0;
+}
+
+.highScoreTitle,
+.highScoreValue {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+  -webkit-font-smoothing: antialiased;
+}
+
+.highScoreValue {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- Preview overlay ---- */
+.previewPanel {
+  position: absolute;
+  /* #000000 at alpha 0.86 (ui-spec §4.1). */
+  background: var(--colour-preview-backdrop);
+  /* Rendered last so it covers the board; SetAsLastSibling in Unity. */
+  z-index: 10;
+  pointer-events: none;
+}
+
+.previewImage {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  /* AspectRatioFitter m_AspectMode 3 = FitInParent. */
+  object-fit: contain;
+}

@@ -1,0 +1,124 @@
+/*
+ * All lengths are REFERENCE pixels — this subtree lives inside <ScaledCanvas>.
+ * A 4 px line here is 4 px at 2160×3840 and 2 px at 1080×1920, exactly like a
+ * Unity sprite would be.
+ */
+
+.root {
+  position: absolute;
+  inset: 0;
+  background: var(--map-kohl);
+  font-family: var(--font-display);
+  font-weight: 700;
+}
+
+/* Reference bounds: 4 px inset border so both edges of the line are visible. */
+.bounds {
+  position: absolute;
+  inset: 0;
+  border: 4px solid var(--map-ferozi);
+  pointer-events: none;
+}
+
+/* 100 px minor grid + 500 px major grid. */
+.grid {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(to right, rgb(255 255 255 / 0.28) 0 2px, transparent 2px),
+    linear-gradient(to bottom, rgb(255 255 255 / 0.28) 0 2px, transparent 2px),
+    linear-gradient(to right, rgb(255 255 255 / 0.09) 0 2px, transparent 2px),
+    linear-gradient(to bottom, rgb(255 255 255 / 0.09) 0 2px, transparent 2px);
+  background-size:
+    500px 500px,
+    500px 500px,
+    100px 100px,
+    100px 100px;
+}
+
+.crosshairV,
+.crosshairH {
+  position: absolute;
+  background: var(--map-sharbati);
+  pointer-events: none;
+}
+
+.crosshairV {
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  transform: translateX(-1px);
+}
+
+.crosshairH {
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 2px;
+  transform: translateY(-1px);
+}
+
+.corner {
+  position: absolute;
+  width: 200px;
+  height: 200px;
+  border: 4px solid var(--map-gulabi);
+  pointer-events: none;
+}
+
+.cornerTL { left: 0; top: 0; }
+.cornerTR { right: 0; top: 0; }
+.cornerBL { left: 0; bottom: 0; }
+.cornerBR { right: 0; bottom: 0; }
+
+/* Idiom A probes (fractional anchors) — amber. */
+.probeA,
+.probeB {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 40px;
+  text-transform: uppercase;
+  color: var(--map-kohl);
+  overflow: hidden;
+}
+
+.probeA {
+  background: var(--map-aamras);
+  outline: 2px solid var(--map-white);
+}
+
+/* Idiom B probe (point anchor + fixed size) — purple. */
+.probeB {
+  background: var(--map-baingani);
+  color: var(--map-white);
+  outline: 2px solid var(--map-white);
+  font-size: 26px;
+}
+
+/* Numeric readout — the actual Phase 0 deliverable: measure, don't eyeball. */
+.readout {
+  position: absolute;
+  left: 120px;
+  top: 1200px;
+  display: grid;
+  grid-template-columns: max-content max-content;
+  gap: 12px 40px;
+  padding: 40px;
+  background: rgb(0 0 0 / 0.75);
+  outline: 2px solid var(--map-ferozi);
+  font-size: 44px;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+}
+
+.readout dt {
+  color: var(--map-ferozi);
+}
+
+.readout dd {
+  color: var(--map-white);
+}

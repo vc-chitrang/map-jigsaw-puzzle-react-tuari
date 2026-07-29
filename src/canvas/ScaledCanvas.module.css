@@ -1,0 +1,23 @@
+/* Fills the window; clips anything the scaled canvas overhangs. */
+.viewport {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  background: var(--map-kohl);
+}
+
+/*
+ * Centred, reference-sized, uniformly scaled.
+ * transform-origin is the centre because the translate(-50%,-50%) happens
+ * inside the same transform — order matters: translate first, then scale.
+ */
+.canvas {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform-origin: center center;
+  /* Reference px in, device px out. Children never see the scale. */
+  will-change: transform;
+  /* Sub-pixel geometry must survive the scale — no layout containment here. */
+  contain: layout style;
+}

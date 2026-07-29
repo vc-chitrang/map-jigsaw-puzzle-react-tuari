@@ -1,0 +1,56 @@
+.button {
+  /* Position comes from the layout table via inline styles. */
+  appearance: none;
+  border: 0;
+  padding: 0;
+  background-color: transparent;
+  /* Unity `preserveAspect` on the button Image → contain, centred. */
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.button:disabled {
+  cursor: default;
+}
+
+/*
+ * Label and icon are absolutely positioned inside the button. The label is a
+ * full-bleed flex box because TMP centres on the cap box, not the em box, and
+ * flex centring is the closest match (pixel-perfect §4.4).
+ */
+.label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-weight: 700;
+  /* Scene strings are authored lowercase and render uppercase. */
+  text-transform: uppercase;
+  line-height: 1;
+  pointer-events: none;
+  -webkit-font-smoothing: antialiased;
+}
+
+.icon {
+  /* Unity `preserveAspect`. */
+  object-fit: contain;
+  pointer-events: none;
+}
+
+/*
+ * Disabled: label and icon only, alpha 0.3, RGB preserved. The background sprite
+ * is deliberately untouched — SpriteSwap leaves the normal sprite in place
+ * (ui-spec §9, ADR-005).
+ */
+.disabled .label,
+.disabled .icon {
+  opacity: var(--disabled-alpha);
+}

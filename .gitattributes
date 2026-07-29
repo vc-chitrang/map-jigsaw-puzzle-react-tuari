@@ -1,0 +1,31 @@
+# Normalise text files in the repo, and check them out with native endings.
+* text=auto
+
+# cmd.exe MIS-PARSES a batch file that uses LF-only line endings — it reports
+# "'build.bat' is not recognized as an internal or external command" even though
+# the file is right there. These MUST stay CRLF.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# PowerShell is tolerant of LF, but keeping these CRLF matches the platform.
+*.ps1 text eol=crlf
+
+# Web/source files stay LF.
+*.ts   text eol=lf
+*.tsx  text eol=lf
+*.js   text eol=lf
+*.mjs  text eol=lf
+*.json text eol=lf
+*.css  text eol=lf
+*.html text eol=lf
+*.md   text eol=lf
+*.rs   text eol=lf
+*.toml text eol=lf
+
+# Binaries — never touch.
+*.png  binary
+*.ico  binary
+*.icns binary
+*.woff2 binary
+*.otf  binary
+*.ttf  binary
