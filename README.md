@@ -174,6 +174,14 @@ without it a fullscreen undecorated kiosk cannot be closed.
 
 ### Auto-start on boot + crash restart
 
+**Opt-in, and off by default.** The build itself never restarts anything — the `.exe` just exits on
+close. Auto-start lives entirely in a separate scheduled task you choose to install. **Do NOT enable
+it on a machine where a separate launcher manages the app lifecycle**: the watchdog reopening this app
+on close would fight the launcher. It is only for a standalone kiosk where this app is the whole show.
+
+**Click to enable / disable:** double-click `scripts/kiosk/enable-autostart.cmd` (or
+`disable-autostart.cmd`). They ask for admin (UAC) and prompt for orientation.
+
 On the kiosk the app is supervised from the OUTSIDE (ADR-024), because a restart mechanism inside the
 app cannot revive the app once its process is gone:
 

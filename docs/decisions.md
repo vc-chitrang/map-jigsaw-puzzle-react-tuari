@@ -48,6 +48,12 @@ scheduled task (at logon)  --runs-->  kiosk-watchdog.ps1  --launches-->  app
   appears. The same reason the task triggers on **logon**, not startup.
 
 **Consequences.**
+- **Opt-in, off by default.** The app build restarts nothing; auto-start is only
+  the scheduled task, installed on demand (`enable-autostart.cmd` /
+  `disable-autostart.cmd` are the click wrappers, or the `install-`/
+  `uninstall-autostart.ps1` scripts directly). **It must stay off wherever a
+  separate launcher owns the app lifecycle** — a watchdog that reopens the app on
+  close fights a launcher that closes it to switch apps.
 - The kiosk must be set to **auto-login** a dedicated account (a hardware step,
   P6.10); the task fires on that logon. Documented in the README.
 - **Not covered:** a WebView2 renderer that crashes while the host process stays
