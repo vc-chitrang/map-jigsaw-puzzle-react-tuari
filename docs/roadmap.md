@@ -201,15 +201,61 @@ stack — Phase 5.
 
 ---
 
-## Phase 5 — Win screen, navigation, keyboard
+## Phase 5 — Win screen, navigation, keyboard  ✅ *complete*
 
-- [ ] Win screen: best time, your time, Play Again (straight into gameplay).
-- [ ] 1 s delay + reveal of the 9th slice before the win screen.
-- [ ] `ScreenRouter` with the custom back rules and the cross-fade (200 ms ×2, with timeout fallback).
-- [ ] **In-app on-screen keyboard** (white, brand-styled) wired to the search field.
-- [ ] Tap-outside-to-dismiss rule (< 15 px = tap, ignore drags, ignore taps on inputs).
+- [x] Win screen: best time, your time, Play Again (straight into gameplay). An **overlay** on the
+      Puzzle screen, not a routed screen — its scene background is alpha 0 (ADR-018).
+- [x] 1 s delay + reveal of the 9th slice — already in the reducer since Phase 1; wired here.
+- [x] `ScreenRouter` with the custom back rules and the cross-fade (200 ms ×2, timeout fallback).
+- [x] In-app on-screen keyboard (white, brand-styled) wired to the search field **and all five
+      filter popups**.
+- [x] Tap-outside-to-dismiss (< 15 px = tap, ignore drags, ignore taps on inputs).
 
 **Exit criteria:** full loop playable end-to-end; no transition can leave a click-blocking overlay.
+
+**Verified — the transition invariant.** Measured live at 540×960 by reading the overlay's computed
+style through a full cross-fade:
+
+| Phase | `pointer-events` | opacity |
+|---|---|---|
+| `idle` (before) | `none` | 0 |
+| `fadingOut` | `auto` | 0.68 mid-fade |
+| `fadingIn` | `auto` | 0.88 mid-fade |
+| `idle` (after) | `none` | 0 |
+
+Plus 23 unit tests on the pure reducer, including an **exhaustive walk of the action space to depth
+4** asserting that `phase === 'idle'` always implies `pointer-events: none`, and confirming the walk
+actually reached all three phases so the assertion is not vacuous. `FORCE_IDLE` is proven to land on
+`idle` from every phase.
+
+**Verified — the win path, end to end.** The board was solved for real: board state was read out of
+the DOM (tile transforms and background-positions), BFS found a **17-move** solution, and the moves
+were played through the normal tap path. Result: board solved, 9th slice revealed, win screen shown,
+`Your Score 00:03`, `High Score 00:03` (first record written), Play Again present. Play Again then
+produced a new board straight into **gameplay** — START hidden, footer live, timer running.
+
+**Verified — the keyboard.** 41 keys, 469.7 device px wide at 540×960 so it fits the canvas. Shift
+latches, uppercases exactly one character, then clears (`ragm` → shift → `M` → `m` → `ragmMm`).
+Backspace, space and Search all correct; Search commits the query and closes the keyboard.
+
+**Verified — the 15 px dismiss rule**, all four cases: an 80 px drag leaves the keyboard open; a 3 px
+tap closes it; 13.5 px diagonally still counts as a tap; **15.6 px diagonally counts as a drag**, so
+the rule is measured diagonally rather than per-axis.
+
+**Three bugs found and fixed while verifying:**
+
+1. **The win screen was invisible.** Nested inside the Puzzle screen it sat under the preview panel's
+   `z-index: 10`. Caught by a screenshot — the DOM assertion passed the whole time because
+   `innerText` contained "You Win!" (ADR-018).
+2. **Home mid-game did nothing** when no cropped artwork was pending. Clearing `preparedArtwork` was
+   the only reset signal, and clearing an already-null value changes no dependency. Added an explicit
+   `resetToken`.
+3. **Fast typing lost characters.** The keyboard took the current value as a prop, so four presses in
+   one React batch all read the same stale string and "raga" arrived as "a". The keyboard no longer
+   knows the text at all — `onChange` takes an updater.
+
+**Not done:** `PerPageDD` (P3.11), card internal geometry (P3.12), a real phone-upload test (P4.11),
+and the pixel diff (needs an interactive shell).
 
 ---
 

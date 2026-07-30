@@ -21,6 +21,7 @@ import { highScoreStore } from '../../storage/localStore';
 import { Board } from './Board';
 import { useAutoShuffle, useGameTimer, useMoveSettler, useWinDelay } from './hooks';
 import { adoptPreparedArtwork, loadRandomArtwork, type LoadedArtwork } from './loadArtwork';
+import { WinScreen } from '../WinScreen/WinScreen';
 import styles from './PuzzleScreen.module.css';
 
 const TUNING = BOARD_TUNING.portrait;
@@ -38,6 +39,26 @@ interface PuzzleScreenProps {
   readonly onStart?: () => void;
   /** Home / back. */
   readonly onHome?: () => void;
+  /**
+   * "Play Again" on the win screen. The owner must clear `preparedArtwork` so a
+   * fresh random artwork is loaded — the cropped blob has been revoked by then.
+   */
+  readonly onPlayAgain?: () => void;
+  /**
+   * Reports whether a game is in progress, which the Back rule needs: Back on the
+   * Puzzle screen abandons a game mid-play but QUITS the app in attract mode
+   * (docs/game-logic.md §6.3).
+   */
+  readonly onMidGameChange?: (midGame: boolean) => void;
+  /**
+   * Increment to force `ResetToLaunchMode()`: abandon the game, load a new random
+   * artwork, return to attract mode.
+   *
+   * A token rather than a boolean because the owner needs to trigger a reset even
+   * when nothing else about the props changed — Home mid-game with no prepared
+   * artwork would otherwise be a silent no-op.
+   */
+  readonly resetToken?: number;
 }
 
 /**
@@ -57,6 +78,9 @@ export function PuzzleScreen({
   preparedArtwork = null,
   onStart,
   onHome,
+  onPlayAgain,
+  onMidGameChange,
+  resetToken = 0,
 }: PuzzleScreenProps = {}) {
   const [state, dispatch] = useReducer(gameReducer, INITIAL_GAME_STATE);
   const [artwork, setArtwork] = useState<LoadedArtwork | null>(null);
@@ -132,6 +156,27 @@ export function PuzzleScreen({
   // Release the blob URLs when the screen goes away.
   useEffect(() => () => artwork?.release(), [artwork]);
 
+  /**
+   * External `ResetToLaunchMode()`. The first render is skipped — mounting is
+   * already a fresh start, and resetting here would load the artwork twice.
+   */
+  const lastResetToken = useRef(resetToken);
+  useEffect(() => {
+    if (resetToken === lastResetToken.current) return;
+    lastResetToken.current = resetToken;
+    startGameplayImmediately.current = false;
+    dispatch({ type: 'RESET_TO_LAUNCH_MODE' });
+    setBuildToken((token) => token + 1);
+  }, [resetToken]);
+
+  /**
+   * A game counts as "in progress" once attract mode has been left and it is not
+   * yet solved. Back abandons that game; in attract mode Back quits instead.
+   */
+  useEffect(() => {
+    onMidGameChange?.(state.mode === 'gameplay' && !state.isSolved);
+  }, [state.mode, state.isSolved, onMidGameChange]);
+
   // ---- Input ---------------------------------------------------------------
   const handleMove = useCallback(
     (cell: Cell) => {
@@ -159,6 +204,20 @@ export function PuzzleScreen({
     dispatch({ type: 'RESET_TO_LAUNCH_MODE' });
     setBuildToken((token) => token + 1);
   }, []);
+
+  /**
+   * `ResetToLaunchMode(true)` — a new image that goes STRAIGHT into gameplay,
+   * skipping attract mode (docs/game-logic.md §6.2). The flag is consumed by the
+   * BUILD that follows the image load.
+   */
+  const handlePlayAgain = useCallback(() => {
+    startGameplayImmediately.current = true;
+    dispatch({ type: 'RESET_TO_LAUNCH_MODE', startGameplayImmediately: true });
+    // Bump the token as well as notifying the owner: if `preparedArtwork` was
+    // already null, clearing it changes no dependency and the load would not re-run.
+    setBuildToken((token) => token + 1);
+    onPlayAgain?.();
+  }, [onPlayAgain]);
 
   const handleStart = useCallback(() => {
     // Unity's START leaves attract mode AND navigates to image selection. With no
@@ -288,6 +347,18 @@ export function PuzzleScreen({
         disabled={!footerEnabled}
         onPress={handleNewImage}
       />
+
+      {/* Win screen. An overlay, not a routed screen: the board and the preview
+          must stay visible behind it, which is why its scene background is at
+          alpha 0. The reducer has already run the reveal and the 1 s delay by the
+          time `phase` reaches 'won'. */}
+      {state.phase === 'won' ? (
+        <WinScreen
+          elapsedSeconds={state.timer.elapsedSeconds}
+          highScoreSeconds={state.highScoreSeconds}
+          onPlayAgain={handlePlayAgain}
+        />
+      ) : null}
 
       {/* Preview overlay. MatchPreviewToBoard resizes the panel to the board rect
           at runtime, so it overlays the board — not the whole screen, despite the

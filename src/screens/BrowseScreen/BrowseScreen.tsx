@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import {
   SORT_MODES,
   formatResultCount,
@@ -12,6 +12,8 @@ import { rectStyle, textStyle } from '../../layout/rect';
 import { ArtworkCard } from './ArtworkCard';
 import { FilterDropdown, type DropdownOption } from './FilterDropdown';
 import { useCollection } from './useCollection';
+import { OnScreenKeyboard } from '../../ui/keyboard/OnScreenKeyboard';
+import { isTap, keyboardHeight } from '../../ui/keyboard/layout';
 import styles from './BrowseScreen.module.css';
 
 /**
@@ -32,6 +34,53 @@ export function BrowseScreen({ onBack, onSelectArtwork }: BrowseScreenProps) {
 
   /** At most one popup open at a time, like a Unity `TMP_Dropdown`. */
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+
+  /**
+   * Which field the on-screen keyboard is serving: the main search box, or the
+   * search input inside one filter popup. `null` means the keyboard is closed.
+   */
+  const [keyboardTarget, setKeyboardTarget] = useState<'search' | { filter: string } | null>(null);
+
+  /** Popup search text, per dropdown. Lifted so the keyboard can drive it. */
+  const [filterSearch, setFilterSearch] = useState<Record<string, string>>({});
+
+  const setOneFilterSearch = (key: string, next: string | ((previous: string) => string)) =>
+    setFilterSearch((current) => ({
+      ...current,
+      [key]: typeof next === 'function' ? next(current[key] ?? '') : next,
+    }));
+
+  /**
+   * Route the keyboard's updater to whichever field it is serving. An updater
+   * rather than a value, so fast typing composes instead of overwriting.
+   */
+  const applyKeyboardEdit = (updater: (previous: string) => string) => {
+    if (keyboardTarget === null) return;
+    if (keyboardTarget === 'search') actions.setSearchText(updater);
+    else setOneFilterSearch(keyboardTarget.filter, updater);
+  };
+
+  /**
+   * Pointer-down position, for the tap-versus-drag test on dismiss.
+   * `HandleKeyboardDismiss`: on pointer UP, a movement under 15 px is a tap and
+   * closes the keyboard; a drag is a scroll and must not (docs/ui-spec.md §5).
+   */
+  const dismissStart = useRef<{ x: number; y: number } | null>(null);
+
+  const handleBackdropPointerDown = (event: React.PointerEvent) => {
+    setOpenDropdown(null);
+    dismissStart.current = { x: event.clientX, y: event.clientY };
+  };
+
+  const handleBackdropPointerUp = (event: React.PointerEvent) => {
+    const start = dismissStart.current;
+    dismissStart.current = null;
+    if (!start || keyboardTarget === null) return;
+
+    // A tap on an input re-targets rather than dismissing; those elements stop
+    // propagation themselves, so anything reaching here is outside them.
+    if (isTap(start.x, start.y, event.clientX, event.clientY)) setKeyboardTarget(null);
+  };
 
   const optionsFor = useMemo<Record<string, readonly DropdownOption[]>>(() => {
     const filters = collection.filters;
@@ -70,8 +119,10 @@ export function BrowseScreen({ onBack, onSelectArtwork }: BrowseScreenProps) {
     <div
       className={styles.screen}
       style={rectStyle(B.screen.rect)}
-      // Tapping anywhere outside a popup closes it.
-      onPointerDown={() => setOpenDropdown(null)}
+      // Tapping anywhere outside a popup closes it, and a TAP (not a drag)
+      // outside an input also dismisses the keyboard.
+      onPointerDown={handleBackdropPointerDown}
+      onPointerUp={handleBackdropPointerUp}
     >
       <img className={styles.background} src={B.screen.background} alt="" draggable={false} />
 
@@ -113,6 +164,13 @@ export function BrowseScreen({ onBack, onSelectArtwork }: BrowseScreenProps) {
             onChange={(event) => actions.setSearchText(event.target.value)}
             onKeyDown={(event) => {
               if (event.key === 'Enter') actions.submitSearch();
+            }}
+            // Focus opens the in-app keyboard (ADR-006). `readOnly` would block
+            // a physical keyboard, which staff use for setup, so both work.
+            onFocus={() => setKeyboardTarget('search')}
+            onPointerDown={(event) => {
+              event.stopPropagation();
+              setKeyboardTarget('search');
             }}
             autoComplete="off"
             spellCheck={false}
@@ -176,8 +234,16 @@ export function BrowseScreen({ onBack, onSelectArtwork }: BrowseScreenProps) {
               setOpenDropdown(null);
             }}
             open={openDropdown === item.key}
-            onToggle={() => setOpenDropdown(openDropdown === item.key ? null : item.key)}
+            onToggle={() => {
+              const next = openDropdown === item.key ? null : item.key;
+              setOpenDropdown(next);
+              // Closing the popup takes its keyboard with it.
+              if (next === null) setKeyboardTarget(null);
+            }}
             disabled={collection.filters === null}
+            search={filterSearch[item.key] ?? ''}
+            onSearchChange={(next) => setOneFilterSearch(item.key, next)}
+            onSearchFocus={() => setKeyboardTarget({ filter: item.key })}
           />
         ))}
       </div>
@@ -294,6 +360,24 @@ export function BrowseScreen({ onBack, onSelectArtwork }: BrowseScreenProps) {
           {pagination ? `Page ${pagination.current_page} of ${pagination.last_page}` : ''}
         </span>
       </div>
+
+      {/* ---- On-screen keyboard ----
+          Anchored to the bottom of the screen and centred. Rendered last so it
+          sits above the grid and the pagination bar. */}
+      {keyboardTarget !== null ? (
+        <div className={styles.keyboardDock} style={{ bottom: '0px', height: `${keyboardHeight()}px` }}>
+          <OnScreenKeyboard
+            onChange={applyKeyboardEdit}
+            onSubmit={() => {
+              // Submitting the main field runs the query; a filter popup's field
+              // only narrows its own list, so there is nothing to submit there.
+              if (keyboardTarget === 'search') actions.submitSearch();
+              setKeyboardTarget(null);
+            }}
+            onClose={() => setKeyboardTarget(null)}
+          />
+        </div>
+      ) : null}
     </div>
   );
 }

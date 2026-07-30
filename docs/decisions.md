@@ -4,6 +4,30 @@ Architectural decisions, newest first. Each entry: context → decision → cons
 
 ---
 
+## ADR-018 — The win screen is an overlay on the Puzzle screen, not a routed screen
+
+**Date:** 2026-07-29 · **Status:** Accepted
+
+**Context.** `WinScreen` is one of the eight screen roots in the scene, so the obvious port is a
+fifth entry in the router's `ScreenId`. But its own `Background` image is
+`Background_Portrait.png` at **alpha 0** — fully transparent. The solved board and the full-image
+preview must remain visible behind it; cross-fading to black would hide exactly the thing the
+visitor just finished.
+
+**Decision.** Render `WinScreen` as an overlay inside the Puzzle screen, driven by the reducer's
+`phase === 'won'`. `ScreenId` covers only the four screens the router actually cross-fades between.
+
+**Consequences.**
+- The reveal → 1 s delay → win sequence stays entirely in the reducer, already tested.
+- **It needs an explicit `z-index` (20).** In Unity `WinScreen` is a later *sibling* than the whole
+  Puzzle screen, so it naturally paints above the preview panel. Nested inside the Puzzle screen it
+  does not: the preview panel's `z-index: 10` covered the popup completely and the win screen was
+  invisible while still present in the DOM. Caught by screenshot, not by a passing DOM assertion —
+  `innerText` contained "You Win!" the whole time.
+- `resolveBack` has no `win` case, because the win screen has no Back button.
+
+---
+
 ## ADR-017 — The crop screen is a resizable square grid, not pan-and-zoom
 
 **Date:** 2026-07-29 · **Status:** Accepted (corrects the docs)

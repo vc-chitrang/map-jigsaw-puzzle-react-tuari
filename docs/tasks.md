@@ -113,6 +113,22 @@ Status: `TODO` · `WIP` · `DONE` · `BLOCKED`
 | P4.10 | End-to-end verification | **DONE** | Full flow walked at 540×960; measurements in [roadmap.md](roadmap.md) |
 | P4.11 | Verify against a real phone upload | **TODO** | Needs the phone-side upload page and a device on the same network — cannot be exercised here |
 
+## Phase 5 — Win screen, router, keyboard
+
+| # | Task | Status | Notes |
+|---|---|---|---|
+| P5.1 | `ScreenRouter` with the fail-safe cross-fade | **DONE** | `navigation/router.ts` (pure) + `ScreenRouter.tsx`. 23 tests incl. an exhaustive phase walk of the invariant |
+| P5.2 | `pointer-events` derived in exactly one place | **DONE** | `overlayPointerEvents`; verified live across all phases |
+| P5.3 | Timeout fallback so a dropped event cannot wedge the UI | **DONE** | Primary timer advances the phase; a second timer forces `idle` and logs a warning |
+| P5.4 | Custom back rules | **DONE** | `resolveBack`, transcribed from game-logic §6.3; quit only from Puzzle in attract mode |
+| P5.5 | Win screen | **DONE** | Overlay on the Puzzle screen, not a routed screen — ADR-018. Needs `z-index: 20` to clear the preview |
+| P5.6 | Play Again → new image straight into gameplay | **DONE** | Verified: START hidden, footer live, timer running |
+| P5.7 | In-app on-screen keyboard | **DONE** | `ui/keyboard/`; 27 tests. `onChange` takes an updater so fast typing cannot lose characters |
+| P5.8 | Keyboard wired to the 5 filter popups | **DONE** | Popup search text lifted into `BrowseScreen` so one keyboard serves all six fields |
+| P5.9 | Tap-outside-to-dismiss, 15 px rule | **DONE** | Measured diagonally; all four cases verified |
+| P5.10 | Fix: Home mid-game was a no-op | **DONE** | Added `resetToken`; clearing an already-null prop changed no dependency |
+| P5.11 | Landscape orientation | **TODO** | Phase 6 |
+
 ## Build & release tooling
 
 | # | Task | Status | Notes |

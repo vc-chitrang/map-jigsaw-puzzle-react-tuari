@@ -1,10 +1,19 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
+import { getCurrentWindow } from '@tauri-apps/api/window';
 import { ScaledCanvas } from './canvas/ScaledCanvas';
 import { ParityHarness } from './dev/ParityHarness';
 import { PuzzleScreen } from './screens/PuzzleScreen/PuzzleScreen';
 import { BrowseScreen } from './screens/BrowseScreen/BrowseScreen';
 import { ImageSelectScreen } from './screens/ImageSelectScreen/ImageSelectScreen';
 import { CropScreen } from './screens/CropScreen/CropScreen';
+import { ScreenRouter } from './navigation/ScreenRouter';
+import {
+  INITIAL_NAV_STATE,
+  isTransitioning,
+  navReducer,
+  resolveBack,
+  type ScreenId,
+} from './navigation/router';
 import { VersionBadge } from './ui/VersionBadge';
 import { fetchImageAsBlobUrl } from './api/client';
 import { connectUploadSocket, type UploadSocket } from './api/socket';
@@ -13,19 +22,14 @@ import type { ResultsData } from './api/types';
 /**
  * Application shell.
  *
- * INTERIM NAVIGATION — replaced in Phase 5 by `ScreenRouter`.
+ * Navigation goes through `ScreenRouter`, which cross-fades through black and
+ * whose overlay can never be left blocking input (ADR-002). All rules live in
+ * `navigation/router.ts`; this component wires them to the screens and owns the
+ * things that outlive a screen: the pending crop image and the upload socket.
  *
- * A plain state switch: no cross-fade, no back stack. Phase 5 adds the real router
- * with the `idle | fadingOut | fadingIn` transition state, the timeout fallback and
- * the custom back rules (ADR-002, game-logic §6.3). Deliberately NOT half-building
- * the overlay here — a partial version of the exact mechanism that wedged the Unity
- * build is worse than none.
- *
- * Flow: Puzzle -> ImageSelect -> Browse -> Crop -> Puzzle, with a QR upload able to
- * jump straight to Crop.
+ * Flow: Puzzle → ImageSelect → Browse → Crop → Puzzle, with a QR upload able to
+ * jump straight to Crop from either ImageSelect or Crop itself.
  */
-
-type Screen = 'puzzle' | 'select' | 'browse' | 'crop';
 
 /** An image waiting to be cropped, plus the title to carry forward. */
 interface CropSource {
@@ -36,20 +40,26 @@ interface CropSource {
 export function App() {
   const showHarness = import.meta.env.VITE_PARITY_HARNESS === '1';
 
-  const [screen, setScreen] = useState<Screen>('puzzle');
+  const [nav, dispatchNav] = useReducer(navReducer, INITIAL_NAV_STATE);
   const [cropSource, setCropSource] = useState<CropSource | null>(null);
   const [preparedArtwork, setPreparedArtwork] = useState<CropSource | null>(null);
   const [uploadReady, setUploadReady] = useState(false);
+  /** Bumped to force the Puzzle screen back to attract mode with a new artwork. */
+  const [resetToken, setResetToken] = useState(0);
+  /** Set by the Puzzle screen so the Back rule can tell attract from mid-game. */
+  const puzzleMidGame = useRef(false);
 
   /**
-   * The current screen, readable from the socket callback without making the
-   * socket effect depend on it — re-subscribing on every navigation would drop
-   * uploads that arrive mid-transition.
+   * Current screen, readable from the socket callback without making the socket
+   * effect depend on it — re-subscribing on every navigation would drop an upload
+   * that arrives mid-transition.
    */
-  const screenRef = useRef<Screen>(screen);
-  screenRef.current = screen;
+  const screenRef = useRef<ScreenId>(nav.current);
+  screenRef.current = nav.current;
 
-  /** Revoked whenever it is replaced, so a browsing visitor cannot leak blobs. */
+  const go = useCallback((to: ScreenId) => dispatchNav({ type: 'NAVIGATE', to }), []);
+
+  /** Revoked whenever it is replaced, so browsing cannot leak blob URLs. */
   const cropSourceRef = useRef<CropSource | null>(null);
 
   const replaceCropSource = useCallback((next: CropSource | null) => {
@@ -72,10 +82,10 @@ export function App() {
       try {
         const blobUrl = await fetchImageAsBlobUrl(imageUrl);
         replaceCropSource({ url: blobUrl, title });
-        setScreen('crop');
+        dispatchNav({ type: 'NAVIGATE', to: 'crop' });
       } catch (error) {
-        // Staying put is the right failure mode: the visitor keeps whatever screen
-        // they were on rather than landing on an empty crop stage.
+        // Staying put is the right failure mode: the visitor keeps the screen they
+        // were on rather than landing on an empty crop stage.
         console.error('[app] could not load the image for cropping', error);
       }
     },
@@ -92,9 +102,9 @@ export function App() {
         onStatus: setUploadReady,
         onImageUrl: (url) => {
           // Accept an upload ONLY while ImageSelect or Crop is showing
-          // (UIManager.OnImageReceived). This is what lets a visitor scan a
-          // second QR while already cropping and replace the image in place,
-          // and what stops an upload from hijacking a game in progress.
+          // (UIManager.OnImageReceived). That is what lets a visitor scan a
+          // second QR while already cropping and replace the image in place, and
+          // what stops an upload hijacking a game in progress.
           const current = screenRef.current;
           if (current !== 'select' && current !== 'crop') {
             console.info(`[app] ignoring an upload while on the ${current} screen`);
@@ -138,49 +148,112 @@ export function App() {
       // ours to release.
       replaceCropSource(null);
       setPreparedArtwork(result);
-      setScreen('puzzle');
+      dispatchNav({ type: 'NAVIGATE', to: 'puzzle' });
     },
     [replaceCropSource],
   );
 
-  const goHome = useCallback(() => {
-    replaceCropSource(null);
-    setPreparedArtwork(null);
-    setScreen('puzzle');
-  }, [replaceCropSource]);
+  /** Play Again needs a fresh random artwork, so the cropped one must be dropped. */
+  const handlePlayAgain = useCallback(() => setPreparedArtwork(null), []);
+
+  /**
+   * Back / Home, following the custom rules in `resolveBack`.
+   *
+   * `quit` is the same exit the staff gesture uses. It only happens from the
+   * Puzzle screen in attract mode, which is exactly Unity's rule.
+   */
+  const handleBack = useCallback(() => {
+    const outcome = resolveBack(nav, { puzzleMidGame: puzzleMidGame.current });
+
+    switch (outcome.kind) {
+      case 'navigate':
+        if (outcome.resetToLaunch) {
+          replaceCropSource(null);
+          setPreparedArtwork(null);
+          // The token is what actually resets the game. Clearing `preparedArtwork`
+          // alone is not enough: if it was already null nothing changes and the
+          // Puzzle screen would stay mid-game.
+          setResetToken((token) => token + 1);
+        }
+        dispatchNav({ type: 'NAVIGATE', to: outcome.to });
+        return;
+
+      case 'resetToLaunch':
+        replaceCropSource(null);
+        setPreparedArtwork(null);
+        setResetToken((token) => token + 1);
+        return;
+
+      case 'quit':
+        if ('__TAURI_INTERNALS__' in window) {
+          void getCurrentWindow()
+            .close()
+            .catch((error) => console.error('[app] quit failed', error));
+        } else {
+          console.info('[app] quit requested (no-op outside Tauri)');
+        }
+        return;
+
+      default: {
+        const unreachable: never = outcome;
+        return unreachable;
+      }
+    }
+  }, [nav, replaceCropSource]);
+
+  if (showHarness) {
+    return (
+      <>
+        <ScaledCanvas>
+          <ParityHarness />
+        </ScaledCanvas>
+        <VersionBadge />
+      </>
+    );
+  }
+
+  // While a transition runs, the overlay covers everything, so the outgoing
+  // screen cannot be interacted with regardless of what it renders.
+  const blocked = isTransitioning(nav);
+
+  const screen =
+    nav.current === 'select' ? (
+      <ImageSelectScreen
+        onBack={handleBack}
+        onBrowseCollection={() => go('browse')}
+        uploadReady={uploadReady}
+      />
+    ) : nav.current === 'browse' ? (
+      <BrowseScreen onBack={handleBack} onSelectArtwork={handleSelectArtwork} />
+    ) : nav.current === 'crop' && cropSource ? (
+      <CropScreen
+        imageUrl={cropSource.url}
+        title={cropSource.title}
+        onBack={handleBack}
+        onCropped={handleCropped}
+      />
+    ) : (
+      <PuzzleScreen
+        preparedArtwork={preparedArtwork}
+        onStart={() => go('select')}
+        onHome={handleBack}
+        onPlayAgain={handlePlayAgain}
+        resetToken={resetToken}
+        onMidGameChange={(midGame) => {
+          puzzleMidGame.current = midGame;
+        }}
+      />
+    );
 
   return (
     <>
-      <ScaledCanvas>
-        {showHarness ? (
-          <ParityHarness />
-        ) : screen === 'select' ? (
-          <ImageSelectScreen
-            onBack={goHome}
-            onBrowseCollection={() => setScreen('browse')}
-            uploadReady={uploadReady}
-          />
-        ) : screen === 'browse' ? (
-          <BrowseScreen onBack={() => setScreen('select')} onSelectArtwork={handleSelectArtwork} />
-        ) : screen === 'crop' && cropSource ? (
-          <CropScreen
-            imageUrl={cropSource.url}
-            title={cropSource.title}
-            // Back from Crop returns to Browse when that is where it came from,
-            // else to ImageSelect (game-logic §6.3). A QR upload has no title and
-            // no Browse history, so it goes back to ImageSelect.
-            onBack={() => setScreen(cropSource.title ? 'browse' : 'select')}
-            onCropped={handleCropped}
-          />
-        ) : (
-          <PuzzleScreen
-            preparedArtwork={preparedArtwork}
-            onStart={() => setScreen('select')}
-            onHome={goHome}
-          />
-        )}
-      </ScaledCanvas>
+      <ScreenRouter state={nav} dispatch={dispatchNav}>
+        <ScaledCanvas>{screen}</ScaledCanvas>
+      </ScreenRouter>
       <VersionBadge />
+      {/* Debug aid: the phase is on the overlay's data-phase attribute, and this
+          mirrors it for the parity harness / DOM assertions. */}
+      <span hidden data-nav-phase={nav.phase} data-nav-screen={nav.current} data-blocked={blocked} />
     </>
   );
 }

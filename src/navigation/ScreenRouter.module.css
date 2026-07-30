@@ -1,0 +1,17 @@
+/*
+ * Full-VIEWPORT black overlay, not canvas-sized: on an off-aspect display the
+ * scaled canvas does not reach the screen edges, and a cross-fade that left
+ * strips of live UI visible around it would look broken.
+ *
+ * `position: fixed` also means it covers the version badge, which is correct —
+ * during a transition nothing should be interactive.
+ */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--map-kohl);
+  /* Above every screen and above the badge (z-index 1000). */
+  z-index: 2000;
+  /* opacity, pointer-events and transition are all set inline from the phase. */
+  will-change: opacity;
+}

@@ -1,0 +1,75 @@
+/* Reference px throughout — inside <ScaledCanvas>. */
+
+/*
+ * Transparent: the scene's Background image is at alpha 0, so the solved board
+ * and the preview behind remain visible. Pointer events pass through everywhere
+ * except the popup, so a stray tap on the board does nothing.
+ *
+ * z-index must beat the preview panel (10). In Unity the WinScreen is a separate
+ * screen ROOT and therefore a later sibling than the whole Puzzle screen, so it
+ * paints above the preview; rendered inside the Puzzle screen here, it needs to
+ * say so explicitly. Without this the popup is invisible — the preview covers it.
+ */
+.screen {
+  pointer-events: none;
+  z-index: 20;
+}
+
+.popup {
+  /* The "You Win!" banner hangs above the popup's top edge. */
+  overflow: visible;
+  pointer-events: auto;
+}
+
+.mask,
+.pattern {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.youWin {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 16px;
+}
+
+.youWinText {
+  font-family: var(--font-display);
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+/*
+ * Zero-width text at the panel centre, RIGHT-aligned (TMP h = Right), so it grows
+ * leftward from the centre line while the value box sits to the right of it. Left
+ * or centre alignment here overlaps the label with its own value.
+ */
+.scoreLabel {
+  display: flex;
+  align-items: center;
+  /* flex-end == right-aligned, on a box with no width. */
+  justify-content: flex-end;
+  font-family: var(--font-display);
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.scoreBox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+}
+
+.scoreValue {
+  font-family: var(--font-display);
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}

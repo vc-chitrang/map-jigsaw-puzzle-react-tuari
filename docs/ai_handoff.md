@@ -12,7 +12,7 @@ State for the next agent. Read this first, then [architecture.md](architecture.m
 | Track | State |
 |---|---|
 | **Unity app** (shipping) | Live kiosk build. Active work: brand pass (fonts/colours), button press feedback, disabled-state styling, on-screen-keyboard investigation. See §7. |
-| **React + Tauri port** | **Phases 0–4 built, first installer produced (v0.1.1).** 212 tests green. Full flow walks Puzzle → ImageSelect → Browse → Crop → Puzzle; Browse is live against the real collection API (32,305 artworks). Outstanding: the pixel diff (§10) and Phase 5 (win screen, router, in-app keyboard). |
+| **React + Tauri port** | **Phases 0–5 built, first installer produced (v0.1.1).** 262 tests green. The whole loop plays end to end: attract → START → ImageSelect → Browse → Crop → gameplay → win → Play Again, with a fail-safe cross-fade router and an in-app keyboard. Outstanding: the pixel diff (§10) and Phase 6 (landscape, brand pass, packaging). |
 
 **Building:** `build.bat` at the repo root. Bumps the patch version, runs the tests, builds, prints
 the artefact paths. `build.bat minor|major|same` for the other version behaviours. `package.json` is
@@ -172,6 +172,41 @@ prefix or an inactive parent as "does not ship".
 
 ---
 
+## 2e. What Phase 5 delivered
+
+| File | Contents |
+|---|---|
+| `src/navigation/router.ts` | Pure transition state machine + `resolveBack`. `overlayPointerEvents` is the ONE place pointer-events is decided |
+| `src/navigation/ScreenRouter.tsx` | Overlay + the two timers (primary advance, recovery force-idle) |
+| `src/layout/win.ts` | Win screen geometry, with the alignments read from the scene YAML |
+| `src/screens/WinScreen/*` | Popup, scores, Play Again |
+| `src/ui/keyboard/*` | Layout + pure key handling, and the keyboard component |
+
+### The router is the thing to not break
+
+`phase === 'idle'` MUST imply `pointer-events: none`. That is the Unity bug (ADR-002) in one line.
+It is enforced by `overlayPointerEvents` being the only place the decision is made, and asserted by
+an exhaustive walk of the action space in `router.test.ts`. If you add a second condition to the
+overlay's style, you have reintroduced the bug.
+
+`FORCE_IDLE` is the recovery hatch and is safe from any phase. The `ScreenRouter` fires it on a
+timer that should never be reached; it logs a warning if it is.
+
+### Three bugs Phase 5 surfaced, all worth remembering
+
+1. **A passing DOM assertion is not a visible UI.** The win screen was completely covered by the
+   preview panel, yet `innerText` contained "You Win!" and my check went green. The screenshot caught
+   it. Nested overlays need explicit `z-index` when the Unity original relied on sibling order
+   (ADR-018).
+2. **Clearing an already-null prop changes no dependency.** Home mid-game reset nothing because the
+   only signal was `setPreparedArtwork(null)` and it was already null. Use an explicit token when the
+   owner must be able to trigger an action unconditionally.
+3. **A controlled component that computes from its `value` prop loses fast input.** Four keyboard
+   presses in one React batch all read the same stale string. Pass an updater, or hold the value in
+   the component — never both.
+
+---
+
 ## 3. Key facts worth not re-deriving
 
 - **Canvas reference resolutions:** Portrait **2160×3840** (primary), Landscape **3840×2160**;
@@ -268,23 +303,26 @@ Pending manual Unity steps (editor-only, cannot be scripted headlessly):
 
 ## 8. Recommended next task
 
-**Phase 5 — Win screen, the real router, in-app keyboard.**
+**Phase 6 — landscape, brand pass, packaging.** The portrait build is feature-complete.
 
-1. **`ScreenRouter`** replacing the state switch in `App.tsx`. This is the one to get right:
-   `idle | fadingOut | fadingIn`, 200 ms per half (`OutQuad` then `InQuad`), swap at full black,
-   `pointer-events` derived from the phase in **exactly one place**, plus a timeout fallback so a
-   dropped `transitionend` cannot wedge the app (ADR-002). The back rules are in game-logic §6.3 and
-   are already honoured by the interim switch, so port them across.
-2. **Win screen** — geometry at `docs/ui/scene-portrait.md` lines 603-867. Best time, your time,
-   Play Again (straight into gameplay, skipping attract). The 1 s delay and the 9th-slice reveal are
-   already implemented in the reducer; the screen just has to render.
-3. **In-app keyboard** (ADR-006) wired to the Browse search field and the five filter popups. White,
-   brand-styled. Every keyboard defect in this project came from not owning the keyboard.
-4. **Tap-outside-to-dismiss**: < 15 px of movement counts as a tap, ignore drags, ignore taps that
-   land on an input (`HandleKeyboardDismiss`, ui-spec §5).
+1. **Landscape geometry table** — `src/layout/landscape.ts` from `docs/ui/scene-landscape.md`. The
+   plumbing already exists: `BOARD_TUNING.landscape` carries the correct padding factor (0.68) and
+   panel offset, `REFERENCE.landscape` is defined, and `resolveOrientation` reads
+   `VITE_ORIENTATION`. What is missing is the per-element table and a way to pick between the two.
+   Note the landscape scene still has `ColorTint` buttons rather than `SpriteSwap` — see U1.
+2. **Brand pass** — the colour tokens are already single-source in `src/styles/tokens.css`, so this is
+   a review rather than a refactor. `data-color-mode="unity"` exists for parity captures (ADR-010).
+3. **Performance** — 60 fps during tile animation at 4K, and memory stable across 100+ rebuilds.
+   Tiles already animate with `transform` only.
+4. **24 h soak test** and the kiosk-hardware install.
+5. **Auto-start on boot + crash auto-restart.**
 
-**Also outstanding:** the pixel diff (§10 — unblocked at 540×960, needs an interactive shell),
-`PerPageDD` (P3.11), card internal geometry (P3.12), and a real phone-upload test (P4.11).
+**Also outstanding:** the pixel diff (§10 — needs an interactive shell), `PerPageDD` (P3.11), card
+internal geometry (P3.12), a real phone-upload test (P4.11), and **code signing (B5)** — the installer
+is unsigned, so SmartScreen warns on first run.
+
+**And still, independently of all of it: rotate the API key and the OAuth `client_secret`.** Both are
+in the Unity repository's git history.
 
 ---
 

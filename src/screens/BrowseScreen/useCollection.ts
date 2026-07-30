@@ -43,7 +43,11 @@ export interface CollectionState {
 }
 
 export interface CollectionActions {
-  setSearchText(text: string): void;
+  /**
+   * Accepts an updater as well as a plain string, so the on-screen keyboard can
+   * compose several fast presses without reading a stale value.
+   */
+  setSearchText(text: string | ((previous: string) => string)): void;
   /** Commit the field's contents — Enter or the search button. */
   submitSearch(): void;
   clearSearch(): void;

@@ -1,4 +1,4 @@
-import { useMemo, useState, type CSSProperties } from 'react';
+import { useMemo, type CSSProperties } from 'react';
 import { BROWSE_PORTRAIT as B } from '../../layout/browse';
 import { rectStyle, textStyle } from '../../layout/rect';
 import styles from './BrowseScreen.module.css';
@@ -46,6 +46,15 @@ interface FilterDropdownProps {
   readonly open: boolean;
   readonly onToggle: () => void;
   readonly disabled?: boolean;
+  /**
+   * The popup's search text is CONTROLLED by the parent so the shared on-screen
+   * keyboard can drive it. Keeping it local would mean either a keyboard per
+   * popup (there is no room — the popup is 400 px tall) or two sources of truth.
+   */
+  readonly search: string;
+  readonly onSearchChange: (next: string) => void;
+  /** The visitor tapped the popup's search field; aim the keyboard at it. */
+  readonly onSearchFocus: () => void;
 }
 
 const D = B.filterDropdowns;
@@ -59,9 +68,10 @@ export function FilterDropdown({
   open,
   onToggle,
   disabled = false,
+  search,
+  onSearchChange,
+  onSearchFocus,
 }: FilterDropdownProps) {
-  const [search, setSearch] = useState('');
-
   const controlStyle: CSSProperties = rectStyle({
     kind: 'point',
     anchor: { x: 0, y: 1 },
@@ -115,10 +125,15 @@ export function FilterDropdown({
             <input
               className={styles.dropdownSearch}
               value={search}
-              onChange={(event) => setSearch(event.target.value)}
+              onChange={(event) => onSearchChange(event.target.value)}
               placeholder={`Search ${label.toLowerCase()}...`}
               style={{ fontSize: `${D.label.fontSizePx}px` }}
-              // The in-app keyboard (Phase 5) will attach to this field.
+              onFocus={onSearchFocus}
+              onPointerDown={(event) => {
+                // Must not reach the backdrop, which would dismiss the keyboard.
+                event.stopPropagation();
+                onSearchFocus();
+              }}
               autoComplete="off"
               spellCheck={false}
             />
@@ -126,7 +141,7 @@ export function FilterDropdown({
               <button
                 type="button"
                 className={styles.dropdownSearchClear}
-                onClick={() => setSearch('')}
+                onClick={() => onSearchChange('')}
                 aria-label="Clear the filter search"
               >
                 ×
@@ -143,7 +158,7 @@ export function FilterDropdown({
                 style={{ fontSize: `${D.label.fontSizePx}px` }}
                 onClick={() => {
                   onSelect(typeof selected === 'number' ? 0 : '');
-                  setSearch('');
+                  onSearchChange('');
                 }}
               >
                 Any {label.toLowerCase()}
@@ -159,7 +174,7 @@ export function FilterDropdown({
                   style={{ fontSize: `${D.label.fontSizePx}px` }}
                   onClick={() => {
                     onSelect(option.value);
-                    setSearch('');
+                    onSearchChange('');
                   }}
                 >
                   {option.label}
