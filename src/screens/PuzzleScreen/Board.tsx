@@ -123,7 +123,7 @@ export function Board({
         {arrowsVisible
           ? arrows.map((arrow) => {
               // up | down | left | right — drives the directional pulse class.
-              const dir = arrow.asset.replace('arrow-', '').replace('.png', '');
+              const dir = arrow.asset.replace('arrow-', '').replace(/\.(png|svg)$/, '');
               return (
                 <button
                   key={arrow.index}

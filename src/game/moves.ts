@@ -72,13 +72,13 @@ export function applyMove(state: BoardState, cell: Cell): BoardState | null {
  * `offset` is measured FROM the empty cell TO the tile that arrow pulls in, in
  * grid coordinates (y down). `asset` is the normalised sprite name written by
  * scripts/copy-assets.ps1 — upstream the files are named after the offset
- * itself (`0_-1.png` etc.).
+ * itself (`0_-1.svg` etc.).
  */
 export const ARROW_DIRECTIONS = [
-  { offset: { x: 0, y: -1 }, asset: 'arrow-up.png', label: 'above' },
-  { offset: { x: 0, y: 1 }, asset: 'arrow-down.png', label: 'below' },
-  { offset: { x: -1, y: 0 }, asset: 'arrow-left.png', label: 'left' },
-  { offset: { x: 1, y: 0 }, asset: 'arrow-right.png', label: 'right' },
+  { offset: { x: 0, y: -1 }, asset: 'arrow-up.svg', label: 'above' },
+  { offset: { x: 0, y: 1 }, asset: 'arrow-down.svg', label: 'below' },
+  { offset: { x: -1, y: 0 }, asset: 'arrow-left.svg', label: 'left' },
+  { offset: { x: 1, y: 0 }, asset: 'arrow-right.svg', label: 'right' },
 ] as const satisfies readonly {
   offset: Point;
   asset: string;

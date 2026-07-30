@@ -104,10 +104,10 @@ describe('ARROW_DIRECTIONS', () => {
 
   it('maps each offset to the normalised sprite name', () => {
     expect(ARROW_DIRECTIONS.map((d) => d.asset)).toEqual([
-      'arrow-up.png',
-      'arrow-down.png',
-      'arrow-left.png',
-      'arrow-right.png',
+      'arrow-up.svg',
+      'arrow-down.svg',
+      'arrow-left.svg',
+      'arrow-right.svg',
     ]);
   });
 });
@@ -115,7 +115,7 @@ describe('ARROW_DIRECTIONS', () => {
 describe('arrowPlacements', () => {
   it('shows only arrows whose neighbour exists and holds a tile', () => {
     const placements = arrowPlacements(board, geometry);
-    expect(placements.map((p) => p.asset)).toEqual(['arrow-up.png', 'arrow-left.png']);
+    expect(placements.map((p) => p.asset)).toEqual(['arrow-up.svg', 'arrow-left.svg']);
   });
 
   it('shows all four when the empty cell is centred', () => {
@@ -153,8 +153,8 @@ describe('arrowPlacements', () => {
   it('does NOT negate y — the up arrow sits above the empty cell', () => {
     const centred = applyMove(applyMove(board, cell(1, 2))!, cell(1, 1))!;
     const placements = arrowPlacements(centred, geometry);
-    const up = placements.find((p) => p.asset === 'arrow-up.png')!;
-    const down = placements.find((p) => p.asset === 'arrow-down.png')!;
+    const up = placements.find((p) => p.asset === 'arrow-up.svg')!;
+    const down = placements.find((p) => p.asset === 'arrow-down.svg')!;
     const emptyPos = cellPosition(centred.emptyCell, geometry);
 
     // Smaller y is higher on screen. This is the double-negation guard.

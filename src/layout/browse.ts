@@ -88,7 +88,7 @@ export const BROWSE_PORTRAIT = {
       size: { x: 124, y: 124 },
       pivot: { x: 0, y: 0.5 },
     } satisfies LayoutRect,
-    sprite: '/assets/gameplay/back-button.png',
+    sprite: '/assets/gameplay/back-button.svg',
     opacity: 0.85,
   },
 

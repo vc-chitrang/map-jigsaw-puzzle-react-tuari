@@ -64,7 +64,7 @@ export const PUZZLE_PORTRAIT = {
       size: { x: 124, y: 124 },
       pivot: { x: 0, y: 0.5 },
     } satisfies LayoutRect,
-    sprite: '/assets/gameplay/home-button.png',
+    sprite: '/assets/gameplay/home-button.svg',
   },
 
   /** "TAP THE TILES TO SOLVE THE PUZZLE" — zero-sized text at a point anchor. */
@@ -91,8 +91,8 @@ export const PUZZLE_PORTRAIT = {
       anchorMin: { x: 0.233, y: 0.3202 },
       anchorMax: { x: 0.4766, y: 0.3707 },
     } satisfies LayoutRect,
-    sprite: '/assets/gameplay/start-button.png',
-    pressedSprite: '/assets/gameplay/start-button-pressed.png',
+    sprite: '/assets/gameplay/start-button.svg',
+    pressedSprite: '/assets/gameplay/start-button-pressed.svg',
     label: {
       fontSizePx: 112,
       colour: 'var(--map-white)',
@@ -111,7 +111,7 @@ export const PUZZLE_PORTRAIT = {
       size: { x: 526, y: 194 },
       pivot: { x: 0.5, y: 0.5 },
     } satisfies LayoutRect,
-    sprite: '/assets/gameplay/timer-background.png',
+    sprite: '/assets/gameplay/timer-background.svg',
     label: { fontSizePx: 100, colour: 'var(--map-white)' } satisfies TextSpec, // margin 0
   },
 
@@ -155,8 +155,8 @@ export const PUZZLE_PORTRAIT = {
         anchorMin: { x: 0.1311, y: 0.2476 },
         anchorMax: { x: 0.3302, y: 0.294 },
       } satisfies LayoutRect,
-      sprite: '/assets/gameplay/reset-button.png',
-      pressedSprite: '/assets/gameplay/reset-button-pressed.png',
+      sprite: '/assets/gameplay/reset-button.svg',
+      pressedSprite: '/assets/gameplay/reset-button-pressed.svg',
       label: {
         fontSizePx: 68,
         colour: 'var(--map-white)',
@@ -165,7 +165,7 @@ export const PUZZLE_PORTRAIT = {
         marginPx: { left: 90, top: 8, right: 0, bottom: 16 },
       } satisfies TextSpec,
       icon: {
-        sprite: '/assets/gameplay/icon-reset.png',
+        sprite: '/assets/gameplay/icon-reset.svg',
         rect: {
           kind: 'fractional',
           anchorMin: { x: 0.2272, y: 0.336 },
@@ -180,8 +180,8 @@ export const PUZZLE_PORTRAIT = {
         anchorMin: { x: 0.4005, y: 0.2476 },
         anchorMax: { x: 0.5995, y: 0.294 },
       } satisfies LayoutRect,
-      sprite: '/assets/gameplay/preview-button.png',
-      pressedSprite: '/assets/gameplay/preview-button-pressed.png',
+      sprite: '/assets/gameplay/preview-button.svg',
+      pressedSprite: '/assets/gameplay/preview-button-pressed.svg',
       // Authored lowercase in the scene; uppercased by CSS (ui-spec §4.2).
       label: {
         fontSizePx: 68,
@@ -191,7 +191,7 @@ export const PUZZLE_PORTRAIT = {
         marginPx: { left: 122, top: 0, right: 0, bottom: 16 },
       } satisfies TextSpec,
       icon: {
-        sprite: '/assets/gameplay/icon-preview.png',
+        sprite: '/assets/gameplay/icon-preview.svg',
         rect: {
           kind: 'fractional',
           anchorMin: { x: 0.146, y: 0.3367 },
@@ -206,8 +206,8 @@ export const PUZZLE_PORTRAIT = {
         anchorMin: { x: 0.6708, y: 0.2476 },
         anchorMax: { x: 0.8699, y: 0.294 },
       } satisfies LayoutRect,
-      sprite: '/assets/gameplay/new-image-button.png',
-      pressedSprite: '/assets/gameplay/new-image-button-pressed.png',
+      sprite: '/assets/gameplay/new-image-button.svg',
+      pressedSprite: '/assets/gameplay/new-image-button-pressed.svg',
       label: {
         fontSizePx: 68,
         colour: 'var(--map-white)',
@@ -216,7 +216,7 @@ export const PUZZLE_PORTRAIT = {
         marginPx: { left: 110, top: 10, right: 6, bottom: 18 },
       } satisfies TextSpec,
       icon: {
-        sprite: '/assets/gameplay/icon-new-image.png',
+        sprite: '/assets/gameplay/icon-new-image.svg',
         rect: {
           kind: 'fractional',
           anchorMin: { x: 0.0958, y: 0.336 },

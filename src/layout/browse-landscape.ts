@@ -79,7 +79,7 @@ export const BROWSE_LANDSCAPE = {
       size: { x: 72, y: 72 },
       pivot: { x: 0, y: 0.5 },
     } satisfies LayoutRect,
-    sprite: '/assets/gameplay/back-button.png',
+    sprite: '/assets/gameplay/back-button.svg',
     opacity: 0.85,
   },
 

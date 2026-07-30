@@ -70,7 +70,7 @@ export const IMAGE_SELECT_LANDSCAPE = {
       size: { x: 72, y: 72 },
       pivot: { x: 0, y: 0.5 },
     } satisfies LayoutRect,
-    sprite: '/assets/gameplay/back-button.png',
+    sprite: '/assets/gameplay/back-button.svg',
   },
 
   /** Translucent panel holding both choices. #000000 at alpha 0.5098. */
@@ -269,8 +269,8 @@ export const CROP_LANDSCAPE = {
       size: { x: 315, y: 121 },
       pivot: { x: 0.5, y: 0 },
     } satisfies LayoutRect,
-    sprite: '/assets/gameplay/start-button.png',
-    pressedSprite: '/assets/gameplay/start-button-pressed.png',
+    sprite: '/assets/gameplay/start-button.svg',
+    pressedSprite: '/assets/gameplay/start-button-pressed.svg',
     label: {
       fontSizePx: 82,
       colour: 'var(--map-white)',

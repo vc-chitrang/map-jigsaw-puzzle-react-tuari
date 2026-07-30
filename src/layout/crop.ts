@@ -62,7 +62,7 @@ export const IMAGE_SELECT_PORTRAIT = {
       size: { x: 124, y: 124 },
       pivot: { x: 0, y: 0.5 },
     } satisfies LayoutRect,
-    sprite: '/assets/gameplay/back-button.png',
+    sprite: '/assets/gameplay/back-button.svg',
   },
 
   /** Translucent panel holding both choices. #000000 at alpha 0.5098. */
@@ -248,11 +248,11 @@ export const CROP_PORTRAIT = {
   startButton: {
     rect: {
       kind: 'fractional',
-      anchorMin: { x: 0.376, y: 0.2454 },
-      anchorMax: { x: 0.624, y: 0.299 },
+      anchorMin: { x: 0.148, y: 0.108 },
+      anchorMax: { x: 0.852, y: 0.147 },
     } satisfies LayoutRect,
-    sprite: '/assets/gameplay/start-button.png',
-    pressedSprite: '/assets/gameplay/start-button-pressed.png',
+    sprite: '/assets/gameplay/start-button.svg',
+    pressedSprite: '/assets/gameplay/start-button-pressed.svg',
     label: { fontSizePx: 100, colour: 'var(--map-white)', text: 'START' } satisfies TextSpec,
   },
 } as const;

@@ -971,3 +971,19 @@ On `ImageSelectScreen`, choices are stacked vertically in Portrait mode and side
 **Consequences.**
 - Portrait mode displays a clean horizontal divider separating top and bottom panels.
 - Landscape mode displays a clean vertical divider separating left and right panels.
+
+---
+
+## ADR-035 — Gameplay SVG Vector Asset Migration
+
+**Date:** 2026-07-30 · **Status:** Accepted
+
+**Context.**
+Added 21 vector SVG files (`back-button.svg`, `home-button.svg`, `start-button.svg`, `reset-button.svg`, `preview-button.svg`, `new-image-button.svg`, `play-again-button.svg`, `timer-background.svg`, `arrow-up.svg`, `arrow-down.svg`, `arrow-left.svg`, `arrow-right.svg`, etc.) to `public/assets/gameplay/` for resolution-independent 4K rendering.
+
+**Decision.**
+Updated layout configurations (`portrait.ts`, `landscape.ts`, `crop.ts`, `crop-landscape.ts`, `win.ts`, `win-landscape.ts`, `browse.ts`, `browse-landscape.ts`) and game moves logic (`moves.ts`, `Board.tsx`) to load vector `.svg` assets. `map-logo.png` retained as PNG pending logo path verification.
+
+**Consequences.**
+- UI buttons, icons, directional controls, and timer backgrounds render crisp vector lines at 4K resolution.
+- 308 Vitest unit tests pass and release build verified.
