@@ -143,7 +143,7 @@ Status: `TODO` · `WIP` · `DONE` · `BLOCKED`
 | P6.8 | Memory stable across 100+ rebuilds | **TODO** | Blob URLs are revoked on replacement; needs a soak to confirm |
 | P6.9 | 24 h soak test | **TODO** | Needs the kiosk |
 | P6.10 | Test the installer on kiosk hardware | **TODO** | Installer works; hardware untested |
-| P6.11 | Auto-start on boot + crash auto-restart | **TODO** | Windows task or registry Run key, plus a watchdog |
+| P6.11 | Auto-start on boot + crash auto-restart | **DONE** | ADR-024. Logon Scheduled Task -> `scripts/kiosk/kiosk-watchdog.ps1` -> app. Pure restart policy in `KioskPolicy.ps1`, 16 Pester tests (`npm run test:watchdog`). `install-autostart.ps1` / `uninstall-autostart.ps1` (idempotent, `-DryRun`). Registering the task + kiosk auto-login are on-hardware steps (P6.10). Does not yet catch a renderer-crash-with-live-host or a hang |
 
 ## Parity fixes found while verifying Phase 6
 
@@ -166,8 +166,9 @@ and comparing against Unity, not by a landscape-only difference.
 | B3 | Version badge, bottom-left of the screen | **DONE** | `src/ui/VersionBadge.tsx`, viewport-fixed so it is outside the scaled canvas. `VITE_HIDE_VERSION=1` hides it for parity captures |
 | B4 | `.gitattributes` pinning `*.bat` to CRLF | **DONE** | `cmd.exe` mis-parses an LF-only batch file and claims it does not exist |
 | B5 | Code signing for the installer | **TODO** | Unsigned today → SmartScreen warning on first run on the kiosk. Needs a certificate from the client |
-| B6 | Auto-start on boot + crash auto-restart | **TODO** | Phase 6 (same item as P6.11) |
+| B6 | Auto-start on boot + crash auto-restart | **DONE** | Same item as P6.11 — ADR-024. See `scripts/kiosk/` |
 | B7 | A git remote that accepts pushes | **DONE** | 2026-07-30. `origin` is now `https://github.com/vc-chitrang/map-jigsaw-puzzle-react-tuari.git`, matching the stored credential; the old remote belonged to another account and every push 403'd. `main` tracks it and nothing is unpushed |
+| B8 | `copy-assets.ps1` must not hard-fail on a Unity-less machine | **DONE** | 2026-07-30. The `predev`/`prebuild` hooks call it on every run; it `throw`/`Join-Path`-crashed when the Unity drive was absent, blocking dev AND build even with `public/assets` already populated. Now skips gracefully (exit 0) when the assets exist, and still fails loudly on a truly empty checkout. Makes the README "copy the three artefacts" path actually work |
 
 ### §12 parity checklist status
 

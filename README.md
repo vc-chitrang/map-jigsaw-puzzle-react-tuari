@@ -148,11 +148,12 @@ an addition the Unity build does not have.
 | `npm run tauri:dev` | Tauri shell + dev server. **Windowed** while developing |
 | `npm run tauri:build` | NSIS installer with a bundled WebView2 offline installer |
 | `npm run bump:version` | Bump the patch version and sync every file that carries one |
-| `npm run copy:assets` | Unity sprites → `public/assets`, with filename normalisation |
+| `npm run copy:assets` | Unity sprites → `public/assets`, with filename normalisation. Runs on every `dev`/`build`; **skips with exit 0 when Unity is absent but `public/assets` is already populated**, so a Unity-less checkout still builds |
 | `npm run build:fonts` | Conduit ITC `.otf`/`.ttf` → `public/fonts/*.woff2` |
 | `npm run build:icons` | Squares the MAP logo on black, then generates app icons |
 | `npm run extract:api-config` | Unity `API.cs` → gitignored `src-tauri/.env` (prints no secrets) |
-| `npm test` | Vitest |
+| `npm test` | Vitest (308) — the app/game/layout suite |
+| `npm run test:watchdog` | Pester (16) — the kiosk auto-start restart policy (`scripts/kiosk/`) |
 | `npm run diff:pixels` | Numeric pixel-parity diff (see below) |
 
 ### Kiosk mode while developing
@@ -170,6 +171,37 @@ This keeps `tauri:dev` from covering your editor while still letting you test th
 **Exit hatch: press `Esc` twice within 1 second.** Same gesture as the Unity build. It is
 installed before React renders (`src/main.tsx`), so it still works if the UI fails to mount —
 without it a fullscreen undecorated kiosk cannot be closed.
+
+### Auto-start on boot + crash restart
+
+On the kiosk the app is supervised from the OUTSIDE (ADR-024), because a restart mechanism inside the
+app cannot revive the app once its process is gone:
+
+```
+scheduled task (at logon)  →  scripts/kiosk/kiosk-watchdog.ps1  →  app
+```
+
+The watchdog relaunches the app if it **crashes** (non-zero exit) with a short backoff, cools off for
+5 minutes if it hits a crash loop, and **stops on a clean exit** — a clean exit is the staff
+double-Esc, so staff always keep a way out. It supervises the app process dying; a WebView2 renderer
+crash that leaves the host process alive, and a hang, are not yet caught (they need a health signal
+and the real hardware).
+
+Everything is PowerShell (no Node/Pester on the kiosk). Preview and register it:
+
+```bash
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/kiosk/install-autostart.ps1 -DryRun
+```
+
+```bash
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/kiosk/install-autostart.ps1 -Orientation portrait -User KIOSK-PC\museum
+```
+
+Register from an **elevated** shell (the task runs at the Highest level). The trigger is **logon**, not
+startup, because a WebView2 GUI needs a desktop session — so the kiosk must be set to **auto-login** a
+dedicated account (a hardware step). Landscape is a second product, so pass `-Orientation landscape`
+for its own task. Remove a task with `scripts/kiosk/uninstall-autostart.ps1`. The restart policy is
+covered by `npm run test:watchdog`.
 
 ---
 
@@ -219,6 +251,7 @@ src/
 └── layout/       (Phase 2) geometry tables per orientation
 src-tauri/        Rust shell: kiosk window, later collection_fetch + image_fetch
 scripts/          asset copy, font build, icon build, API config, pixel diff
+scripts/kiosk/    auto-start watchdog + scheduled-task install/uninstall (ADR-024)
 ```
 
 ## Security

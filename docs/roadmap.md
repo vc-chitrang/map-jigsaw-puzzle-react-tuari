@@ -269,7 +269,10 @@ and the pixel diff (needs an interactive shell).
 - [ ] Performance: 60 fps during tile animation at 4K; memory stable across 100+ rebuilds.
 - [ ] Soak test: 24 h.
 - [x] Build `.exe`/installer — working since Phase 2 (`build.bat`). **Not yet tested on kiosk hardware.**
-- [ ] Auto-start on boot + crash auto-restart.
+- [x] Auto-start on boot + crash auto-restart — logon Scheduled Task drives an external watchdog
+      (`scripts/kiosk/`, ADR-024). Pure restart policy, 16 Pester tests (`npm run test:watchdog`).
+      Registering the task and the kiosk auto-login are on-hardware steps (P6.10); a renderer-crash
+      with a live host process, and a hang, are not yet caught (need a health signal + the machine).
 
 **Exit criteria:** signed installer runs on kiosk hardware, survives a 24 h soak.
 

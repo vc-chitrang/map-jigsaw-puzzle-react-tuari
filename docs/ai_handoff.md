@@ -12,7 +12,7 @@ State for the next agent. Read this first, then [architecture.md](architecture.m
 | Track | State |
 |---|---|
 | **Unity app** (shipping) | Live kiosk build. Active work: brand pass (fonts/colours), button press feedback, disabled-state styling, on-screen-keyboard investigation. See §7. |
-| **React + Tauri port** | **Phases 0–5 complete; Phase 6 all geometry done.** 308 tests green. The whole loop plays end to end in **both orientations** — all five screens now render from per-orientation tables. Outstanding: the pixel diff (§10), perf/soak on real hardware, auto-start, and code signing. |
+| **React + Tauri port** | **Phases 0–5 complete; Phase 6 all geometry done.** 308 vitest + 16 Pester tests green. The whole loop plays end to end in **both orientations** — all five screens now render from per-orientation tables. **Auto-start + crash-restart landed (ADR-024, `scripts/kiosk/`).** Outstanding: the pixel diff (§10), perf/soak on real hardware, and code signing. |
 
 **Building:** `build.bat` at the repo root — `build.bat` for portrait, `build.bat landscape` for
 landscape. Bumps the patch version, runs the tests, builds, prints the artefact paths. Add `minor`,
@@ -386,8 +386,10 @@ is the source of truth. Ask which source the running build reads before trusting
 **Close out Phase 6.** All geometry is done in both orientations; what is left is hardware and
 packaging.
 
-1. **Auto-start on boot + crash auto-restart (P6.11 / B6)** — the only remaining item that can be
-   built and unit-tested here. A scheduled task or a `Run` key plus a watchdog.
+1. **Auto-start on boot + crash auto-restart (P6.11 / B6)** — **DONE (ADR-024, `scripts/kiosk/`).**
+   Remaining work is on-hardware: register the task with `install-autostart.ps1` (elevated), set the
+   kiosk to auto-login, and add a health signal so a renderer-crash-with-live-host or a hang is caught
+   too (only process-death is handled now).
 2. **Performance and soak** — 60 fps during tile animation at 4K, memory stable across 100+ rebuilds,
    24 h run. All need the real kiosk. Tiles already animate with `transform` only, and blob URLs now
    have exactly one owner each (ADR-023), which is what a memory soak would have caught.
@@ -443,6 +445,18 @@ in the Unity repository's git history.
   `'build.bat' is not recognized as an internal or external command` even though the file exists in
   the current directory. `.gitattributes` now pins `*.bat`/`*.cmd`/`*.ps1` to CRLF; if you create a
   batch file with a tool that writes LF, convert it.
+- **`copy-assets.ps1` no longer hard-fails without Unity (B8, 2026-07-30).** The `predev`/`prebuild`
+  hooks run it on every dev/build, and it used to `throw` (and `Join-Path`-crash on the absent `D:`
+  drive) when the Unity project was missing — which blocked *everything* on a Unity-less checkout even
+  though `public/assets` was already populated. It now skips with exit 0 when the assets are present
+  (`NAME_MAP.md` as the sentinel) and still fails loudly on a genuinely empty checkout. This is what
+  makes the README "copy the three artefacts instead of bringing Unity" path actually build.
+- **Kiosk auto-start lives in `scripts/kiosk/` (ADR-024), PowerShell only** — the kiosk has no Node or
+  Pester. `KioskPolicy.ps1` is the pure, Pester-tested core (`npm run test:watchdog`, kept OUT of
+  `npm test`); `kiosk-watchdog.ps1` is the supervisor loop (`-DryRun`, `-MaxIterations`, stub-exe
+  friendly); `install-autostart.ps1` / `uninstall-autostart.ps1` register/remove the logon task
+  (`-DryRun`, need elevation). The watchdog relaunches on a crash and STOPS on a clean exit (code 0 =
+  staff double-Esc), so staff keep a way out.
 
 ---
 

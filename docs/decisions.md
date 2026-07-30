@@ -4,6 +4,69 @@ Architectural decisions, newest first. Each entry: context → decision → cons
 
 ---
 
+## ADR-024 — Auto-start and crash-restart: a logon scheduled task drives an external watchdog
+
+**Date:** 2026-07-30 · **Status:** Accepted
+
+**Context.** The kiosk must launch the app on boot and bring it back if it dies,
+with no staff present. This is P6.11 / B6, and the only Phase-6 item that can be
+built and tested without the kiosk hardware. Two things have to be true: the app
+starts by itself, and a crash does not leave a black screen until Monday.
+
+**Decision.** Two layers, both outside the app (see `scripts/kiosk/`):
+
+```
+scheduled task (at logon)  --runs-->  kiosk-watchdog.ps1  --launches-->  app
+        (backstop: restart-on-failure)      (relaunch on crash)
+```
+
+- **Auto-start is a Scheduled Task** triggered at logon, RunLevel Highest, no
+  execution-time-limit, `restart on failure` as a backstop for the watchdog
+  process itself. `install-autostart.ps1` registers it (idempotent, `-DryRun`);
+  `uninstall-autostart.ps1` removes it.
+- **Crash-restart is a separate watchdog process** (`kiosk-watchdog.ps1`): launch
+  the app, wait for exit, decide, repeat. It must be external — a restart
+  mechanism *inside* the app cannot restart the app once the app's process is
+  gone.
+- **The relaunch decision is one pure function**, `Get-RestartDecision` in
+  `KioskPolicy.ps1`: exit code `0` ⇒ **Stop** (a clean exit is the staff
+  double-Esc; auto-relaunching it would trap staff with no way out); any other
+  code ⇒ **relaunch** after a short backoff; ≥5 fast crashes in a row ⇒
+  **cool off** 5 min instead of pinning the CPU. A run ≥60 s counts as healthy
+  and resets the fast-crash counter.
+- **PowerShell, not TypeScript or a Tauri plugin.** PowerShell 5.1 is guaranteed
+  on the kiosk with zero extra runtime (Node and Pester are dev-only). The pure
+  logic is unit-tested with **Pester** (`npm run test:watchdog`, 16 tests); the
+  vitest suite (`npm test`) stays 308 and orientation-agnostic.
+
+**Rejected.**
+- *Registry `Run` key* — cannot elevate, cannot restart on crash, and starts at
+  logon only with no supervision.
+- *`tauri-plugin-autostart`* — registers a launch entry but has no crash-restart,
+  and an in-process watchdog dies with the process it is meant to revive.
+- *Windows Service* — runs in session 0 with no desktop, so a WebView2 GUI never
+  appears. The same reason the task triggers on **logon**, not startup.
+
+**Consequences.**
+- The kiosk must be set to **auto-login** a dedicated account (a hardware step,
+  P6.10); the task fires on that logon. Documented in the README.
+- **Not covered:** a WebView2 renderer that crashes while the host process stays
+  alive (blank board), and a hang. Both need a health signal from the running app
+  and the real kiosk to validate — tracked with P6.7–P6.10. Process-death restart
+  is what is buildable and testable now.
+- **Two products (ADR-020) ⇒ two tasks**, two install dirs, two task names.
+  `KioskPolicy.ps1` derives all three from the orientation, matched to the tauri
+  configs and asserted in the Pester tests.
+- The clean-exit code (`0`) is coupled to Tauri's clean-close behaviour. If a
+  future Tauri version changes it, `CleanExitCode` in `KioskPolicy.ps1` is the one
+  line to update — called out in a comment there.
+- Verified here without touching the scheduler: the watchdog loop was driven with
+  stub exes (exit 7 ⇒ relaunch with backoff then bounded stop; exit 0 ⇒ stop), the
+  installer/uninstaller were run with `-DryRun`, and the policy has 16 Pester
+  tests. Registering the real task needs an elevated shell on the kiosk.
+
+---
+
 ## ADR-023 — A blob URL is revoked by whoever created it, never by a screen that only reads it
 
 **Date:** 2026-07-30 · **Status:** Accepted
