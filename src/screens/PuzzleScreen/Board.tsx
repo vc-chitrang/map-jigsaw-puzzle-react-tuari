@@ -12,7 +12,8 @@ import {
   type GameState,
   type Tile,
 } from '../../game';
-import { PUZZLE_PORTRAIT } from '../../layout/portrait';
+import { PUZZLE_CHROME } from '../../layout/chrome';
+import { ORIENTATION } from '../../canvas/reference';
 import { rectStyle, textStyle } from '../../layout/rect';
 import styles from './Board.module.css';
 
@@ -26,7 +27,8 @@ interface BoardProps {
   readonly onArrowTap: (cell: Cell) => void;
 }
 
-const TUNING = BOARD_TUNING.portrait;
+const TUNING = BOARD_TUNING[ORIENTATION];
+const CHROME = PUZZLE_CHROME[ORIENTATION];
 
 /**
  * Background offset for a tile's slice.
@@ -177,8 +179,8 @@ export function Board({
         <div
           className={styles.artworkTitle}
           style={{
-            ...rectStyle(PUZZLE_PORTRAIT.artworkTitle.rect),
-            ...textStyle(PUZZLE_PORTRAIT.artworkTitle.text),
+            ...rectStyle(CHROME.artworkTitleRect),
+            ...textStyle(CHROME.artworkTitleText),
           }}
         >
           {state.identity.artworkTitle ?? ''}

@@ -259,16 +259,48 @@ and the pixel diff (needs an interactive shell).
 
 ---
 
-## Phase 6 — Landscape, polish, packaging
+## Phase 6 — Landscape, polish, packaging  🟡 *landscape Puzzle screen and brand pass done*
 
-- [ ] Landscape geometry table; verify both orientations against captures.
-- [ ] Brand pass: replace `#E7B639`/`#DCB63C` with `#FFA300`; all colours as CSS custom properties.
-- [ ] Performance: 60 fps during tile animation; memory stable across 100+ rebuilds.
-- [ ] Soak test: run 24 h, confirm no leak/drift (the Unity build had explicit texture cleanup for this).
-- [ ] Build MSI/`.exe`; test on the actual kiosk hardware and display.
+- [x] Landscape geometry table for the **Puzzle screen** — `src/layout/landscape.ts`, transcribed from
+      `docs/ui/scene-landscape.md` with layout-group and TMP details read from the scene YAML.
+- [ ] Landscape tables for **ImageSelect, Browse, Crop and Win** — not started.
+- [x] Brand pass: the ambers were resolved in ADR-013; chrome neutrals are now tokens too.
+- [ ] Performance: 60 fps during tile animation at 4K; memory stable across 100+ rebuilds.
+- [ ] Soak test: 24 h.
+- [x] Build `.exe`/installer — working since Phase 2 (`build.bat`). **Not yet tested on kiosk hardware.**
 - [ ] Auto-start on boot + crash auto-restart.
 
 **Exit criteria:** signed installer runs on kiosk hardware, survives a 24 h soak.
+
+**Landscape — verified at 960×540** (a 16:9 window, so scale 0.25 of the 3840×2160 reference):
+
+| Check | Measured | Expected |
+|---|---|---|
+| canvas | 3840 × 2160 | reference size |
+| scaleFactor | 0.250000 | `sqrt((960/3840)×(540/2160))` |
+| board | 367.2² device = 1468.8 ref | `min(3840,2160) × 0.68` |
+| board centre | (480, 980) ref-adjusted | centred, 100 px above centre |
+| footer row | 5 children: 290,224,290,290,290 ref | scene sizes |
+| gap between controls | 66.8 ref | ~70 ref by Unity's maths |
+
+**Portrait re-checked for regression after the refactor**: canvas 2160×3840, home button 31 device
+= 124 ref (portrait's size, not landscape's 72), board 1520.8 ref, and the landscape flex row is
+absent from the DOM. No regression.
+
+**Landscape is not portrait rearranged** — see ADR-019. Different back-button size, logo corner, every
+font size, and a flat high-score fill instead of the masked 9-slice. The footer uses a
+`HorizontalLayoutGroup`, which `extract_ui.py` does not report, so the dump alone would have stacked
+all five controls at `pos (0,0)`.
+
+**Brand pass status.** The amber conflict was settled in ADR-013 and the tokens carry it. Chrome
+neutrals (input borders, keyboard keys, dividers) are now `--chrome-*` tokens. Colours in
+`src/layout/*.ts` stay literal **on purpose**: they are transcribed scene data, and inlining them is
+what keeps those tables diffable against the dumps. Two card placeholder shades (`#111111`,
+`#1a1a1a`) are still literal — cosmetic, in the image-failure state only.
+
+**Open question for packaging:** a landscape build needs a different `productName`/`identifier` to
+install alongside the portrait one, or the orientation has to become a runtime setting rather than a
+build-time flag. Not decided — see the note in `docs/tasks.md` (P6.5).
 
 ---
 

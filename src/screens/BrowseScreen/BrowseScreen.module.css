@@ -61,7 +61,7 @@
 }
 
 .searchInput::placeholder {
-  color: rgb(128 128 128 / 0.7);
+  color: var(--chrome-placeholder);
 }
 
 .searchInput:focus {
@@ -127,7 +127,7 @@
   appearance: none;
   padding: 0;
   background: var(--map-white);
-  border: 2px solid #cccccc;
+  border: 2px solid var(--chrome-border);
   border-radius: 8px;
   cursor: pointer;
   touch-action: manipulation;
@@ -175,7 +175,7 @@
   display: flex;
   flex-direction: column;
   background: var(--map-white);
-  border: 2px solid #cccccc;
+  border: 2px solid var(--chrome-border);
   border-radius: 8px;
   /* Above the result bar and the grid below it. */
   z-index: 50;
@@ -186,7 +186,7 @@
 .dropdownSearchRow {
   position: relative;
   flex: 0 0 auto;
-  border-bottom: 2px solid #eeeeee;
+  border-bottom: 2px solid var(--chrome-divider);
 }
 
 .dropdownSearch {
@@ -197,7 +197,7 @@
   background: transparent;
   font-family: var(--font-display);
   font-weight: 400;
-  color: #262626;
+  color: var(--chrome-field-text);
 }
 
 .dropdownSearch:focus {
@@ -214,7 +214,7 @@
   appearance: none;
   border: 0;
   background: transparent;
-  color: #666666;
+  color: var(--chrome-muted-text);
   font-size: 36px;
   line-height: 1;
   cursor: pointer;
@@ -242,7 +242,7 @@
   appearance: none;
   border: 0;
   background: transparent;
-  color: #000000;
+  color: var(--map-kohl);
   font-family: var(--font-display);
   font-weight: 400;
   text-align: left;
@@ -251,7 +251,7 @@
 }
 
 .dropdownItem:active {
-  background: #eeeeee;
+  background: var(--chrome-divider);
 }
 
 .dropdownTick {
@@ -261,7 +261,7 @@
 
 .dropdownEmpty {
   padding: 18px;
-  color: #808080;
+  color: var(--chrome-muted-text);
   font-family: var(--font-display);
 }
 
@@ -306,9 +306,9 @@
   padding: 0 48px 0 18px;
   appearance: none;
   background: var(--map-white);
-  border: 2px solid #cccccc;
+  border: 2px solid var(--chrome-border);
   border-radius: 8px;
-  color: #000000;
+  color: var(--map-kohl);
   font-family: var(--font-display);
   font-weight: 400;
   cursor: pointer;

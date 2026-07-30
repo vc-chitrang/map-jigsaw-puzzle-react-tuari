@@ -20,8 +20,8 @@
 
 .key {
   appearance: none;
-  border: 2px solid #d8d8d8;
-  background: #f5f5f5;
+  border: 2px solid var(--chrome-key-border);
+  background: var(--chrome-key-face);
   color: var(--map-kohl);
   font-family: var(--font-display);
   font-weight: 700;
@@ -41,7 +41,7 @@
 
 /* Shift, backspace, space, Close, Search. */
 .actionKey {
-  background: #e4e4e4;
+  background: var(--chrome-key-action);
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }

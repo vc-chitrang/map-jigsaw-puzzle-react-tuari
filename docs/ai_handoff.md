@@ -12,7 +12,7 @@ State for the next agent. Read this first, then [architecture.md](architecture.m
 | Track | State |
 |---|---|
 | **Unity app** (shipping) | Live kiosk build. Active work: brand pass (fonts/colours), button press feedback, disabled-state styling, on-screen-keyboard investigation. See §7. |
-| **React + Tauri port** | **Phases 0–5 built, first installer produced (v0.1.1).** 262 tests green. The whole loop plays end to end: attract → START → ImageSelect → Browse → Crop → gameplay → win → Play Again, with a fail-safe cross-fade router and an in-app keyboard. Outstanding: the pixel diff (§10) and Phase 6 (landscape, brand pass, packaging). |
+| **React + Tauri port** | **Phases 0–5 complete; Phase 6 part-done.** 276 tests green. The whole loop plays end to end in **portrait**, and the **landscape Puzzle screen** now renders from its own geometry table. Outstanding: landscape tables for the other four screens, the pixel diff (§10), perf/soak on real hardware, auto-start, and a decision on how a landscape build is packaged. |
 
 **Building:** `build.bat` at the repo root. Bumps the patch version, runs the tests, builds, prints
 the artefact paths. `build.bat minor|major|same` for the other version behaviours. `package.json` is
@@ -301,21 +301,47 @@ Pending manual Unity steps (editor-only, cannot be scripted headlessly):
 
 ---
 
+## 2f. What Phase 6 delivered so far
+
+| File | Contents |
+|---|---|
+| `src/layout/landscape.ts` | Landscape Puzzle geometry, with a table of every way it differs from portrait |
+| `src/layout/chrome.ts` | The parts that differ only by NUMBER, selected by orientation |
+| `src/screens/PuzzleScreen/LandscapeFooter.tsx` | The flex-row footer (`HorizontalLayoutGroup`) |
+| `src/styles/tokens.css` | Added `--chrome-*` neutrals |
+
+Switch orientation with `VITE_ORIENTATION=landscape` at build time.
+
+### Landscape is a different design, not a rearrangement
+
+Back button 72² not 124². Logo top-right not top-centre. START 82 not 112, footer labels 44 not 68,
+timer 82 not 100, high-score value 52 not 82. High-score badge is a flat `#67787F` fill, not the
+masked 9-slice. Preview insets the width, not the height.
+
+**And the footer is a `HorizontalLayoutGroup`** — `extract_ui.py` does not report layout groups, so
+the dump shows all five controls at `pos (0,0)`. That is the fourth time the scene YAML had to be read
+directly (ADR-015, 016, 017, 019). **Check the scene, always.**
+
+`justify-content: space-evenly` approximates the layout group's force-expand: measured 66.8 ref px
+between controls where Unity's maths predicts 70. Close, not exact — needs a capture.
+
+---
+
 ## 8. Recommended next task
 
-**Phase 6 — landscape, brand pass, packaging.** The portrait build is feature-complete.
+**Finish Phase 6.** The Puzzle screen works in both orientations; four screens still need landscape
+tables.
 
-1. **Landscape geometry table** — `src/layout/landscape.ts` from `docs/ui/scene-landscape.md`. The
-   plumbing already exists: `BOARD_TUNING.landscape` carries the correct padding factor (0.68) and
-   panel offset, `REFERENCE.landscape` is defined, and `resolveOrientation` reads
-   `VITE_ORIENTATION`. What is missing is the per-element table and a way to pick between the two.
-   Note the landscape scene still has `ColorTint` buttons rather than `SpriteSwap` — see U1.
-2. **Brand pass** — the colour tokens are already single-source in `src/styles/tokens.css`, so this is
-   a review rather than a refactor. `data-color-mode="unity"` exists for parity captures (ADR-010).
-3. **Performance** — 60 fps during tile animation at 4K, and memory stable across 100+ rebuilds.
-   Tiles already animate with `transform` only.
-4. **24 h soak test** and the kiosk-hardware install.
-5. **Auto-start on boot + crash auto-restart.**
+1. **Landscape tables for ImageSelect, Browse, Crop and Win** — from `docs/ui/scene-landscape.md`.
+   Follow the `landscape.ts` pattern: transcribe verbatim, and read the scene YAML for anything the
+   dump cannot express (layout groups, TMP margins and alignments, active/inactive parents). Expect
+   the same class of surprise as the footer.
+2. **Decide the landscape packaging question (P6.5)** before building a landscape installer — two
+   products, or orientation as a runtime setting. This is a client-facing decision.
+3. **Performance and soak** — 60 fps during tile animation at 4K, memory stable across 100+ rebuilds,
+   24 h run. All need the real kiosk.
+4. **Auto-start on boot + crash auto-restart.**
+5. **Code signing (B5)** — procurement, so worth starting early.
 
 **Also outstanding:** the pixel diff (§10 — needs an interactive shell), `PerPageDD` (P3.11), card
 internal geometry (P3.12), a real phone-upload test (P4.11), and **code signing (B5)** — the installer

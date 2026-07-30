@@ -129,6 +129,22 @@ Status: `TODO` · `WIP` · `DONE` · `BLOCKED`
 | P5.10 | Fix: Home mid-game was a no-op | **DONE** | Added `resetToken`; clearing an already-null prop changed no dependency |
 | P5.11 | Landscape orientation | **TODO** | Phase 6 |
 
+## Phase 6 — Landscape, polish, packaging
+
+| # | Task | Status | Notes |
+|---|---|---|---|
+| P6.1 | Landscape geometry — Puzzle screen | **DONE** | `src/layout/landscape.ts`; layout group and TMP margins read from the scene YAML, not the dump |
+| P6.2 | Orientation plumbing | **DONE** | `layout/chrome.ts` selects the data-driven parts; `LandscapeFooter` branches the flex-row mechanism (ADR-019) |
+| P6.3 | Verify both orientations render | **DONE** | Landscape at 960×540 and portrait re-checked for regression — figures in [roadmap.md](roadmap.md) |
+| P6.4 | Landscape geometry — ImageSelect, Browse, Crop, Win | **TODO** | Four more tables from `docs/ui/scene-landscape.md`. Note the landscape scene still has `ColorTint` buttons (U1) |
+| P6.5 | Decide how a landscape build is packaged | **TODO** | **Needs a decision:** two installers with different `productName`/`identifier`, or make orientation a runtime setting instead of a build flag. Today it is `VITE_ORIENTATION` at build time |
+| P6.6 | Brand pass | **DONE** | Ambers settled in ADR-013; chrome neutrals now `--chrome-*` tokens. Layout-table colours stay literal by design |
+| P6.7 | 60 fps during tile animation at 4K | **TODO** | Needs the real hardware; tiles already animate with `transform` only |
+| P6.8 | Memory stable across 100+ rebuilds | **TODO** | Blob URLs are revoked on replacement; needs a soak to confirm |
+| P6.9 | 24 h soak test | **TODO** | Needs the kiosk |
+| P6.10 | Test the installer on kiosk hardware | **TODO** | Installer works; hardware untested |
+| P6.11 | Auto-start on boot + crash auto-restart | **TODO** | Windows task or registry Run key, plus a watchdog |
+
 ## Build & release tooling
 
 | # | Task | Status | Notes |

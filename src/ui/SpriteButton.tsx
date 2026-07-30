@@ -35,7 +35,14 @@ interface IconSpec {
 }
 
 interface SpriteButtonProps {
-  readonly rect: LayoutRect;
+  /**
+   * Absolute position from a layout table. Omit when the button is laid out by a
+   * flex parent instead — the landscape footer is a `HorizontalLayoutGroup`, so
+   * its buttons are in flow and size themselves via `style`.
+   */
+  readonly rect?: LayoutRect;
+  /** Extra styles, applied after `rect` so they win. */
+  readonly style?: CSSProperties;
   readonly sprite: string;
   readonly pressedSprite?: string;
   readonly label?: TextSpec;
@@ -66,6 +73,7 @@ function isInsideBounds(element: HTMLElement, clientX: number, clientY: number):
 
 export function SpriteButton({
   rect,
+  style,
   sprite,
   pressedSprite,
   label,
@@ -153,7 +161,11 @@ export function SpriteButton({
       className={[styles.button, disabled ? styles.disabled : '', className]
         .filter(Boolean)
         .join(' ')}
-      style={{ ...rectStyle(rect), backgroundImage: `url("${background}")` }}
+      style={{
+        ...(rect ? rectStyle(rect) : {}),
+        backgroundImage: `url("${background}")`,
+        ...style,
+      }}
       disabled={disabled}
       aria-label={ariaLabel ?? label?.text}
       onPointerDown={handlePointerDown}

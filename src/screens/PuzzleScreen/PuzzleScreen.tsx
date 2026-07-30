@@ -13,8 +13,10 @@ import {
   writeHighScoreIfFaster,
   type Cell,
 } from '../../game';
-import { REF } from '../../canvas/reference';
+import { ORIENTATION, REF } from '../../canvas/reference';
 import { PUZZLE_PORTRAIT as L } from '../../layout/portrait';
+import { PUZZLE_CHROME } from '../../layout/chrome';
+import { LandscapeFooter } from './LandscapeFooter';
 import { CENTRED_ON_POINT, rectStyle, textStyle } from '../../layout/rect';
 import { SpriteButton } from '../../ui/SpriteButton';
 import { highScoreStore } from '../../storage/localStore';
@@ -24,7 +26,9 @@ import { adoptPreparedArtwork, loadRandomArtwork, type LoadedArtwork } from './l
 import { WinScreen } from '../WinScreen/WinScreen';
 import styles from './PuzzleScreen.module.css';
 
-const TUNING = BOARD_TUNING.portrait;
+const TUNING = BOARD_TUNING[ORIENTATION];
+const CHROME = PUZZLE_CHROME[ORIENTATION];
+const IS_LANDSCAPE = ORIENTATION === 'landscape';
 
 interface PuzzleScreenProps {
   /**
@@ -235,21 +239,19 @@ export function PuzzleScreen({
 
   return (
     <div className={styles.screen} style={rectStyle(L.screen.rect)}>
-      <img className={styles.background} src={L.screen.background} alt="" draggable={false} />
+      <img className={styles.background} src={CHROME.background} alt="" draggable={false} />
 
       <img
         className={styles.logo}
-        style={rectStyle(L.appLogo.rect)}
-        src={L.appLogo.sprite}
+        style={rectStyle(CHROME.appLogoRect)}
+        src={CHROME.appLogoSprite}
         alt="Museum of Art & Photography"
         draggable={false}
       />
 
-      {/* Home. Navigation lands in Phase 5; the hit target exists now so the
-          geometry can be diffed against the Unity capture. */}
       <SpriteButton
-        rect={L.backButton.rect}
-        sprite={L.backButton.sprite}
+        rect={CHROME.backButtonRect}
+        sprite={CHROME.backButtonSprite}
         ariaLabel="Home"
         onPress={onHome ?? handleNewImage}
       />
@@ -263,7 +265,25 @@ export function PuzzleScreen({
         onArrowTap={handleMove}
       />
 
-      {/* Footer -------------------------------------------------------------- */}
+      {/* Footer ----------------------------------------------------------------
+          Portrait positions its five controls absolutely from fractional anchors;
+          landscape lays the same controls out with a HorizontalLayoutGroup. That
+          is a difference in MECHANISM, so the two footers are separate components
+          rather than one riddled with conditionals (ADR-019). */}
+      {IS_LANDSCAPE ? (
+        <LandscapeFooter
+          isAttract={isAttract}
+          footerEnabled={footerEnabled}
+          timerText={formatTime(state.timer.elapsedSeconds)}
+          highScoreText={formatHighScore(state.highScoreSeconds)}
+          onStart={handleStart}
+          onReset={handleReset}
+          onNewImage={handleNewImage}
+          onPreviewStart={() => setPreviewHeld(true)}
+          onPreviewEnd={() => setPreviewHeld(false)}
+        />
+      ) : (
+        <>
       <div className={styles.caption} style={rectStyle(L.caption.rect)}>
         <span style={{ ...CENTRED_ON_POINT, ...textStyle(L.caption.text) }}>
           {L.caption.text.text}
@@ -347,6 +367,8 @@ export function PuzzleScreen({
         disabled={!footerEnabled}
         onPress={handleNewImage}
       />
+        </>
+      )}
 
       {/* Win screen. An overlay, not a routed screen: the board and the preview
           must stay visible behind it, which is why its scene background is at

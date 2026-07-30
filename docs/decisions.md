@@ -4,6 +4,40 @@ Architectural decisions, newest first. Each entry: context → decision → cons
 
 ---
 
+## ADR-019 — One component tree per screen, except where the LAYOUT MECHANISM differs
+
+**Date:** 2026-07-30 · **Status:** Accepted
+
+**Context.** [architecture.md §2.6](architecture.md) asks for one component tree with geometry driven
+from per-orientation data tables. That holds for most of the Puzzle screen — background, logo, back
+button, preview inset and artwork title differ only in their numbers, so `layout/chrome.ts` selects
+them by orientation and the component never branches.
+
+It does **not** hold for the footer. Portrait positions its five controls absolutely from fractional
+anchors. Landscape's `ControlButtons_00` carries a `HorizontalLayoutGroup` (spacing 50, childAlignment
+7 = LowerCenter, `childForceExpandWidth/Height = 1`, `childControlWidth/Height = 0`) plus a
+`ContentSizeFitter`, and every child sits at `pos (0,0)` because the layout group places them at
+runtime. That is a difference in mechanism, not in values.
+
+**Decision.** Data-drive what is data. Branch what is mechanism: `LandscapeFooter` is a separate
+component rendering a flex row, chosen by `ORIENTATION` at module scope.
+
+**Consequences.**
+- Reading `docs/ui/scene-landscape.md` alone would have stacked all five controls on top of each
+  other at `pos (0,0)` — `extract_ui.py` does not report layout groups. **Fourth** time the scene
+  YAML had to be consulted directly (ADR-015, ADR-016, ADR-017).
+- Landscape is not portrait rearranged: the back button is 72² rather than 124², the logo is
+  top-right, and every font size differs (START 82 vs 112, footer labels 44 vs 68, timer 82 vs 100,
+  high-score value 52 vs 82). The high-score badge is a flat `#67787F` fill rather than the masked
+  9-sliced sprite. Assuming a shared component with different numbers would have been wrong twice
+  over.
+- `justify-content: space-evenly` approximates `childForceExpandWidth`. Measured, it puts 66.8 px
+  between controls where Unity's slot-expansion maths predicts 70 px, and 16.4 px at the ends versus
+  10 px. **Within a few reference px but not exact — settle it against a Unity capture.**
+- `SpriteButton.rect` is now optional so a button can be laid out by a flex parent.
+
+---
+
 ## ADR-018 — The win screen is an overlay on the Puzzle screen, not a routed screen
 
 **Date:** 2026-07-29 · **Status:** Accepted

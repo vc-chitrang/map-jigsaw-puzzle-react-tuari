@@ -32,6 +32,25 @@
      palette; kept as-is because the palette has no neutral grey. Task Q3. */
   --colour-highscore-badge: #67797f;
 
+  /*
+   * ---- Neutral chrome ----
+   * Input borders, keyboard keys and dividers. These have no Unity equivalent —
+   * they belong to UI this port added (the in-app keyboard, the searchable filter
+   * popups), so they are design decisions and live here.
+   *
+   * Colours that DO come from the Unity scenes stay as literals in
+   * src/layout/*.ts instead. They are transcribed data, not decisions, and keeping
+   * them inline is what makes those tables diffable against the scene dumps.
+   */
+  --chrome-border: #cccccc;
+  --chrome-divider: #eeeeee;
+  --chrome-field-text: #262626;
+  --chrome-key-face: #f5f5f5;
+  --chrome-key-border: #d8d8d8;
+  --chrome-key-action: #e4e4e4;
+  --chrome-muted-text: #666666;
+  --chrome-placeholder: rgb(128 128 128 / 0.7);
+
   /* ---- Typography ---- */
   /* Conduit ITC only — client directive. `serif` fallback is deliberate: a
      silent fallback to a look-alike sans would hide a missing-font failure. */
