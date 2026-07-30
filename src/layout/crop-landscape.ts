@@ -131,12 +131,15 @@ export const IMAGE_SELECT_LANDSCAPE = {
       pivot: { x: 0.5, y: 0.5 },
     } satisfies LayoutRect,
     iconSprite: '/assets/select/gallery-add.png',
+    // Sized to a real centred box below the icon (the Unity ContentSizeFitter is
+    // not in the dump, so it came through as size (0,0), which collapsed the
+    // text and spilled it below the card — same fix as portrait).
     labelRect: {
       kind: 'point',
-      anchor: { x: 0.5, y: 0 },
-      pos: { x: 0, y: 150.18 },
-      size: { x: 0, y: 0 },
-      pivot: { x: 0.5, y: 0 },
+      anchor: { x: 0.5, y: 0.5 },
+      pos: { x: 0, y: -120 },
+      size: { x: 600, y: 170 },
+      pivot: { x: 0.5, y: 0.5 },
     } satisfies LayoutRect,
     // Authored with an explicit newline, and at the same 52 px as portrait —
     // the only ImageSelect text size that does NOT change.

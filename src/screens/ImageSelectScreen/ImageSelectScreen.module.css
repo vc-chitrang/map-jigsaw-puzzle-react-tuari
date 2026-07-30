@@ -72,7 +72,8 @@
 
 .choiceLabel {
   display: flex;
-  align-items: flex-start;
+  flex-direction: column;
+  align-items: center;
   justify-content: center;
   font-family: var(--font-display);
   font-weight: 700;
@@ -109,40 +110,19 @@
   overflow: visible;
 }
 
-.qrFill {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-}
-
 /*
- * QRCodeImage stretches with a +100 px overhang on each axis in the scene
- * (`sizeDelta = (100,100)`), i.e. it deliberately spills past the pill. Inset
- * negatively to match.
- *
- * Width and height are explicit: `width: auto` on a REPLACED element resolves to
- * the intrinsic size (the QR sprite is 1024²) and the right/bottom insets are then
- * ignored, which renders it at 1024 px inside a 682 px panel.
+ * The QR sprite is black-on-transparent, so it sits on its own plain WHITE
+ * square (matches the Unity build) — no circular pill, no dimmed/offline state.
+ * Fills the panel exactly; width/height are explicit because `width: auto` on a
+ * replaced element takes the intrinsic size (the sprite is 1024²) and ignores
+ * the insets.
  */
 .qrCode {
   position: absolute;
-  inset: -50px;
-  width: calc(100% + 100px);
-  height: calc(100% + 100px);
+  inset: 0;
+  width: 100%;
+  height: 100%;
   object-fit: contain;
-  pointer-events: none;
-}
-
-.qrOffline {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 24px;
-  color: var(--map-sharbati);
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 40px;
-  text-align: center;
-  text-transform: uppercase;
+  background-color: var(--map-white);
   pointer-events: none;
 }

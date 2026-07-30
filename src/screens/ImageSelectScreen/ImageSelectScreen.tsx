@@ -23,15 +23,14 @@ const S = IMAGE_SELECT_LAYOUT[ORIENTATION];
 interface ImageSelectScreenProps {
   readonly onBack: () => void;
   readonly onBrowseCollection: () => void;
-  /** True while the upload socket is connected — QR is useless without it. */
+  /**
+   * Accepted for call-site compatibility but no longer used: the QR is always
+   * shown clean, with no offline/dimmed state (per design correction).
+   */
   readonly uploadReady?: boolean;
 }
 
-export function ImageSelectScreen({
-  onBack,
-  onBrowseCollection,
-  uploadReady = true,
-}: ImageSelectScreenProps) {
+export function ImageSelectScreen({ onBack, onBrowseCollection }: ImageSelectScreenProps) {
   const description = (
     <span
       className={styles.description}
@@ -118,20 +117,14 @@ export function ImageSelectScreen({
 
         <img className={styles.divider} style={rectStyle(S.dividerRect)} src={S.dividerSprite} alt="" draggable={false} />
 
-        {/* ---- QR upload ---- */}
+        {/* ---- QR upload ----
+            The QR sprite is black-on-transparent, so it renders on its own plain
+            white square (`.qrCode` background). No circular pill and no
+            offline/dimmed treatment: the code is always shown clean. */}
         <div className={styles.qrPanel} style={rectStyle(S.qrPanel.rect)}>
-          <div
-            className={styles.qrFill}
-            style={{
-              // 9-sliced white pill, same masking trick as the high-score badge:
-              // border-image cannot be tinted, mask-border can.
-              backgroundColor: 'var(--map-white)',
-              WebkitMaskBoxImage: `url("${S.qrPanel.sprite}") ${S.qrPanel.sliceBorderPx} fill stretch`,
-            }}
-          />
           <img
             className={styles.qrCode}
-            style={{ ...rectStyle(S.qrPanel.codeRect), opacity: uploadReady ? 1 : 0.35 }}
+            style={rectStyle(S.qrPanel.codeRect)}
             src={S.qrPanel.codeSprite}
             alt="QR code to upload your own image"
             draggable={false}
@@ -142,11 +135,6 @@ export function ImageSelectScreen({
           >
             {S.qrPanel.caption.text}
           </span>
-
-          {/* Say so rather than leaving a code that silently cannot work. */}
-          {!uploadReady ? (
-            <span className={styles.qrOffline}>Upload is offline</span>
-          ) : null}
         </div>
       </div>
     </div>

@@ -125,12 +125,17 @@ export const IMAGE_SELECT_PORTRAIT = {
       pivot: { x: 0.5, y: 0.5 },
     } satisfies LayoutRect,
     iconSprite: '/assets/select/gallery-add.png',
+    // The Unity label uses a ContentSizeFitter, which extract_ui.py cannot
+    // report (AGENTS.md), so the dump gave size (0,0). A zero-width flex box
+    // collapses the text to one word per line and spills below the card. Sized
+    // to a real box below the icon, centred, to match the Unity screenshot: two
+    // lines, "Add from" / "MAP's collection".
     labelRect: {
       kind: 'point',
-      anchor: { x: 0.5, y: 0 },
-      pos: { x: 0, y: 150.18 },
-      size: { x: 0, y: 0 },
-      pivot: { x: 0.5, y: 0 },
+      anchor: { x: 0.5, y: 0.5 },
+      pos: { x: 0, y: -120 },
+      size: { x: 600, y: 170 },
+      pivot: { x: 0.5, y: 0.5 },
     } satisfies LayoutRect,
     // Authored with an explicit newline.
     label: {
