@@ -125,7 +125,7 @@ export const BROWSE_LANDSCAPE = {
       size: { x: 70, y: 0 },
       pivot: { x: 0, y: 0.5 },
     } satisfies LayoutRect,
-    searchSprite: '/assets/browse/search-button.png',
+    searchSprite: '/assets/browse/search-button.svg',
   },
 
   filterBar: {
@@ -225,7 +225,7 @@ export const BROWSE_LANDSCAPE = {
       size: { x: 45, y: 45 },
       pivot: { x: 1, y: 0.5 },
     } satisfies LayoutRect,
-    gridViewSprite: '/assets/browse/grid-view.png',
+    gridViewSprite: '/assets/browse/grid-view.svg',
   },
 
   cardArea: {
@@ -260,7 +260,7 @@ export const BROWSE_LANDSCAPE = {
       size: { x: 75, y: -870 },
       pivot: { x: 1, y: 0.5 },
     } satisfies LayoutRect,
-    arrowSprite: '/assets/browse/pagination-arrow.png',
+    arrowSprite: '/assets/browse/pagination-arrow.svg',
     arrowSize: 40,
 
     /** Grid maths — code, not scene, so identical in both builds. */

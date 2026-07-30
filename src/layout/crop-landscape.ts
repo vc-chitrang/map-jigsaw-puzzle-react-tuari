@@ -130,7 +130,7 @@ export const IMAGE_SELECT_LANDSCAPE = {
       size: { x: 162, y: 162 },
       pivot: { x: 0.5, y: 0.5 },
     } satisfies LayoutRect,
-    iconSprite: '/assets/select/gallery-add.png',
+    iconSprite: '/assets/select/gallery-add.svg',
     // Sized to a real centred box below the icon (the Unity ContentSizeFitter is
     // not in the dump, so it came through as size (0,0), which collapsed the
     // text and spilled it below the card — same fix as portrait).
@@ -232,7 +232,7 @@ export const CROP_LANDSCAPE = {
   } satisfies TextSpec,
 
   /** Initial guide overlay; twice portrait's, on a stage 52 px smaller. */
-  gridSprite: '/assets/crop/crop-reference-frame.png',
+  gridSprite: '/assets/crop/crop-reference-frame.svg',
   gridInitialSize: 1000,
 
   /** Handles and the minimum size come from the component, not the scene layout. */

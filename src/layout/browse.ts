@@ -126,7 +126,7 @@ export const BROWSE_PORTRAIT = {
       size: { x: 70, y: 70 },
       pivot: { x: 0, y: 0.5 },
     } satisfies LayoutRect,
-    searchSprite: '/assets/browse/search-button.png',
+    searchSprite: '/assets/browse/search-button.svg',
   },
 
   filterBar: {
@@ -222,7 +222,7 @@ export const BROWSE_PORTRAIT = {
       size: { x: 60, y: 60 },
       pivot: { x: 1, y: 0.5 },
     } satisfies LayoutRect,
-    gridViewSprite: '/assets/browse/grid-view.png',
+    gridViewSprite: '/assets/browse/grid-view.svg',
     /**
      * `PerPageDD` at (0.535, 0.2001)-(0.6823, 0.7999) is active in the scene but
      * its option list is neither in the scene nor in the docs, so it is NOT
@@ -253,7 +253,7 @@ export const BROWSE_PORTRAIT = {
       size: { x: 100, y: 581.4 },
       pivot: { x: 1, y: 0.5 },
     } satisfies LayoutRect,
-    arrowSprite: '/assets/browse/pagination-arrow.png',
+    arrowSprite: '/assets/browse/pagination-arrow.svg',
     arrowSize: 60,
 
     /** Grid maths — `UpdateGridCellSize`, ui-spec §5. See `CARD_GRID`. */

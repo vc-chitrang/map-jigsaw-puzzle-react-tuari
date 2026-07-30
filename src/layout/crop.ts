@@ -124,7 +124,7 @@ export const IMAGE_SELECT_PORTRAIT = {
       size: { x: 162, y: 162 },
       pivot: { x: 0.5, y: 0.5 },
     } satisfies LayoutRect,
-    iconSprite: '/assets/select/gallery-add.png',
+    iconSprite: '/assets/select/gallery-add.svg',
     // The Unity label uses a ContentSizeFitter, which extract_ui.py cannot
     // report (AGENTS.md), so the dump gave size (0,0). A zero-width flex box
     // collapses the text to one word per line and spills below the card. Sized
@@ -221,7 +221,7 @@ export const CROP_PORTRAIT = {
   } satisfies TextSpec,
 
   /** Initial guide overlay; `CropGridResizer` resizes it at runtime. */
-  gridSprite: '/assets/crop/crop-reference-frame.png',
+  gridSprite: '/assets/crop/crop-reference-frame.svg',
   gridInitialSize: 500,
 
   /** Corner handles and the minimum grid size — see `CROP_SHARED` (ADR-022). */

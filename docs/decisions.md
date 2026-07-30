@@ -1040,3 +1040,19 @@ When installing the packaged release executable on a new machine without a `.env
 - Up and Down directional tile arrows are fully visible and pulse cleanly during gameplay.
 - The MAP Museum logo header renders crisp and centered across all screens.
 - 308 Vitest unit tests pass and release build v0.1.9 verified.
+
+---
+
+## ADR-039 — Full SVG Asset Integration Across Browse, Crop, and Select Screens
+
+**Date:** 2026-07-30 · **Status:** Accepted
+
+**Context.**
+Added 7 additional SVG vector files (`grid-view.svg`, `page-selection-box.svg`, `pagination-arrow.svg`, `search-button.svg`, `crop-reference-frame.svg`, `export-arrow.svg`, `gallery-add.svg`) across `public/assets/browse/`, `public/assets/crop/`, and `public/assets/select/`.
+
+**Decision.**
+Updated layout configurations (`browse.ts`, `browse-landscape.ts`, `crop.ts`, `crop-landscape.ts`) to use `.svg` vector asset paths for search icons, grid view buttons, pagination arrows, crop reference frames, and gallery add buttons.
+
+**Consequences.**
+- UI icons across all screens now render crisp vector graphics at 4K resolution.
+- 308 Vitest unit tests pass and release build v0.1.10 verified.
