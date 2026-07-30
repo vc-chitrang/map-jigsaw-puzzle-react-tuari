@@ -4,6 +4,129 @@ Architectural decisions, newest first. Each entry: context → decision → cons
 
 ---
 
+## ADR-023 — A blob URL is revoked by whoever created it, never by a screen that only reads it
+
+**Date:** 2026-07-30 · **Status:** Accepted
+
+**Context.** After cropping an image the board rendered **completely black** — eight tiles, correct
+sizes, correct `background-position`, and no pixels. Found by taking a screenshot of the board rather
+than by asserting on the DOM; every structural check passed the whole time (the same failure mode as
+ADR-018).
+
+The cause was ownership. `App` created the cropped blob URL and kept it in state as
+`preparedArtwork`; `adoptPreparedArtwork` then declared that "ownership transfers" to the Puzzle
+screen, whose `useEffect(() => () => artwork?.release(), [artwork])` revoked it. That cleanup runs on
+every change of `artwork` **and on unmount**, so:
+
+* under React 18 `StrictMode` the mount → cleanup → mount cycle revoked the URL before the first
+  paint, which is what produced the black board in development; and
+* a remount with the same `preparedArtwork` still in `App`'s state would adopt an already-revoked
+  URL in production too.
+
+**Decision.** The creator revokes. `App` gained `replacePreparedArtwork`, the mirror of
+`replaceCropSource`: it revokes the previous URL when it is replaced, clears both owned URLs on
+unmount, and is the only writer of that state. `adoptPreparedArtwork().release()` is now a documented
+no-op — the Puzzle screen still owns and releases the blobs *it* creates (`loadRandomArtwork`,
+`loadFallbackArtwork`).
+
+**Consequences.**
+- Verified after the fix: the board slices a live 1011×1011 blob at `background-size: 1508.64px`
+  (= cellSize 502.88 × 3) and the artwork is visible in a screenshot.
+- "Ownership transfers" across a component boundary is not worth the two lines it saves. Two owners
+  for one resource is what caused this; one owner per resource is the rule now.
+- Phase 4's verification measured the board's `background-size` and concluded the export worked. It
+  did not look at a pixel. **Any "the image is there" claim needs a screenshot or a pixel sample.**
+
+---
+
+## ADR-022 — Three parity defects, all from reading the wrong source of truth
+
+**Date:** 2026-07-30 · **Status:** Accepted (corrects the port)
+
+**Context.** Measuring the landscape screens turned up three values that were wrong in **portrait
+too**. Each came from a plausible-looking source that is not what Unity ships.
+
+| Thing | Port had | Unity ships | Where the truth lives |
+|---|---|---|---|
+| Crop handles | 80 px, white @ 0.9, `minSizeFraction` 0.2 | **50 px, opaque white, 0.5** | the SCENE's serialized `CropGridResizer` (identical in both scenes) |
+| Card grid | `gap: 24`, no padding, card taller than its cell | **spacing 16, padding (16,16,16,40), SQUARE cell** | `CollectionUIManager.SetupGridLayout` / `UpdateGridCellSize` — added at runtime, so it is in neither scene |
+| Label casing | every `SpriteButton` label uppercased by CSS | **only labels whose TMP `m_fontStyle` has bit 16** | `m_fontStyle` per `TMP_Text` |
+
+The handle values are ADR-015 again — the fifth time the scene overrode a C# initialiser. The grid
+values are the inverse case: `CardGrid` has **no** `GridLayoutGroup` in either scene, so the code is
+the source of truth and the scene has nothing to say. The casing was a blanket CSS rule that read
+plausibly and was never checked per label.
+
+**Decision.**
+- `CROP_SHARED` in `layout/crop.ts` holds the crop-grid tunables once, for both orientations, with the
+  divergence from the C# defaults documented.
+- `CARD_GRID` in `layout/browse.ts` holds the grid maths once, for both orientations, quoting the two
+  methods it comes from. The card is now square (`aspect-ratio: 1/1`) with the caption inside it, so a
+  card equals its Unity cell; the image box takes what the caption leaves.
+- `TextSpec.uppercase` mirrors `m_fontStyle & 16`, `textStyle` emits `text-transform` explicitly in
+  both directions, and the blanket rule is gone from `SpriteButton.module.css`. Set on: the caption,
+  START, and the three footer labels, in both orientations, plus landscape's crop START. **Not** set
+  on "Play Again?" or "You Win!", which Unity renders mixed case and the port was shouting.
+
+**Consequences.**
+- Behavioural change: the crop grid can now only shrink to half its initial size, not a fifth, and the
+  handles are visibly smaller. Both match the shipping build.
+- Verified live: handles 50 px `rgb(255,255,255)`; grid 7 columns at 960×540 landscape and 4 at
+  540×960 portrait with `gap: 16px`, `padding: 16px 16px 40px`; cards 362.4² (landscape) and 381.2²
+  (portrait) — square, caption 132 px inside; "Play Again?" renders mixed case.
+- `text-transform` is now data. A new label that needs uppercasing must say so, which is the same
+  discipline the TMP margins already follow.
+- **Neither the scene nor the C# initialisers are automatically right.** Ask which one the running
+  build reads: serialized field → scene; runtime-constructed component → code.
+
+---
+
+## ADR-021 — Landscape geometry for the remaining four screens, selected per screen from data
+
+**Date:** 2026-07-30 · **Status:** Accepted
+
+**Context.** ADR-019 settled the pattern for the Puzzle screen: data-drive what differs by number,
+branch only where the layout MECHANISM differs. The other four screens (ImageSelect, Crop, Browse,
+Win) still had portrait-only tables, and their components imported `*_PORTRAIT` directly.
+
+Two things in the landscape scenes did not fit "same shape, different numbers":
+
+1. **The instruction line changes parent.** Portrait hangs it inside the panel (ImageSelect) or inside
+   the crop stage (Crop); landscape makes it a child of `Container`, i.e. the screen. Same element,
+   different coordinate space.
+2. **Landscape Browse uses an edge-stretched rect idiom the converter did not have.**
+   `ClearSearchBtn`, `SearchButton`, `PrevButton` and `NextButton` are anchored to one vertical edge
+   with the Y stretched and a `sizeDelta` on the stretched axis — the mirror of `HorizontalBandRect`,
+   which the portrait table had side-stepped by pre-resolving those rects to point rects.
+
+**Decision.**
+- Four new tables: `layout/crop-landscape.ts` (ImageSelect + Crop), `layout/browse-landscape.ts`,
+  `layout/win-landscape.ts`, each transcribed verbatim with a divergence table in its header.
+- `layout/screens.ts` selects per screen by `ORIENTATION`, with an explicit interface per screen — the
+  same idea as `chrome.ts`, so a missing field in a new table is a compile error.
+- `descriptionParent: 'screen' | 'panel' | 'stage'` is part of the table; the components render the
+  description where the table says instead of assuming.
+- `rectStyle` gained a fourth idiom, `verticalBand`, deriving
+  `height = (b − a)·parentH + sizeDelta.y` and
+  `cssTop = (1 − b)·parentH − pos.y − (1 − pivot.y)·sizeDelta.y`.
+
+**Consequences.**
+- Landscape is again not portrait rearranged: the panel, both choice rects, every caption size, the
+  crop stage, the grid's initial size, the rotate buttons, the crop START, all five dropdown widths,
+  the page arrows and the whole win popup differ. The headers record each one.
+- Verified at 960×540 (all four screens driven through a stubbed IPC) and re-checked at 540×960 for
+  portrait regression. Figures in [roadmap.md](roadmap.md) Phase 6.
+- The portrait table still pre-resolves its own vertical bands to point rects (`PrevButton` 100 ×
+  581.4 = 2582.4 − 2001). Left as it is — the numbers are equivalent and it is verified — but the two
+  tables now express the same scene idiom differently, which is noted in both headers.
+- `PerPageDD` and `GridViewButton` stay unported in landscape too, for the reasons already recorded
+  (P3.11: no option list anywhere; there is only one view).
+- The landscape scene's win `PatternDesign` carries `sizeDelta (2340, 960)`. Recorded and deliberately
+  not rendered: it is a flat colour clipped by `DesignMask`, so stretching it to the mask is
+  pixel-identical.
+
+---
+
 ## ADR-020 — Portrait and landscape ship as two separate installers
 
 **Date:** 2026-07-30 · **Status:** Accepted (client directive)

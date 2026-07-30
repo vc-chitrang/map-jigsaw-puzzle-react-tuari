@@ -1,8 +1,11 @@
 import { useState } from 'react';
 import { cardImageUrl } from '../../api/imagekit';
 import { primaryArtistName, type ResultsData } from '../../api/types';
-import { BROWSE_PORTRAIT as B } from '../../layout/browse';
+import { ORIENTATION } from '../../canvas/reference';
+import { BROWSE_LAYOUT } from '../../layout/screens';
 import styles from './BrowseScreen.module.css';
+
+const B = BROWSE_LAYOUT[ORIENTATION];
 
 /**
  * One artwork card.

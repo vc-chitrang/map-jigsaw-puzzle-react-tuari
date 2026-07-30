@@ -50,8 +50,14 @@ async function cropAndTrack(url: string, intermediate: string | null): Promise<{
  * Adopt an already-square image, as produced by the Crop screen.
  *
  * No cropping: `exportCrop` has already made it square, and re-cropping would
- * resample it for nothing. The caller hands over OWNERSHIP of the blob URL — this
- * artwork's `release()` revokes it.
+ * resample it for nothing.
+ *
+ * **Ownership stays with the caller**, so `release()` is a no-op. It used to
+ * revoke, and that was wrong in two ways: the owner still held the same URL in
+ * state, so a remount (START then Back) adopted an already-revoked URL and the
+ * board rendered BLACK; and under React 18 StrictMode the mount-cleanup-mount
+ * cycle revoked it before the first paint. Whoever created the blob revokes it —
+ * see `replacePreparedArtwork` in `App.tsx`.
  */
 export function adoptPreparedArtwork(url: string, title: string): LoadedArtwork {
   return {
@@ -60,9 +66,7 @@ export function adoptPreparedArtwork(url: string, title: string): LoadedArtwork 
     // it does in Unity.
     identity: { artworkTitle: title },
     source: 'collection',
-    release: () => {
-      if (url.startsWith('blob:')) URL.revokeObjectURL(url);
-    },
+    release: () => {},
   };
 }
 

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { REF } from '../../canvas/reference';
-import { CROP_PORTRAIT as C } from '../../layout/crop';
+import { ORIENTATION, REF } from '../../canvas/reference';
+import { CROP_LAYOUT } from '../../layout/screens';
 import { rectStyle, textStyle } from '../../layout/rect';
 import { SpriteButton } from '../../ui/SpriteButton';
 import {
@@ -32,9 +32,16 @@ import styles from './CropScreen.module.css';
  * Rotation is ±90° over 300 ms linear, and the pixel rotation is committed after
  * the tween — the board slices with `background-position`, which cannot carry a
  * rotation.
+ *
+ * The instruction line changes PARENT between orientations: portrait anchors it
+ * above the stage (`anchorY > 1` inside `CropAreaBackground`), landscape hangs it
+ * from the screen's top edge. `descriptionParent` decides, so neither case is an
+ * assumption (see `layout/screens.ts`).
  */
 
 const ROTATE_MS = 300;
+
+const C = CROP_LAYOUT[ORIENTATION];
 
 interface CropScreenProps {
   /** Square-cropping is this screen's job, so any aspect ratio is fine here. */
@@ -194,6 +201,15 @@ export function CropScreen({ imageUrl, title = '', onBack, onCropped }: CropScre
 
   const ready = grid !== null && visible !== null && visible.width > 0;
 
+  const description = (
+    <span
+      className={styles.description}
+      style={{ ...rectStyle(C.descriptionRect), ...textStyle(C.description) }}
+    >
+      {C.description.text}
+    </span>
+  );
+
   return (
     <div className={styles.screen} style={rectStyle(C.screen.rect)}>
       <img className={styles.background} src={C.screen.background} alt="" draggable={false} />
@@ -216,14 +232,14 @@ export function CropScreen({ imageUrl, title = '', onBack, onCropped }: CropScre
         <img src={C.backButton.sprite} alt="" draggable={false} />
       </button>
 
+      {C.descriptionParent === 'screen' ? description : null}
+
       <div
         className={styles.stage}
         style={{ ...rectStyle(C.stageRect), background: C.stageBackground }}
         ref={stageRef}
       >
-        <span className={styles.description} style={{ ...rectStyle(C.descriptionRect), ...textStyle(C.description) }}>
-          {C.description.text}
-        </span>
+        {C.descriptionParent === 'stage' ? description : null}
 
         {/* Square wrapper so a 90° turn about its centre stays in place. The
             tween runs on this; the committed rotation re-fits the image. */}

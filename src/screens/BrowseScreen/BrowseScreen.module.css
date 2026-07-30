@@ -325,10 +325,10 @@
   touch-action: pan-y;
 }
 
+/* Gap and padding come from the layout table (SetupGridLayout), not from here. */
 .cardGrid {
   display: grid;
   align-content: start;
-  padding: 24px;
 }
 
 .pageArrow {
@@ -358,9 +358,17 @@
 }
 
 /* ---- Card ------------------------------------------------------------------ */
+/*
+ * The CELL is square — `UpdateGridCellSize` sets `cellSize = (n, n)` — and the
+ * caption lives INSIDE it, so the whole card is square and the image box takes
+ * whatever the caption leaves. Making only the image square instead pushed each
+ * card `captionHeightPx` taller than its Unity cell.
+ */
 .card {
   display: flex;
   flex-direction: column;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
   appearance: none;
   border: 0;
   padding: 0;
@@ -380,8 +388,9 @@
 .cardImageBox {
   position: relative;
   display: block;
-  /* Square cells (UpdateGridCellSize makes cellSize square). */
-  aspect-ratio: 1 / 1;
+  /* Fills the square cell minus the caption band. */
+  flex: 1 1 auto;
+  min-height: 0;
   width: 100%;
   background: #111111;
   overflow: hidden;
@@ -429,6 +438,7 @@
 
 .cardCaption {
   display: flex;
+  flex: 0 0 auto;
   flex-direction: column;
   justify-content: flex-start;
   gap: 6px;

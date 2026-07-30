@@ -60,7 +60,33 @@ export interface HorizontalBandRect {
   readonly pivot: Vec2;
 }
 
-export type LayoutRect = StretchRect | FractionalRect | PointRect | HorizontalBandRect;
+/**
+ * Anchored to one parent edge the OTHER way round: `anchorMin.y ≠ anchorMax.y`
+ * but the X is a point. The mirror of `HorizontalBandRect`.
+ *
+ * Unlike the horizontal band this one carries a `sizeDelta` on its stretched
+ * axis, because landscape Browse needs it: `PrevButton` is
+ * `anchorMin (0,0)` / `anchorMax (0,1)` with `sizeDelta (75, −870)`, i.e. 75 px
+ * wide and 870 px shorter than its parent.
+ */
+export interface VerticalBandRect {
+  readonly kind: 'verticalBand';
+  /** Shared anchor X (0 = left, 1 = right). */
+  readonly anchorX: number;
+  readonly anchorMinY: number;
+  readonly anchorMaxY: number;
+  readonly pos: Vec2;
+  /** `x` is the explicit width; `y` is the `sizeDelta` on the stretched axis. */
+  readonly size: Vec2;
+  readonly pivot: Vec2;
+}
+
+export type LayoutRect =
+  | StretchRect
+  | FractionalRect
+  | PointRect
+  | HorizontalBandRect
+  | VerticalBandRect;
 
 const pct = (value: number): string => `${(value * 100).toFixed(4)}%`;
 
@@ -143,6 +169,23 @@ export function rectStyle(rect: LayoutRect): CSSProperties {
       };
     }
 
+    case 'verticalBand': {
+      const { anchorX, anchorMinY, anchorMaxY, pos, size, pivot } = rect;
+      // Derivation (Unity → CSS), with a = anchorMinY, b = anchorMaxY, p = pivot.y:
+      //   height  = (b − a) × parentH + sizeDelta.y
+      //   cssTop  = (1 − b) × parentH − pos.y − (1 − p) × sizeDelta.y
+      // At a = 0, b = 1, p = 0.5, sizeDelta.y = −870, pos.y = 65 that gives
+      // top = 370 px and height = calc(100% − 870px), which is what the scene
+      // shows for `PrevButton`.
+      return {
+        position: 'absolute',
+        left: offset(anchorX, pos.x - pivot.x * size.x),
+        width: px(size.x),
+        top: offset(1 - anchorMaxY, -pos.y - (1 - pivot.y) * size.y),
+        height: offset(anchorMaxY - anchorMinY, size.y),
+      };
+    }
+
     default: {
       const unreachable: never = rect;
       return unreachable;
@@ -162,6 +205,12 @@ export interface TextLike {
   readonly fontSizePx: number;
   readonly colour: string;
   readonly marginPx?: TextMarginPx;
+  /**
+   * TMP `m_fontStyle & 16` (UpperCase). Only some labels carry it — the footer
+   * labels, the caption and START do; **"Play Again?" and "You Win!" do not**.
+   * Uppercasing everything is wrong, so this is opt-in per label (ADR-022).
+   */
+  readonly uppercase?: boolean;
 }
 
 /**
@@ -177,6 +226,9 @@ export function textStyle(spec: TextLike): CSSProperties {
   return {
     fontSize: `${spec.fontSizePx}px`,
     color: spec.colour,
+    // Explicit in both directions, so no inherited rule can uppercase a label
+    // that Unity renders mixed-case.
+    textTransform: spec.uppercase ? 'uppercase' : 'none',
     ...(margin
       ? {
           paddingLeft: `${margin.left}px`,
