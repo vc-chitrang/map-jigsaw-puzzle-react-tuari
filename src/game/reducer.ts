@@ -13,7 +13,7 @@
  */
 
 import { applyMove, isInitialEmptyCell } from './moves';
-import { isSolved } from './board';
+import { createSolvedBoard, isSolved } from './board';
 import { INITIAL_TIMER, tickTimer, type TimerState } from './timer';
 import { NO_HIGH_SCORE } from './constants';
 import type { ArtworkIdentity } from './highScore';
@@ -89,7 +89,13 @@ export type GameAction =
   | { type: 'SET_PREVIEW_VISIBLE'; visible: boolean }
   | { type: 'HIGH_SCORE_LOADED'; seconds: number }
   /** "New Image" (attract) or "Play Again" (`startGameplayImmediately`). */
-  | { type: 'RESET_TO_LAUNCH_MODE'; startGameplayImmediately?: boolean };
+  | { type: 'RESET_TO_LAUNCH_MODE'; startGameplayImmediately?: boolean }
+  /**
+   * Debug/QA cheat: instantly solve the board and enter the win sequence, as if
+   * the final tile had just settled. Wired to a hotkey (Ctrl+Shift+Alt+S) on the
+   * Puzzle screen. Not reachable through normal play.
+   */
+  | { type: 'SOLVE_CHEAT' };
 
 /**
  * Whether a tile/arrow tap should be accepted.
@@ -194,6 +200,27 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       return {
         ...INITIAL_GAME_STATE,
         startGameplayImmediately: action.startGameplayImmediately ?? false,
+      };
+    }
+
+    case 'SOLVE_CHEAT': {
+      // Only from active play (attract or gameplay); ignore once solving/won so a
+      // second press cannot re-enter the sequence.
+      if (!state.board || state.phase !== 'playing') return state;
+
+      // Produce exactly the state a winning MOVE_SETTLED would: a solved board,
+      // timer stopped, phase `revealing`. `useWinDelay` then fires the 1 s delay
+      // to `won`, and the high-score write keyed on `revealing` runs — same as a
+      // real solve.
+      return {
+        ...state,
+        board: createSolvedBoard(state.board.size),
+        mode: 'gameplay',
+        isAnimating: false,
+        animatingSource: null,
+        isSolved: true,
+        phase: 'revealing',
+        timer: { ...state.timer, running: false },
       };
     }
 

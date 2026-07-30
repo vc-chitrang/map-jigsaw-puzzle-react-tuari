@@ -34,24 +34,18 @@ interface WinScreenProps {
 export function WinScreen({ elapsedSeconds, highScoreSeconds, onPlayAgain }: WinScreenProps) {
   return (
     <div className={styles.screen} style={rectStyle(W.screenRect)}>
-      <div className={styles.popup} style={rectStyle(W.popup.rect)}>
-        {/* 9-sliced pill, then the tinted pattern over it, then the flat wash.
-            Same mask-border trick as the high-score badge: `border-image` cannot
-            be tinted, `-webkit-mask-box-image` can. */}
-        <div
-          className={styles.mask}
-          style={{
-            backgroundColor: W.popup.background,
-            WebkitMaskBoxImage: `url("${W.popup.maskSprite}") ${W.popup.maskSliceBorderPx} fill stretch`,
-          }}
-        />
-        <div
-          className={styles.pattern}
-          style={{
-            backgroundColor: W.popup.patternColour,
-            WebkitMaskBoxImage: `url("${W.popup.maskSprite}") ${W.popup.maskSliceBorderPx} fill stretch`,
-          }}
-        />
+      <div
+        className={styles.popup}
+        style={{
+          ...rectStyle(W.popup.rect),
+          // Scene: Popup fill #64787E @0.59, then PatternDesign #007CC4 @0.39
+          // over it, inside a thin white Outline (the scene's `Outline` element,
+          // which the port had defined as `outlineColour` but never drawn).
+          background: W.popup.background,
+          borderColor: W.popup.outlineColour,
+        }}
+      >
+        <div className={styles.pattern} style={{ backgroundColor: W.popup.patternColour }} />
 
         {/* ---- "You Win!" ---- */}
         <div

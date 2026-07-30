@@ -256,6 +256,7 @@ export function App() {
       <PuzzleScreen
         preparedArtwork={preparedArtwork}
         onStart={() => go('select')}
+        onNewImage={() => go('select')}
         onHome={handleBack}
         onPlayAgain={handlePlayAgain}
         resetToken={resetToken}

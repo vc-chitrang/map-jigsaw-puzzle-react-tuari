@@ -48,6 +48,7 @@ interface PuzzleScreenProps {
    * fresh random artwork is loaded — the cropped blob has been revoked by then.
    */
   readonly onPlayAgain?: () => void;
+  readonly onNewImage?: () => void;
   /**
    * Reports whether a game is in progress, which the Back rule needs: Back on the
    * Puzzle screen abandons a game mid-play but QUITS the app in attract mode
@@ -83,6 +84,7 @@ export function PuzzleScreen({
   onStart,
   onHome,
   onPlayAgain,
+  onNewImage,
   onMidGameChange,
   resetToken = 0,
 }: PuzzleScreenProps = {}) {
@@ -157,6 +159,20 @@ export function PuzzleScreen({
     }
   }, [state.phase, state.timer.elapsedSeconds, state.identity, state.highScoreSeconds]);
 
+  // Debug/QA cheat: Ctrl+Shift+Alt+S instantly solves the board and shows the
+  // win popup. `e.code === 'KeyS'` is used so the modifier combination cannot
+  // remap the produced character. Capture phase so an input field cannot eat it.
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.ctrlKey && event.shiftKey && event.altKey && event.code === 'KeyS') {
+        event.preventDefault();
+        dispatch({ type: 'SOLVE_CHEAT' });
+      }
+    };
+    window.addEventListener('keydown', onKeyDown, { capture: true });
+    return () => window.removeEventListener('keydown', onKeyDown, { capture: true });
+  }, []);
+
   // Release the blob URLs when the screen goes away.
   useEffect(() => () => artwork?.release(), [artwork]);
 
@@ -204,10 +220,14 @@ export function PuzzleScreen({
   }, [state.board, state.identity, state.highScoreSeconds]);
 
   const handleNewImage = useCallback(() => {
-    startGameplayImmediately.current = false;
-    dispatch({ type: 'RESET_TO_LAUNCH_MODE' });
-    setBuildToken((token) => token + 1);
-  }, []);
+    if (onNewImage) {
+      onNewImage();
+    } else {
+      startGameplayImmediately.current = false;
+      dispatch({ type: 'RESET_TO_LAUNCH_MODE' });
+      setBuildToken((token) => token + 1);
+    }
+  }, [onNewImage]);
 
   /**
    * `ResetToLaunchMode(true)` — a new image that goes STRAIGHT into gameplay,
