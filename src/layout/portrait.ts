@@ -24,8 +24,13 @@ export interface TextSpec {
   readonly fontSizePx: number;
   /** CSS custom property or literal colour. */
   readonly colour: string;
-  /** Authored string. Labels are lowercase in the scene and uppercased in CSS. */
+  /**
+   * Authored string, verbatim. Some labels are authored lowercase and carry TMP's
+   * UpperCase style — set `uppercase` on those rather than assuming (ADR-022).
+   */
   readonly text?: string;
+  /** TMP `m_fontStyle & 16`. See `TextLike.uppercase`. */
+  readonly uppercase?: boolean;
   /**
    * TMP `m_margin`, in reference px. Text is centred inside the rect MINUS these
    * margins, so a left margin shifts the label right — which is how the footer
@@ -75,6 +80,7 @@ export const PUZZLE_PORTRAIT = {
       fontSizePx: 83,
       colour: 'var(--colour-caption)',
       text: 'TAP THE TILES TO SOLVE THE PUZZLE',
+      uppercase: true,
     } satisfies TextSpec,
   },
 
@@ -91,6 +97,7 @@ export const PUZZLE_PORTRAIT = {
       fontSizePx: 112,
       colour: 'var(--map-white)',
       text: 'START',
+      uppercase: true,
       marginPx: { left: 16, top: 0, right: 0, bottom: 20 },
     } satisfies TextSpec,
   },
@@ -154,6 +161,7 @@ export const PUZZLE_PORTRAIT = {
         fontSizePx: 68,
         colour: 'var(--map-white)',
         text: 'RESET',
+        uppercase: true,
         marginPx: { left: 90, top: 8, right: 0, bottom: 16 },
       } satisfies TextSpec,
       icon: {
@@ -179,6 +187,7 @@ export const PUZZLE_PORTRAIT = {
         fontSizePx: 68,
         colour: 'var(--map-white)',
         text: 'preview',
+        uppercase: true,
         marginPx: { left: 122, top: 0, right: 0, bottom: 16 },
       } satisfies TextSpec,
       icon: {
@@ -203,6 +212,7 @@ export const PUZZLE_PORTRAIT = {
         fontSizePx: 68,
         colour: 'var(--map-white)',
         text: 'new image',
+        uppercase: true,
         marginPx: { left: 110, top: 10, right: 6, bottom: 18 },
       } satisfies TextSpec,
       icon: {

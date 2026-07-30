@@ -1,5 +1,6 @@
 import { formatHighScore, formatTime } from '../../game';
-import { WIN_PORTRAIT as W } from '../../layout/win';
+import { ORIENTATION } from '../../canvas/reference';
+import { WIN_LAYOUT } from '../../layout/screens';
 import { rectStyle, textStyle } from '../../layout/rect';
 import { SpriteButton } from '../../ui/SpriteButton';
 import styles from './WinScreen.module.css';
@@ -14,7 +15,12 @@ import styles from './WinScreen.module.css';
  * The reducer already owns the sequencing — the winning move sets `phase:
  * 'revealing'`, the 9th slice appears, and `WIN_DELAY_ELAPSED` fires 1 s later.
  * This component only renders and wires Play Again.
+ *
+ * Geometry is per-orientation data (`layout/win.ts`, `layout/win-landscape.ts`);
+ * the landscape popup is smaller and every font size differs.
  */
+
+const W = WIN_LAYOUT[ORIENTATION];
 
 interface WinScreenProps {
   /** This run, in seconds. */

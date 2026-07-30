@@ -259,11 +259,12 @@ and the pixel diff (needs an interactive shell).
 
 ---
 
-## Phase 6 — Landscape, polish, packaging  🟡 *landscape Puzzle screen and brand pass done*
+## Phase 6 — Landscape, polish, packaging  🟡 *all five screens land in landscape; perf/soak outstanding*
 
 - [x] Landscape geometry table for the **Puzzle screen** — `src/layout/landscape.ts`, transcribed from
       `docs/ui/scene-landscape.md` with layout-group and TMP details read from the scene YAML.
-- [ ] Landscape tables for **ImageSelect, Browse, Crop and Win** — not started.
+- [x] Landscape tables for **ImageSelect, Browse, Crop and Win** — `crop-landscape.ts`,
+      `browse-landscape.ts`, `win-landscape.ts`, selected per screen by `layout/screens.ts` (ADR-021).
 - [x] Brand pass: the ambers were resolved in ADR-013; chrome neutrals are now tokens too.
 - [ ] Performance: 60 fps during tile animation at 4K; memory stable across 100+ rebuilds.
 - [ ] Soak test: 24 h.
@@ -298,9 +299,54 @@ neutrals (input borders, keyboard keys, dividers) are now `--chrome-*` tokens. C
 what keeps those tables diffable against the dumps. Two card placeholder shades (`#111111`,
 `#1a1a1a`) are still literal — cosmetic, in the image-failure state only.
 
-**Open question for packaging:** a landscape build needs a different `productName`/`identifier` to
-install alongside the portrait one, or the orientation has to become a runtime setting rather than a
-build-time flag. Not decided — see the note in `docs/tasks.md` (P6.5).
+**Packaging** is settled: two installers, ADR-020.
+
+### The other four screens in landscape — measured at 960×540 (scale 0.25)
+
+Driven through a stubbed Tauri IPC, reading `getBoundingClientRect` back through the canvas scale.
+Every figure below is the measurement, and every one matches the scene value it was transcribed from.
+
+| Screen | Check | Measured (ref px) | Expected from the scene |
+|---|---|---|---|
+| ImageSelect | panel | 2319.0 × 1490.8 at (759.5, 259.4) | 0.1978-0.8017 / 0.1897-0.8799 |
+| ImageSelect | description | full width, h 92, y 98, font 48 | screen-parented, `pos.y −98` |
+| ImageSelect | collection button | 637.9 × 642.9 at (900.1, 717.4) | 0.0606-0.3357 / 0.2615-0.6928 of the panel |
+| ImageSelect | QR panel + code | 640² panel, code 740² (+100 overhang) | `sizeDelta (100,100)` |
+| ImageSelect | divider | 1 × 78, 32 px below panel centre | `pos (0, −32)`, `size (1, 78)` |
+| Crop | stage | 1468.8² at (1185.8, 245.6) | square, = board size (min × 0.68) |
+| Crop | description | h 38, y 125.6, font 48 | screen-parented, `pos.y −125.6006` |
+| Crop | rotate buttons | 80² at x 1800.2 / 1960.2, y 1744.4 | ±80, `pos.y −110` below the stage |
+| Crop | START | 315 × 121 at (1762.5, 1939), label 82 | point rect, 100 px above the bottom |
+| Crop | handles | 4 × 50 px, `rgb(255,255,255)` | serialized `CropGridResizer` (ADR-022) |
+| Browse | search bar | 2751.7 × 60.5 at (479.2, 242.6) | 0.1248-0.8414 / 0.8597-0.8877 |
+| Browse | search button | 70 wide, full height, outside the right edge | `verticalBand`, pivot (0, 0.5) |
+| Browse | filter title / Clear | 24.5 px at y 317.5 / 300 × 54, 23 px | `pos.y 48.4` / `pos.y 0` |
+| Browse | dropdowns | 5 × 534.2 × 56.3, stride 570.2, filling the bar | spacing 36 (same group as portrait) |
+| Browse | page arrows | 75 × **349.8** at y 900.1 | `sizeDelta (75, −870)` → 1219.75 − 870 |
+| Browse | grid | 7 columns, gap 16, padding 16/16/40, cards 362.4² | `UpdateGridCellSize` + `SetupGridLayout` |
+| Win | popup | 1266.4 × 1013 at (1286.8, 473.5), topmost | 0.3351-0.6649 / 0.3118-0.7808 |
+| Win | banner / boxes | 400 × 120; 320 × 104 at ±100 from centre | scene sizes |
+| Win | Play Again | 475 × 120 at (1682.5, 1266.5), label 68 | `size (475.04, 120)`, `pos.y 100` |
+
+The win screen was reached by **solving the board for real**: board state was read out of the DOM
+(tile transforms + `background-position`), BFS found a 12-move solution, and the moves were played
+through the normal tap path. `Your Score 00:03`, high score written, popup confirmed topmost — the
+ADR-018 z-order trap does not recur in landscape.
+
+**Portrait re-checked at 540×960 after the refactor:** board 1520.6² at (319.7, 645.7) — identical to
+the Phase 2 figures; ImageSelect panel 1831.7 × 2379.3 at (168, 804.9) with the description still
+inside it; crop stage 1520.6², description still above the stage; Browse 4 columns, cards 381.2²;
+footer labels still uppercase. No regression.
+
+### Four parity defects found while verifying (all portrait too)
+
+Fixed, and tracked as F1-F4 in [tasks.md](tasks.md): crop handles from the scene not the C#
+initialisers (ADR-022), card grid spacing/padding and square cells (ADR-022), per-label casing from
+TMP `m_fontStyle` (ADR-022), and the cropped blob URL's ownership — which had the board rendering
+**completely black** after a crop (ADR-023).
+
+**308 tests** green (was 276): +30 for the four landscape tables and the `verticalBand` idiom, +2 for
+the casing rule.
 
 ---
 

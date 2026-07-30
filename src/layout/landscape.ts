@@ -85,6 +85,7 @@ export const PUZZLE_LANDSCAPE = {
       // amber token (ADR-013).
       colour: 'var(--colour-caption)',
       text: 'TAP THE TILES TO SOLVE THE PUZZLE',
+      uppercase: true,
     } satisfies TextSpec,
   },
 
@@ -124,6 +125,7 @@ export const PUZZLE_LANDSCAPE = {
       fontSizePx: 82,
       colour: 'var(--map-white)',
       text: 'start',
+      uppercase: true,
       marginPx: { left: 10, top: 0, right: 0, bottom: 12 },
     } satisfies TextSpec,
   },
@@ -169,6 +171,7 @@ export const PUZZLE_LANDSCAPE = {
         fontSizePx: 44,
         colour: 'var(--map-white)',
         text: 'reset',
+        uppercase: true,
         marginPx: { left: 48, top: 0, right: 0, bottom: 12 },
       } satisfies TextSpec,
       icon: {
@@ -191,6 +194,7 @@ export const PUZZLE_LANDSCAPE = {
         fontSizePx: 44,
         colour: 'var(--map-white)',
         text: 'preview',
+        uppercase: true,
         marginPx: { left: 72, top: 0, right: 0, bottom: 12 },
       } satisfies TextSpec,
       icon: {
@@ -213,6 +217,7 @@ export const PUZZLE_LANDSCAPE = {
         fontSizePx: 44,
         colour: 'var(--map-white)',
         text: 'new image',
+        uppercase: true,
         marginPx: { left: 72, top: 0, right: 0, bottom: 12 },
       } satisfies TextSpec,
       icon: {

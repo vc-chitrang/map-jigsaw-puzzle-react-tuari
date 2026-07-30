@@ -1,5 +1,6 @@
 import { useMemo, type CSSProperties } from 'react';
-import { BROWSE_PORTRAIT as B } from '../../layout/browse';
+import { ORIENTATION } from '../../canvas/reference';
+import { BROWSE_LAYOUT } from '../../layout/screens';
 import { rectStyle, textStyle } from '../../layout/rect';
 import styles from './BrowseScreen.module.css';
 
@@ -57,7 +58,7 @@ interface FilterDropdownProps {
   readonly onSearchFocus: () => void;
 }
 
-const D = B.filterDropdowns;
+const D = BROWSE_LAYOUT[ORIENTATION].filterDropdowns;
 
 export function FilterDropdown({
   label,

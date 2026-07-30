@@ -1,4 +1,5 @@
-import { IMAGE_SELECT_PORTRAIT as S } from '../../layout/crop';
+import { ORIENTATION } from '../../canvas/reference';
+import { IMAGE_SELECT_LAYOUT } from '../../layout/screens';
 import { rectStyle, textStyle } from '../../layout/rect';
 import styles from './ImageSelectScreen.module.css';
 
@@ -6,12 +7,18 @@ import styles from './ImageSelectScreen.module.css';
  * Image Select / Upload — the fork between browsing the collection and uploading
  * a photo from a phone.
  *
- * Two choices, both 682×682, stacked either side of a divider: the MAP collection
- * button above and the QR panel below. The QR itself is a STATIC bundled sprite
- * (`QR_Code_1-1024.png`); the phone-side upload page is a separate service, and
- * the kiosk learns about the result over the `new-upload` socket event rather than
- * by generating a code.
+ * Two choices either side of a divider: in portrait they are two 682² squares
+ * stacked vertically, in landscape two fractional panels side by side. The QR
+ * itself is a STATIC bundled sprite (`QR_Code_1-1024.png`); the phone-side upload
+ * page is a separate service, and the kiosk learns about the result over the
+ * `new-upload` socket event rather than by generating a code.
+ *
+ * The instruction line changes PARENT between orientations — panel in portrait,
+ * screen in landscape — so it is rendered from `descriptionParent` rather than
+ * from an assumption (see `layout/screens.ts`).
  */
+
+const S = IMAGE_SELECT_LAYOUT[ORIENTATION];
 
 interface ImageSelectScreenProps {
   readonly onBack: () => void;
@@ -25,6 +32,15 @@ export function ImageSelectScreen({
   onBrowseCollection,
   uploadReady = true,
 }: ImageSelectScreenProps) {
+  const description = (
+    <span
+      className={styles.description}
+      style={{ ...rectStyle(S.descriptionRect), ...textStyle(S.description) }}
+    >
+      {S.description.text}
+    </span>
+  );
+
   return (
     <div className={styles.screen} style={rectStyle(S.screen.rect)}>
       <img className={styles.background} src={S.screen.background} alt="" draggable={false} />
@@ -47,16 +63,13 @@ export function ImageSelectScreen({
         <img src={S.backButton.sprite} alt="" draggable={false} />
       </button>
 
+      {S.descriptionParent === 'screen' ? description : null}
+
       <div
         className={styles.panel}
         style={{ ...rectStyle(S.panelRect), background: S.panelBackground }}
       >
-        <span
-          className={styles.description}
-          style={{ ...rectStyle(S.descriptionRect), ...textStyle(S.description) }}
-        >
-          {S.description.text}
-        </span>
+        {S.descriptionParent === 'panel' ? description : null}
 
         {/* ---- Collection ---- */}
         <button

@@ -20,6 +20,50 @@ import type { TextSpec } from './portrait';
 /** Body typeface on this screen is Conduit ITC **Regular**, not Bold. */
 const REGULAR = 'var(--font-display)';
 
+/**
+ * Card-grid maths. NOT scene data: `CardGrid` has no `GridLayoutGroup` in either
+ * scene, so `CollectionUIManager.SetupGridLayout` adds one at runtime and
+ * `UpdateGridCellSize` sizes the cells. Both orientations therefore share these.
+ *
+ * The spacing and padding were wrong until ADR-022 (gap was 24 and the padding
+ * was missing). From `SetupGridLayout`:
+ *   `padding = RectOffset(16, 16, 16, 40)`, `spacing = (16, 16)`,
+ * and from `UpdateGridCellSize`:
+ *   `columns = max(2, floor((availableWidth + spacing.x) / (320 + spacing.x)))`
+ * with `availableWidth = gridWidth − padding.left − padding.right`, which is
+ * exactly what `repeat(auto-fill, minmax(320px, 1fr))` with a 16 px gap computes.
+ */
+export const CARD_GRID = {
+  targetCellSizePx: 320,
+  minColumns: 2,
+  gapPx: 16,
+  /** `RectOffset(left, right, top, bottom)`, so the bottom is the odd one out. */
+  paddingPx: { left: 16, right: 16, top: 16, bottom: 40 },
+} as const;
+
+/** Dropdown popup metrics. Identical in both scenes. */
+export const DROPDOWN_POPUP = {
+  /** Full width, 400 px tall, 4 px below the control, 60 px rows. */
+  popupHeight: 400,
+  popupGap: 4,
+  popupRowHeight: 60,
+  outlineColour: '#CCCCCC',
+} as const;
+
+/**
+ * Card internals — UNVERIFIED, see the header note. Sizes follow this screen's
+ * established scale (30 for primary text, 24 for secondary). Shared by both
+ * orientations rather than invented twice.
+ */
+export const CARD_INTERNALS = {
+  titleFontSizePx: 30,
+  metaFontSizePx: 24,
+  titleColour: 'var(--map-white)',
+  metaColour: 'rgb(255 255 255 / 0.7)',
+  captionHeightPx: 132,
+  fontFamily: REGULAR,
+} as const;
+
 export const BROWSE_PORTRAIT = {
   screen: {
     rect: { kind: 'stretch' } satisfies LayoutRect,
@@ -134,11 +178,10 @@ export const BROWSE_PORTRAIT = {
     arrowSprite: '/assets/common/dropdown-arrow.png',
     arrowSize: 30,
     arrowInset: 15,
-    /** Popup: full width, 400 px tall, 4 px below the control, 60 px rows. */
-    popupHeight: 400,
-    popupGap: 4,
-    popupRowHeight: 60,
-    outlineColour: '#CCCCCC',
+    popupHeight: DROPDOWN_POPUP.popupHeight,
+    popupGap: DROPDOWN_POPUP.popupGap,
+    popupRowHeight: DROPDOWN_POPUP.popupRowHeight,
+    outlineColour: DROPDOWN_POPUP.outlineColour,
   },
 
   resultInfoBar: {
@@ -199,10 +242,11 @@ export const BROWSE_PORTRAIT = {
     arrowSprite: '/assets/browse/pagination-arrow.png',
     arrowSize: 60,
 
-    /** Grid maths — `UpdateGridCellSize`, ui-spec §5. */
-    targetCellSizePx: 320,
-    minColumns: 2,
-    gapPx: 24,
+    /** Grid maths — `UpdateGridCellSize`, ui-spec §5. See `CARD_GRID`. */
+    targetCellSizePx: CARD_GRID.targetCellSizePx,
+    minColumns: CARD_GRID.minColumns,
+    gapPx: CARD_GRID.gapPx,
+    paddingPx: CARD_GRID.paddingPx,
   },
 
   pagination: {
@@ -212,18 +256,10 @@ export const BROWSE_PORTRAIT = {
       anchorMax: { x: 0.9018, y: 0.0706 },
     } satisfies LayoutRect,
     info: { fontSizePx: 42, colour: 'var(--map-white)' } satisfies TextSpec,
+    /** `HorizontalLayoutGroup` spacing; 30 in landscape. Recorded, not used. */
+    barSpacingPx: 50,
   },
 
-  /**
-   * Card internals — UNVERIFIED, see the header note. Sizes follow this screen's
-   * established scale (30 for primary text, 24 for secondary).
-   */
-  card: {
-    titleFontSizePx: 30,
-    metaFontSizePx: 24,
-    titleColour: 'var(--map-white)',
-    metaColour: 'rgb(255 255 255 / 0.7)',
-    captionHeightPx: 132,
-    fontFamily: REGULAR,
-  },
+  /** Card internals — UNVERIFIED, see the header note. */
+  card: CARD_INTERNALS,
 } as const;

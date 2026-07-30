@@ -7,7 +7,8 @@ import {
   type ResultsData,
   type SortModeIndex,
 } from '../../api/types';
-import { BROWSE_PORTRAIT as B } from '../../layout/browse';
+import { ORIENTATION } from '../../canvas/reference';
+import { BROWSE_LAYOUT } from '../../layout/screens';
 import { rectStyle, textStyle } from '../../layout/rect';
 import { ArtworkCard } from './ArtworkCard';
 import { FilterDropdown, type DropdownOption } from './FilterDropdown';
@@ -19,8 +20,12 @@ import styles from './BrowseScreen.module.css';
 /**
  * Browse & Discover — search, five searchable filters, sort, paginated card grid.
  *
- * Geometry comes from `src/layout/browse.ts`, transcribed from the scene dump.
+ * Geometry comes from `src/layout/browse.ts` (portrait) or
+ * `src/layout/browse-landscape.ts`, both transcribed from the scene dumps and
+ * selected by orientation in `src/layout/screens.ts`.
  */
+
+const B = BROWSE_LAYOUT[ORIENTATION];
 
 interface BrowseScreenProps {
   readonly onBack: () => void;
@@ -324,9 +329,11 @@ export function BrowseScreen({ onBack, onSelectArtwork }: BrowseScreenProps) {
               className={styles.cardGrid}
               style={{
                 // UpdateGridCellSize: target 320 px cells, minimum 2 columns,
-                // square. auto-fill + minmax reproduces it in one declaration.
+                // square. auto-fill + minmax reproduces it in one declaration,
+                // and SetupGridLayout's padding is asymmetric at the bottom.
                 gridTemplateColumns: `repeat(auto-fill, minmax(${B.cardArea.targetCellSizePx}px, 1fr))`,
                 gap: `${B.cardArea.gapPx}px`,
+                padding: `${B.cardArea.paddingPx.top}px ${B.cardArea.paddingPx.right}px ${B.cardArea.paddingPx.bottom}px ${B.cardArea.paddingPx.left}px`,
               }}
             >
               {playable.map((item) => (

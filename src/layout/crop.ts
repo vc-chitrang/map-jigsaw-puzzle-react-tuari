@@ -21,6 +21,24 @@
 import type { LayoutRect } from './rect';
 import type { TextSpec } from './portrait';
 
+/**
+ * The crop-grid tunables, which are NOT geometry from the screen tree: they are
+ * serialized on the `CropGridResizer` component, and **identically in both
+ * scenes**, so one table serves both orientations.
+ *
+ * These were wrong until ADR-022. The values here are the SCENE values; the C#
+ * initialisers in `CropGridResizer.cs` say 80 px, alpha 0.9 and 0.2, and Unity
+ * ships the serialized ones. Same trap as ADR-015, fifth occurrence.
+ */
+export const CROP_SHARED = {
+  /** `handleVisualSize` — 50, not the 80 the C# initialiser suggests. */
+  handleSizePx: 50,
+  /** `handleColor` — opaque white; the initialiser's 0.9 alpha is not shipped. */
+  handleColour: 'rgb(255 255 255 / 1)',
+  /** `minSizeFraction` — the grid may shrink to HALF its initial size, not a fifth. */
+  minSizeFraction: 0.5,
+} as const;
+
 export const IMAGE_SELECT_PORTRAIT = {
   screen: {
     rect: { kind: 'stretch' } satisfies LayoutRect,
@@ -55,6 +73,11 @@ export const IMAGE_SELECT_PORTRAIT = {
   } satisfies LayoutRect,
   panelBackground: 'rgb(0 0 0 / 0.5098)',
 
+  /**
+   * Child of `BalckBG`, i.e. of the PANEL. Landscape reparents this to the
+   * screen, which is why the parent is part of the table (see crop-landscape.ts).
+   */
+  descriptionParent: 'panel',
   /** Truncated in the scene dump at 60 chars; the full string ends "puzzle". */
   descriptionRect: {
     kind: 'horizontalBand',
@@ -178,6 +201,8 @@ export const CROP_PORTRAIT = {
   } satisfies LayoutRect,
   stageBackground: '#000000',
 
+  /** Child of `CropAreaBackground`, i.e. of the STAGE; landscape uses the screen. */
+  descriptionParent: 'stage',
   /** Instruction, floating ABOVE the stage — note anchorY > 1. */
   descriptionRect: {
     kind: 'fractional',
@@ -194,11 +219,10 @@ export const CROP_PORTRAIT = {
   gridSprite: '/assets/crop/crop-reference-frame.png',
   gridInitialSize: 500,
 
-  /** Corner handles created at runtime: 80 px, white at alpha 0.9. */
-  handleSizePx: 80,
-  handleColour: 'rgb(255 255 255 / 0.9)',
-  /** Grid may shrink to 20 % of its initial size (`minSizeFraction`). */
-  minSizeFraction: 0.2,
+  /** Corner handles and the minimum grid size — see `CROP_SHARED` (ADR-022). */
+  handleSizePx: CROP_SHARED.handleSizePx,
+  handleColour: CROP_SHARED.handleColour,
+  minSizeFraction: CROP_SHARED.minSizeFraction,
 
   rotateButtons: {
     size: { x: 120, y: 120 },

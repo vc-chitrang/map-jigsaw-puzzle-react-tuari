@@ -32,8 +32,11 @@
   justify-content: center;
   font-family: var(--font-display);
   font-weight: 700;
-  /* Scene strings are authored lowercase and render uppercase. */
-  text-transform: uppercase;
+  /*
+   * NO text-transform here. Only labels whose TMP `m_fontStyle` carries the
+   * UpperCase bit are uppercased, and `textStyle` emits that per label — "Play
+   * Again?" and "You Win!" are mixed case in both scenes (ADR-022).
+   */
   line-height: 1;
   pointer-events: none;
   -webkit-font-smoothing: antialiased;

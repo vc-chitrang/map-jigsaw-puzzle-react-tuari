@@ -107,12 +107,98 @@ describe('rectStyle — horizontal band', () => {
   });
 });
 
+describe('rectStyle — vertical band (the mirror idiom)', () => {
+  it('stretches the full parent height when the sizeDelta is zero', () => {
+    // Landscape ClearSearchBtn: anchors (1,0)-(1,1), pos (−15,0), size (30,0),
+    // pivot (1,0.5) ⇒ 30 px wide, hard against the right edge minus 15 px.
+    expect(
+      rectStyle({
+        kind: 'verticalBand',
+        anchorX: 1,
+        anchorMinY: 0,
+        anchorMaxY: 1,
+        pos: { x: -15, y: 0 },
+        size: { x: 30, y: 0 },
+        pivot: { x: 1, y: 0.5 },
+      }),
+    ).toEqual({
+      position: 'absolute',
+      left: 'calc(100.0000% - 45px)',
+      width: '30px',
+      top: '0.0000%',
+      height: '100.0000%',
+    });
+  });
+
+  it('applies a negative sizeDelta on the stretched axis, split by the pivot', () => {
+    // Landscape PrevButton: height = parent − 870, and with pivot.y 0.5 and
+    // pos.y 65 the box sits 435 − 65 = 370 px below the parent's top edge.
+    expect(
+      rectStyle({
+        kind: 'verticalBand',
+        anchorX: 0,
+        anchorMinY: 0,
+        anchorMaxY: 1,
+        pos: { x: 0, y: 65 },
+        size: { x: 75, y: -870 },
+        pivot: { x: 0, y: 0.5 },
+      }),
+    ).toEqual({
+      position: 'absolute',
+      left: '0.0000%',
+      width: '75px',
+      top: '370px',
+      height: 'calc(100.0000% - 870px)',
+    });
+  });
+
+  it('handles a partial anchor span', () => {
+    // Half-height band anchored to the left edge, pivot at its top.
+    expect(
+      rectStyle({
+        kind: 'verticalBand',
+        anchorX: 0,
+        anchorMinY: 0.25,
+        anchorMaxY: 0.75,
+        pos: { x: 10, y: 0 },
+        size: { x: 40, y: -100 },
+        pivot: { x: 0, y: 1 },
+      }),
+    ).toEqual({
+      position: 'absolute',
+      left: '10px',
+      width: '40px',
+      // top = (1 − 0.75)·100% − 0 − (1 − 1)·(−100) = 25%
+      top: '25.0000%',
+      height: 'calc(50.0000% - 100px)',
+    });
+  });
+});
+
 describe('textStyle', () => {
-  it('emits font size and colour', () => {
+  it('emits font size and colour, and no transform unless asked', () => {
     expect(textStyle({ fontSizePx: 68, colour: 'var(--map-white)' })).toEqual({
       fontSize: '68px',
       color: 'var(--map-white)',
+      textTransform: 'none',
     });
+  });
+
+  /**
+   * ADR-022: uppercasing is per label, from TMP `m_fontStyle & 16`. The footer
+   * labels carry it; "Play Again?" and "You Win!" do not, and a blanket CSS rule
+   * used to uppercase them anyway.
+   */
+  it('uppercases only the labels the scene marks UpperCase', () => {
+    expect(textStyle({ fontSizePx: 44, colour: '#fff', uppercase: true }).textTransform).toBe(
+      'uppercase',
+    );
+    expect(textStyle(L.footerButtons.reset.label).textTransform).toBe('uppercase');
+    expect(textStyle(L.startButton.label).textTransform).toBe('uppercase');
+    expect(textStyle(L.caption.text).textTransform).toBe('uppercase');
+    // Values and titles are not marked, so they render as authored.
+    expect(textStyle(L.highScore.title).textTransform).toBe('none');
+    expect(textStyle(L.timer.label).textTransform).toBe('none');
   });
 
   it('maps TMP m_margin to padding so labels clear their icons', () => {
@@ -120,6 +206,7 @@ describe('textStyle', () => {
     expect(textStyle(L.footerButtons.reset.label)).toEqual({
       fontSize: '68px',
       color: 'var(--map-white)',
+      textTransform: 'uppercase',
       paddingLeft: '90px',
       paddingTop: '8px',
       paddingRight: '0px',

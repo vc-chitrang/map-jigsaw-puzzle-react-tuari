@@ -72,6 +72,25 @@ export function App() {
   }, []);
 
   /**
+   * The cropped square, owned HERE for the same reason as `cropSource`.
+   *
+   * The Puzzle screen used to take ownership and revoke on unmount, which broke
+   * two flows: START then Back remounted the screen with a URL it had already
+   * revoked (a black board), and StrictMode's mount-cleanup-mount cycle revoked it
+   * before the first paint. The creator revokes; the screen only reads.
+   */
+  const preparedArtworkRef = useRef<CropSource | null>(null);
+
+  const replacePreparedArtwork = useCallback((next: CropSource | null) => {
+    const previous = preparedArtworkRef.current;
+    if (previous && previous.url !== next?.url && previous.url.startsWith('blob:')) {
+      URL.revokeObjectURL(previous.url);
+    }
+    preparedArtworkRef.current = next;
+    setPreparedArtwork(next);
+  }, []);
+
+  /**
    * Load an image for cropping through the Rust `image_fetch` command.
    *
    * Not via `<img src>`: the crop canvas reads pixels back, and a cross-origin
@@ -128,11 +147,12 @@ export function App() {
     };
   }, [openCropWith]);
 
-  // Release the pending crop image when the app goes away.
+  // Release both owned blob URLs when the app goes away.
   useEffect(
     () => () => {
-      const pending = cropSourceRef.current;
-      if (pending?.url.startsWith('blob:')) URL.revokeObjectURL(pending.url);
+      for (const owned of [cropSourceRef.current, preparedArtworkRef.current]) {
+        if (owned?.url.startsWith('blob:')) URL.revokeObjectURL(owned.url);
+      }
     },
     [],
   );
@@ -144,17 +164,17 @@ export function App() {
 
   const handleCropped = useCallback(
     (result: CropSource) => {
-      // The Puzzle screen takes ownership of the cropped blob; the SOURCE image is
-      // ours to release.
+      // Both blobs are ours: the source is finished with, the cropped square is
+      // handed to the Puzzle screen to READ and released here when it is replaced.
       replaceCropSource(null);
-      setPreparedArtwork(result);
+      replacePreparedArtwork(result);
       dispatchNav({ type: 'NAVIGATE', to: 'puzzle' });
     },
-    [replaceCropSource],
+    [replaceCropSource, replacePreparedArtwork],
   );
 
   /** Play Again needs a fresh random artwork, so the cropped one must be dropped. */
-  const handlePlayAgain = useCallback(() => setPreparedArtwork(null), []);
+  const handlePlayAgain = useCallback(() => replacePreparedArtwork(null), [replacePreparedArtwork]);
 
   /**
    * Back / Home, following the custom rules in `resolveBack`.
@@ -169,7 +189,7 @@ export function App() {
       case 'navigate':
         if (outcome.resetToLaunch) {
           replaceCropSource(null);
-          setPreparedArtwork(null);
+          replacePreparedArtwork(null);
           // The token is what actually resets the game. Clearing `preparedArtwork`
           // alone is not enough: if it was already null nothing changes and the
           // Puzzle screen would stay mid-game.
@@ -180,7 +200,7 @@ export function App() {
 
       case 'resetToLaunch':
         replaceCropSource(null);
-        setPreparedArtwork(null);
+        replacePreparedArtwork(null);
         setResetToken((token) => token + 1);
         return;
 
@@ -199,7 +219,7 @@ export function App() {
         return unreachable;
       }
     }
-  }, [nav, replaceCropSource]);
+  }, [nav, replaceCropSource, replacePreparedArtwork]);
 
   if (showHarness) {
     return (

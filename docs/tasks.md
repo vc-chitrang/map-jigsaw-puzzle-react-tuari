@@ -136,7 +136,7 @@ Status: `TODO` · `WIP` · `DONE` · `BLOCKED`
 | P6.1 | Landscape geometry — Puzzle screen | **DONE** | `src/layout/landscape.ts`; layout group and TMP margins read from the scene YAML, not the dump |
 | P6.2 | Orientation plumbing | **DONE** | `layout/chrome.ts` selects the data-driven parts; `LandscapeFooter` branches the flex-row mechanism (ADR-019) |
 | P6.3 | Verify both orientations render | **DONE** | Landscape at 960×540 and portrait re-checked for regression — figures in [roadmap.md](roadmap.md) |
-| P6.4 | Landscape geometry — ImageSelect, Browse, Crop, Win | **TODO** | Four more tables from `docs/ui/scene-landscape.md`. Note the landscape scene still has `ColorTint` buttons (U1) |
+| P6.4 | Landscape geometry — ImageSelect, Browse, Crop, Win | **DONE** | `src/layout/crop-landscape.ts`, `browse-landscape.ts`, `win-landscape.ts`, selected per screen in `layout/screens.ts` (ADR-021). Adds the `verticalBand` rect idiom and `descriptionParent`. All four screens measured at 960×540; portrait re-checked at 540×960. The landscape scene still has `ColorTint` buttons (U1) |
 | P6.5 | Decide how a landscape build is packaged | **DONE** | Client chose **two installers** (ADR-020). `src-tauri/tauri.landscape.conf.json` overlays `productName` + `identifier`; `build.bat landscape` sets `VITE_ORIENTATION` and passes the overlay |
 | P6.6 | Brand pass | **DONE** | Ambers settled in ADR-013; chrome neutrals now `--chrome-*` tokens. Layout-table colours stay literal by design |
 | P6.7 | 60 fps during tile animation at 4K | **TODO** | Needs the real hardware; tiles already animate with `transform` only |
@@ -144,6 +144,18 @@ Status: `TODO` · `WIP` · `DONE` · `BLOCKED`
 | P6.9 | 24 h soak test | **TODO** | Needs the kiosk |
 | P6.10 | Test the installer on kiosk hardware | **TODO** | Installer works; hardware untested |
 | P6.11 | Auto-start on boot + crash auto-restart | **TODO** | Windows task or registry Run key, plus a watchdog |
+
+## Parity fixes found while verifying Phase 6
+
+All four affect **portrait as well as landscape** — they were found by measuring the landscape screens
+and comparing against Unity, not by a landscape-only difference.
+
+| # | Fix | Status | Notes |
+|---|---|---|---|
+| F1 | Crop handles 80 → **50 px**, alpha 0.9 → **1.0**, `minSizeFraction` 0.2 → **0.5** | **DONE** | ADR-022. The scene's serialized `CropGridResizer` values; the port had the C# initialisers. Fifth instance of ADR-015 |
+| F2 | Card grid `gap` 24 → **16**, added padding **(16,16,16,40)**, card is now **square** like its Unity cell | **DONE** | ADR-022. From `SetupGridLayout`/`UpdateGridCellSize` — `CardGrid` has no `GridLayoutGroup` in either scene, so the code is the source of truth. Cards were `captionHeightPx` taller than the cell |
+| F3 | Label casing is per label (`TextSpec.uppercase` ← TMP `m_fontStyle & 16`), not a blanket CSS rule | **DONE** | ADR-022. "Play Again?" and "You Win!" were rendering as "PLAY AGAIN?" / uppercase in both orientations |
+| F4 | Cropped blob URL is owned and revoked by `App`, not by the Puzzle screen | **DONE** | ADR-023. The board rendered **completely black** after cropping; caught by a screenshot, invisible to every DOM assertion |
 
 ## Build & release tooling
 

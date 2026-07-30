@@ -3,7 +3,7 @@
 State for the next agent. Read this first, then [architecture.md](architecture.md),
 [roadmap.md](roadmap.md).
 
-**Last updated:** 2026-07-29
+**Last updated:** 2026-07-30
 
 ---
 
@@ -12,7 +12,7 @@ State for the next agent. Read this first, then [architecture.md](architecture.m
 | Track | State |
 |---|---|
 | **Unity app** (shipping) | Live kiosk build. Active work: brand pass (fonts/colours), button press feedback, disabled-state styling, on-screen-keyboard investigation. See §7. |
-| **React + Tauri port** | **Phases 0–5 complete; Phase 6 part-done.** 276 tests green. The whole loop plays end to end in **portrait**, and the **landscape Puzzle screen** now renders from its own geometry table. Outstanding: landscape tables for the other four screens, the pixel diff (§10), perf/soak on real hardware, auto-start, and a decision on how a landscape build is packaged. |
+| **React + Tauri port** | **Phases 0–5 complete; Phase 6 all geometry done.** 308 tests green. The whole loop plays end to end in **both orientations** — all five screens now render from per-orientation tables. Outstanding: the pixel diff (§10), perf/soak on real hardware, auto-start, and code signing. |
 
 **Building:** `build.bat` at the repo root — `build.bat` for portrait, `build.bat landscape` for
 landscape. Bumps the patch version, runs the tests, builds, prints the artefact paths. Add `minor`,
@@ -330,27 +330,64 @@ directly (ADR-015, 016, 017, 019). **Check the scene, always.**
 `justify-content: space-evenly` approximates the layout group's force-expand: measured 66.8 ref px
 between controls where Unity's maths predicts 70. Close, not exact — needs a capture.
 
+## 2g. What the rest of Phase 6 delivered
+
+| File | Contents |
+|---|---|
+| `src/layout/crop-landscape.ts` | Landscape ImageSelect + Crop geometry |
+| `src/layout/browse-landscape.ts` | Landscape Browse geometry |
+| `src/layout/win-landscape.ts` | Landscape Win geometry |
+| `src/layout/screens.ts` | Per-screen orientation selection + an explicit interface per screen |
+| `src/layout/rect.ts` | New `verticalBand` idiom; `textStyle` now emits `text-transform` |
+| `src/layout/crop.ts` | `CROP_SHARED` — the crop-grid tunables, corrected to the scene values |
+| `src/layout/browse.ts` | `CARD_GRID`, `DROPDOWN_POPUP`, `CARD_INTERNALS` — shared by both orientations |
+
+All four screen components now read `X_LAYOUT[ORIENTATION]` instead of importing `*_PORTRAIT`.
+Measured figures for every screen: [roadmap.md](roadmap.md) Phase 6.
+
+### The two things that were not "same shape, different numbers" (ADR-021)
+
+1. **The instruction line changes parent** — panel/stage in portrait, the SCREEN in landscape. The
+   table carries `descriptionParent` and the component honours it.
+2. **Landscape Browse needed a new rect idiom.** `ClearSearchBtn`, `SearchButton`, `PrevButton` and
+   `NextButton` are anchored to a vertical edge with the Y stretched *and* a `sizeDelta` on the
+   stretched axis. `verticalBand` handles it; the portrait table pre-resolved the same rects to point
+   rects, so the two tables express one scene idiom two ways (noted in both headers).
+
+### Four defects the verification found — all of which also affected PORTRAIT
+
+| # | Was | Ships | ADR |
+|---|---|---|---|
+| F1 | crop handles 80 px @ 0.9, min 0.2 | **50 px opaque, min 0.5** | 022 |
+| F2 | grid gap 24, no padding, non-square cards | **gap 16, padding (16,16,16,40), square** | 022 |
+| F3 | every button label uppercased | **only `m_fontStyle & 16` ones** — not "Play Again?" | 022 |
+| F4 | Puzzle screen revoked the cropped blob | **`App` owns and revokes it** | 023 |
+
+**F4 is the one to remember: the board was rendering completely BLACK after a crop, and every DOM
+assertion passed.** A screenshot found it. F1 is the *fifth* time the scene overrode a C# initialiser
+(ADR-015); F2 is the inverse — `CardGrid` has no `GridLayoutGroup` in either scene, so the runtime code
+is the source of truth. Ask which source the running build reads before trusting either.
+
 ---
 
 ## 8. Recommended next task
 
-**Finish Phase 6.** The Puzzle screen works in both orientations; four screens still need landscape
-tables.
+**Close out Phase 6.** All geometry is done in both orientations; what is left is hardware and
+packaging.
 
-1. **Landscape tables for ImageSelect, Browse, Crop and Win** — from `docs/ui/scene-landscape.md`.
-   Follow the `landscape.ts` pattern: transcribe verbatim, and read the scene YAML for anything the
-   dump cannot express (layout groups, TMP margins and alignments, active/inactive parents). Expect
-   the same class of surprise as the footer.
-2. **Decide the landscape packaging question (P6.5)** before building a landscape installer — two
-   products, or orientation as a runtime setting. This is a client-facing decision.
-3. **Performance and soak** — 60 fps during tile animation at 4K, memory stable across 100+ rebuilds,
-   24 h run. All need the real kiosk.
-4. **Auto-start on boot + crash auto-restart.**
-5. **Code signing (B5)** — procurement, so worth starting early.
+1. **Auto-start on boot + crash auto-restart (P6.11 / B6)** — the only remaining item that can be
+   built and unit-tested here. A scheduled task or a `Run` key plus a watchdog.
+2. **Performance and soak** — 60 fps during tile animation at 4K, memory stable across 100+ rebuilds,
+   24 h run. All need the real kiosk. Tiles already animate with `transform` only, and blob URLs now
+   have exactly one owner each (ADR-023), which is what a memory soak would have caught.
+3. **Code signing (B5)** — procurement, so worth starting early. **Two** artefacts to sign (ADR-020).
+4. **The pixel diff (§10)** — needs an interactive shell, nothing else.
+5. **Card internal geometry (P3.12)** — still unverified without the prefab. The card is now known to
+   be square (its Unity cell is), but the title/artist/accession sizes inside it are not confirmed.
 
-**Also outstanding:** the pixel diff (§10 — needs an interactive shell), `PerPageDD` (P3.11), card
-internal geometry (P3.12), a real phone-upload test (P4.11), and **code signing (B5)** — the installer
-is unsigned, so SmartScreen warns on first run.
+**Also outstanding:** `PerPageDD` (P3.11 — option list is in neither the scene nor the docs), a real
+phone-upload test (P4.11), and the kiosk-hardware install (P6.10). The installer is unsigned, so
+SmartScreen warns on first run.
 
 **And still, independently of all of it: rotate the API key and the OAuth `client_secret`.** Both are
 in the Unity repository's git history.
@@ -372,6 +409,21 @@ in the Unity repository's git history.
 - The browser-based verification path (Chrome DevTools viewport emulation against `npm run dev`) is
   how the Phase 0 and Phase 2 numbers were measured — it can emulate 2160×3840 on a smaller display,
   which neither the Tauri window nor the Unity player can.
+- **Driving the app in a browser, the recipe that worked (2026-07-30).** No `initScript` was available,
+  and it turns out none is needed: `isTauri()` is evaluated per call, so installing
+  `window.__TAURI_INTERNALS__ = { invoke }` **after** load is enough — the first Browse fetch then goes
+  through the stub, and if it already failed, typing in the search field and pressing Enter refetches.
+  Point each fixture's `primary_image` at a bundled asset (e.g. `/assets/fallback/fallback-01.png`) and
+  the whole Browse → Crop → Puzzle chain works offline.
+  Three traps in that environment: **(a)** the scale factor is computed from `window.innerWidth`, and
+  while the pane is not composited that reads 0, so the canvas renders at `scale(0)` — resize the
+  window once *after* load to force a recompute; **(b)** `window.dispatchEvent` from the tool's
+  isolated world does not reach the app's listeners, but `dispatchEvent` on a DOM node does, so tap a
+  button with `pointerdown` + `pointerup` on the element itself; **(c)** screenshots only work while the
+  pane is actually displayed.
+- **Solving the board from the outside** (to reach the win screen): read each tile's
+  `background-position` for its correct cell and its `translate3d` for its current cell, BFS over the
+  9!/2 states, then tap the tiles in order with ~200 ms between taps. 12–17 moves is typical.
 - **Never round-trip a source file through PowerShell `Get-Content -Raw` / `Set-Content`.** In 5.1 a
   file without a BOM is read as ANSI, so UTF-8 punctuation is mangled and written back
   double-encoded. Use the editing tools instead. This corrupted `layout/portrait.ts` once and had to
