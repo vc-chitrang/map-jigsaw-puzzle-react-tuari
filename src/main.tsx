@@ -17,8 +17,8 @@ import './styles/global.css';
 installExitHatch();
 installKioskLockdown();
 
-// Touch-only kiosk: hide the pointer in packaged builds, keep it while developing.
-if (import.meta.env.PROD) {
+// Keep mouse cursor visible in both dev and production builds.
+if (import.meta.env.VITE_HIDE_CURSOR === '1') {
   document.documentElement.dataset['cursor'] = 'hidden';
 }
 

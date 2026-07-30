@@ -987,3 +987,19 @@ Updated layout configurations (`portrait.ts`, `landscape.ts`, `crop.ts`, `crop-l
 **Consequences.**
 - UI buttons, icons, directional controls, and timer backgrounds render crisp vector lines at 4K resolution.
 - 308 Vitest unit tests pass and release build verified.
+
+---
+
+## ADR-036 — Visible Mouse Cursor in Production Release Builds
+
+**Date:** 2026-07-30 · **Status:** Accepted
+
+**Context.**
+Production builds previously set `data-cursor="hidden"` on `document.documentElement` in `src/main.tsx`, enforcing `cursor: none` across the app in packaged builds.
+
+**Decision.**
+Updated `src/main.tsx` to keep the mouse pointer visible in production release builds by default (gated under `import.meta.env.VITE_HIDE_CURSOR === '1'` if hidden cursor is explicitly needed).
+
+**Consequences.**
+- The mouse pointer is visible during mouse interactions and testing in release builds.
+- 308 Vitest unit tests pass and release build v0.1.7 verified.
