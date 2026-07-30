@@ -1003,3 +1003,21 @@ Updated `src/main.tsx` to keep the mouse pointer visible in production release b
 **Consequences.**
 - The mouse pointer is visible during mouse interactions and testing in release builds.
 - 308 Vitest unit tests pass and release build v0.1.7 verified.
+
+---
+
+## ADR-037 — Compile-Time Fallback API Configuration Embedding
+
+**Date:** 2026-07-30 · **Status:** Accepted
+
+**Context.**
+When installing the packaged release executable on a new machine without a `.env` file present beside the executable, `std::env::var()` calls returned empty strings, logging `base_url MISSING, key MISSING, client_id MISSING, client_secret MISSING` and falling back to bundled offline artwork.
+
+**Decision.**
+1. Updated `src-tauri/build.rs` to read `src-tauri/.env` at build time and emit `cargo:rustc-env` variables for all `MAP_*` configuration keys.
+2. Updated `src-tauri/src/config.rs` to use `option_env!(...)` compile-time fallbacks when runtime environment variables and local `.env` files are absent.
+
+**Consequences.**
+- Packaged release binaries run out-of-the-box on any new machine/kiosk with pre-configured API access.
+- Local `.env` files and system environment variables continue to override the compile-time defaults if specified.
+- 308 Vitest unit tests pass and release build v0.1.8 verified.

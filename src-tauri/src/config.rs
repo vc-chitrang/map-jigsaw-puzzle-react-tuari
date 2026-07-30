@@ -104,18 +104,23 @@ fn load_env_files() {
     }
 }
 
-fn var(name: &str) -> String {
-    std::env::var(name).unwrap_or_default().trim().to_string()
+fn var(name: &str, fallback_compile_time: Option<&'static str>) -> String {
+    let runtime_val = std::env::var(name).unwrap_or_default();
+    let runtime_trimmed = runtime_val.trim();
+    if !runtime_trimmed.is_empty() {
+        return runtime_trimmed.to_string();
+    }
+    fallback_compile_time.unwrap_or_default().trim().to_string()
 }
 
 fn load() -> ApiConfig {
     load_env_files();
 
     let config = ApiConfig {
-        base_url: var("MAP_API_BASE_URL"),
-        key: var("MAP_API_KEY"),
+        base_url: var("MAP_API_BASE_URL", option_env!("MAP_API_BASE_URL")),
+        key: var("MAP_API_KEY", option_env!("MAP_API_KEY")),
         collection_path: {
-            let path = var("MAP_API_COLLECTION_PATH");
+            let path = var("MAP_API_COLLECTION_PATH", option_env!("MAP_API_COLLECTION_PATH"));
             if path.is_empty() {
                 "api/public_hook/v1/artwork".to_string()
             } else {
@@ -123,7 +128,7 @@ fn load() -> ApiConfig {
             }
         },
         login_path: {
-            let path = var("MAP_API_LOGIN_PATH");
+            let path = var("MAP_API_LOGIN_PATH", option_env!("MAP_API_LOGIN_PATH"));
             if path.is_empty() {
                 "oauth/token".to_string()
             } else {
@@ -131,7 +136,7 @@ fn load() -> ApiConfig {
             }
         },
         socket_url: {
-            let url = var("MAP_SOCKET_URL");
+            let url = var("MAP_SOCKET_URL", option_env!("MAP_SOCKET_URL"));
             if url.is_empty() {
                 "https://i-am-puzzle.map-india.org".to_string()
             } else {
@@ -140,18 +145,18 @@ fn load() -> ApiConfig {
         },
         oauth: OAuthCredentials {
             grant_type: {
-                let grant = var("MAP_OAUTH_GRANT_TYPE");
+                let grant = var("MAP_OAUTH_GRANT_TYPE", option_env!("MAP_OAUTH_GRANT_TYPE"));
                 if grant.is_empty() {
                     "client_credentials".to_string()
                 } else {
                     grant
                 }
             },
-            client_id: var("MAP_OAUTH_CLIENT_ID"),
-            client_secret: var("MAP_OAUTH_CLIENT_SECRET"),
-            username: var("MAP_OAUTH_USERNAME"),
-            password: var("MAP_OAUTH_PASSWORD"),
-            scope: var("MAP_OAUTH_SCOPE"),
+            client_id: var("MAP_OAUTH_CLIENT_ID", option_env!("MAP_OAUTH_CLIENT_ID")),
+            client_secret: var("MAP_OAUTH_CLIENT_SECRET", option_env!("MAP_OAUTH_CLIENT_SECRET")),
+            username: var("MAP_OAUTH_USERNAME", option_env!("MAP_OAUTH_USERNAME")),
+            password: var("MAP_OAUTH_PASSWORD", option_env!("MAP_OAUTH_PASSWORD")),
+            scope: var("MAP_OAUTH_SCOPE", option_env!("MAP_OAUTH_SCOPE")),
         },
     };
 
