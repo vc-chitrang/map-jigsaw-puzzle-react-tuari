@@ -290,6 +290,15 @@ export function BrowseScreen({ onBack, onSelectArtwork }: BrowseScreenProps) {
             ))}
           </select>
         </div>
+
+        {/* GridViewButton — visual only (one grid view; nothing to switch). */}
+        <img
+          className={styles.gridViewButton}
+          style={rectStyle(B.resultInfoBar.gridViewRect)}
+          src={B.resultInfoBar.gridViewSprite}
+          alt=""
+          aria-hidden="true"
+        />
       </div>
 
       {/* ---- Card grid ---- */}

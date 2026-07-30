@@ -283,6 +283,12 @@
   overflow: visible;
 }
 
+/* GridViewButton — pink tile sprite, preserveAspect. Visual only. */
+.gridViewButton {
+  object-fit: contain;
+  pointer-events: none;
+}
+
 .sortLabel {
   display: flex;
   align-items: center;

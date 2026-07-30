@@ -210,6 +210,20 @@ export const BROWSE_PORTRAIT = {
     } satisfies LayoutRect,
     sortLabel: { fontSizePx: 24, colour: 'var(--map-white)', text: 'Sort By' } satisfies TextSpec,
     /**
+     * GridViewButton — scene rect: anchor (1,0.5), pos (0,0), size 60x60,
+     * pivot (1,0.5), sprite GridView.png tinted #FFFFFF (the sprite is the pink
+     * tile itself). Rendered VISUAL ONLY: there is a single grid view, so it
+     * does not switch anything. The pink pill sits at the right end of the bar.
+     */
+    gridViewRect: {
+      kind: 'point',
+      anchor: { x: 1, y: 0.5 },
+      pos: { x: 0, y: 0 },
+      size: { x: 60, y: 60 },
+      pivot: { x: 1, y: 0.5 },
+    } satisfies LayoutRect,
+    gridViewSprite: '/assets/browse/grid-view.png',
+    /**
      * `PerPageDD` at (0.535, 0.2001)-(0.6823, 0.7999) is active in the scene but
      * its option list is neither in the scene nor in the docs, so it is NOT
      * ported rather than guessed. `limit` stays at the documented 40.

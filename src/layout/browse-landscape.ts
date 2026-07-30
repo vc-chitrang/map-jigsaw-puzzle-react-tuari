@@ -213,6 +213,19 @@ export const BROWSE_LANDSCAPE = {
       pivot: { x: 1, y: 0.5 },
     } satisfies LayoutRect,
     sortLabel: { fontSizePx: 24, colour: 'var(--map-white)', text: 'Sort By' } satisfies TextSpec,
+    /**
+     * GridViewButton — 45x45 here (60x60 in portrait), anchor (1,0.5),
+     * pivot (1,0.5). Visual only, sprite GridView.png (pink tile). See the
+     * portrait table for the rationale.
+     */
+    gridViewRect: {
+      kind: 'point',
+      anchor: { x: 1, y: 0.5 },
+      pos: { x: 0, y: 0 },
+      size: { x: 45, y: 45 },
+      pivot: { x: 1, y: 0.5 },
+    } satisfies LayoutRect,
+    gridViewSprite: '/assets/browse/grid-view.png',
   },
 
   cardArea: {
