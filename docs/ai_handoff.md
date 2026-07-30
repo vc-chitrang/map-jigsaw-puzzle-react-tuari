@@ -451,6 +451,13 @@ in the Unity repository's git history.
   though `public/assets` was already populated. It now skips with exit 0 when the assets are present
   (`NAME_MAP.md` as the sentinel) and still fails loudly on a genuinely empty checkout. This is what
   makes the README "copy the three artefacts instead of bringing Unity" path actually build.
+- **Artwork images go through Rust and cache to app data (ADR-025).** `image_fetch`
+  caches to `%LOCALAPPDATA%\<identifier>\image-cache\<hash>.<ext>` — disk hit skips
+  the network. Grid previews (ImageKit **w600**) and full masters are both cached.
+  Two live-API-only defects were fixed here: the master host `static.cumulus.co.in`
+  was not allow-listed, and an **unquoted** `MAP_OAUTH_SCOPE` in a hand-edited
+  `.env` dropped the scope (token 1263 vs 1306) so the collection 403'd — quote it
+  (ADR-016 trap again). No cache eviction yet (P6.12).
 - **Kiosk auto-start lives in `scripts/kiosk/` (ADR-024), PowerShell only** — the kiosk has no Node or
   Pester. `KioskPolicy.ps1` is the pure, Pester-tested core (`npm run test:watchdog`, kept OUT of
   `npm test`); `kiosk-watchdog.ps1` is the supervisor loop (`-DryRun`, `-MaxIterations`, stub-exe

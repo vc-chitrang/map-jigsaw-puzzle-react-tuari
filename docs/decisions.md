@@ -4,6 +4,56 @@ Architectural decisions, newest first. Each entry: context → decision → cons
 
 ---
 
+## ADR-025 — Artwork images are fetched through Rust and cached under app data
+
+**Date:** 2026-07-30 · **Status:** Accepted (verified against the live API)
+
+**Context.** Two image defects surfaced once the collection was driven against the
+live API rather than a stub:
+
+1. **The full-resolution master was an unreachable host.** `primary_image` is
+   served from `static.cumulus.co.in`, which was not in `image_fetch`'s host
+   allow-list, so every full-res fetch was rejected as a bad host. Card previews
+   worked only because they loaded ImageKit (`ik.imagekit.io`) straight through an
+   `<img>`, bypassing the allow-list.
+2. **A reduced-scope token → HTTP 403 on the collection.** The hand-edited
+   `.env` (Unity absent, so the generator could not run) had
+   `MAP_OAUTH_SCOPE=read-artwork read-department` **unquoted**. `dotenvy` stops at
+   the first unquoted space, so the app logged in without the scope (token 1263 vs
+   1306 chars) and the collection endpoint answered **403**. `check-api.ps1` has
+   its own parser that tolerated the space, which masked the fault at 200. This is
+   the ADR-016 trap a second time.
+
+**Decision.**
+- Add `cumulus.co.in` to `ALLOWED_IMAGE_HOSTS` (covers `static.cumulus.co.in`).
+- `image_fetch` now **caches to app data**: the URL is hashed to
+  `%LOCALAPPDATA%\<identifier>\image-cache\<hash>.<ext>`; a hit is served from disk
+  without touching the network, a miss is downloaded then written (temp file +
+  rename, so a crash cannot leave a truncated file served as valid). It backs both
+  the low-res grid previews (ImageKit **w600**, ~90 KB) and the full-resolution
+  master loaded when a card is opened (~4–7 MB) — distinct URLs, cached
+  independently.
+- `ArtworkCard` loads its preview through `image_fetch` (a cached blob, revoked on
+  unmount) instead of a raw CDN `<img>`, so previews are cached too and go through
+  the one image path.
+- The `.env` fix is to **quote** the scope value. It is not a code change; a
+  `.env` with a spaced, unquoted value must be quoted (the generator already does
+  this).
+
+**Consequences.**
+- Verified live: login token back to 1306 chars, collection **200**, and a boot
+  fetch wrote a **3.9 MB** master to the cache dir; a second fetch of the same URL
+  is served from disk. Front-end build, `cargo check`, vitest (308) all green.
+- **No eviction yet.** Previews are tiny; masters are cached only when opened. A
+  months-long kiosk run should add a periodic cache-size cap (tracked below).
+- Pure-browser dev (no Tauri, no stub) no longer shows previews, since they route
+  through Rust. The kiosk and the stubbed dev harness are unaffected.
+- **The running build beats the stub, again.** The 4K-master host and the 403 were
+  both invisible until the live API was driven end to end — a stubbed render had
+  hidden them.
+
+---
+
 ## ADR-024 — Auto-start and crash-restart: a logon scheduled task drives an external watchdog
 
 **Date:** 2026-07-30 · **Status:** Accepted

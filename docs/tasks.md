@@ -96,6 +96,8 @@ Status: `TODO` · `WIP` · `DONE` · `BLOCKED`
 | P3.11 | `PerPageDD` (results-per-page dropdown) | **TODO** | Active in the scene but its option list is undocumented; not guessed. `limit` stays 40 |
 | P3.12 | Verify card internal geometry | **BLOCKED** | The card prefab is not in the repo — needs the prefab or a Unity screenshot |
 | P3.13 | `check-api.ps1` connectivity probe | **DONE** | Login + fetch, reporting status and shape while printing no URL, key or token |
+| P3.14 | Cache artwork under app data; fix master host; cached previews | **DONE** | ADR-025. `image_fetch` caches to `%LOCALAPPDATA%\<id>\image-cache`; added `cumulus.co.in` (the `primary_image` master host, previously rejected). Grid previews (ImageKit w600) + full masters both cached. Verified live: 403 (from an unquoted `MAP_OAUTH_SCOPE`, ADR-016 trap) resolved by quoting; token 1306, collection 200, 3.9 MB master cached. **No eviction yet** (P6.12) |
+| P6.12 | Cache eviction / size cap for `image-cache` | **TODO** | Masters are ~4–7 MB each and cached on open; a months-long kiosk run needs a periodic size cap or LRU. Previews (~90 KB) are negligible |
 
 ## Phase 4 — Crop + QR upload
 
