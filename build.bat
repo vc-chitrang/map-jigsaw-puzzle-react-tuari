@@ -8,10 +8,19 @@ REM  Bumps the version, makes sure the generated inputs exist, and produces the
 REM  NSIS installer plus the standalone .exe.
 REM
 REM  Usage:
-REM    build.bat              bump the PATCH number (0.1.0 -> 0.1.1) and build
-REM    build.bat minor        bump the MINOR number (0.1.4 -> 0.2.0) and build
-REM    build.bat major        bump the MAJOR number (0.2.7 -> 1.0.0) and build
-REM    build.bat same         build WITHOUT changing the version
+REM    build.bat                    PORTRAIT, bump the PATCH number
+REM    build.bat landscape          LANDSCAPE, bump the PATCH number
+REM    build.bat minor              portrait, bump the MINOR number
+REM    build.bat landscape major    landscape, bump the MAJOR number
+REM    build.bat same               build WITHOUT changing the version
+REM
+REM  Arguments may be given in either order. Version words: patch (default),
+REM  minor, major, same. Orientation words: portrait (default), landscape.
+REM
+REM  TWO SEPARATE PRODUCTS (ADR-020). The landscape build overlays
+REM  tauri.landscape.conf.json, which changes productName and identifier, so the
+REM  two installers coexist instead of overwriting one another. The version is
+REM  shared: both products ship at the same version from package.json.
 REM
 REM  The version shown at the bottom-left of the app, in the installer, and in
 REM  the .exe file properties all come from package.json. Nothing is hardcoded.
@@ -21,15 +30,27 @@ cd /d "%~dp0"
 
 set "PS=powershell -NoProfile -ExecutionPolicy Bypass -File"
 set "BUMP_ARGS=-Part patch"
+set "ORIENTATION=portrait"
+set "TAURI_ARGS="
 
-if /i "%~1"=="minor" set "BUMP_ARGS=-Part minor"
-if /i "%~1"=="major" set "BUMP_ARGS=-Part major"
-if /i "%~1"=="same"  set "BUMP_ARGS=-NoBump"
-if /i "%~1"=="patch" set "BUMP_ARGS=-Part patch"
+REM Accept the two kinds of word in either order.
+for %%a in (%*) do (
+    if /i "%%a"=="minor"     set "BUMP_ARGS=-Part minor"
+    if /i "%%a"=="major"     set "BUMP_ARGS=-Part major"
+    if /i "%%a"=="patch"     set "BUMP_ARGS=-Part patch"
+    if /i "%%a"=="same"      set "BUMP_ARGS=-NoBump"
+    if /i "%%a"=="portrait"  set "ORIENTATION=portrait"
+    if /i "%%a"=="landscape" set "ORIENTATION=landscape"
+)
+
+REM VITE_ORIENTATION drives the front-end geometry tables; the config overlay
+REM drives productName, identifier and the window.
+set "VITE_ORIENTATION=%ORIENTATION%"
+if /i "%ORIENTATION%"=="landscape" set "TAURI_ARGS=--config src-tauri/tauri.landscape.conf.json"
 
 echo.
 echo ============================================================
-echo  MAP Jigsaw Puzzle - release build
+echo  MAP Jigsaw Puzzle - release build (%ORIENTATION%)
 echo ============================================================
 
 REM --- 1. Dependencies ------------------------------------------------------
@@ -88,9 +109,9 @@ if errorlevel 1 (
 
 REM --- 5. Build -------------------------------------------------------------
 echo.
-echo [5/5] Building the Tauri release bundle...
+echo [5/5] Building the Tauri release bundle (%ORIENTATION%)...
 echo       First run compiles all Rust dependencies with LTO - expect a few minutes.
-call npm run tauri:build
+call npx tauri build %TAURI_ARGS%
 if errorlevel 1 goto :fail
 
 REM --- Report ---------------------------------------------------------------
@@ -100,8 +121,16 @@ REM not the productName, and the installer name embeds the version.
 set "EXE="
 for %%f in ("%CD%\src-tauri\target\release\*.exe") do set "EXE=%%~ff"
 
+REM Match this orientation's installer specifically: both products' installers live
+REM in the same folder, so a bare glob would report whichever sorted last.
 set "SETUP="
-for %%f in ("%CD%\src-tauri\target\release\bundle\nsis\*-setup.exe") do set "SETUP=%%~ff"
+if /i "%ORIENTATION%"=="landscape" (
+    for %%f in ("%CD%\src-tauri\target\release\bundle\nsis\*Landscape*-setup.exe") do set "SETUP=%%~ff"
+) else (
+    for %%f in ("%CD%\src-tauri\target\release\bundle\nsis\*-setup.exe") do (
+        echo %%~nxf | findstr /i "Landscape" >nul || set "SETUP=%%~ff"
+    )
+)
 
 echo.
 echo ============================================================

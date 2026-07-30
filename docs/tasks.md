@@ -137,7 +137,7 @@ Status: `TODO` · `WIP` · `DONE` · `BLOCKED`
 | P6.2 | Orientation plumbing | **DONE** | `layout/chrome.ts` selects the data-driven parts; `LandscapeFooter` branches the flex-row mechanism (ADR-019) |
 | P6.3 | Verify both orientations render | **DONE** | Landscape at 960×540 and portrait re-checked for regression — figures in [roadmap.md](roadmap.md) |
 | P6.4 | Landscape geometry — ImageSelect, Browse, Crop, Win | **TODO** | Four more tables from `docs/ui/scene-landscape.md`. Note the landscape scene still has `ColorTint` buttons (U1) |
-| P6.5 | Decide how a landscape build is packaged | **TODO** | **Needs a decision:** two installers with different `productName`/`identifier`, or make orientation a runtime setting instead of a build flag. Today it is `VITE_ORIENTATION` at build time |
+| P6.5 | Decide how a landscape build is packaged | **DONE** | Client chose **two installers** (ADR-020). `src-tauri/tauri.landscape.conf.json` overlays `productName` + `identifier`; `build.bat landscape` sets `VITE_ORIENTATION` and passes the overlay |
 | P6.6 | Brand pass | **DONE** | Ambers settled in ADR-013; chrome neutrals now `--chrome-*` tokens. Layout-table colours stay literal by design |
 | P6.7 | 60 fps during tile animation at 4K | **TODO** | Needs the real hardware; tiles already animate with `transform` only |
 | P6.8 | Memory stable across 100+ rebuilds | **TODO** | Blob URLs are revoked on replacement; needs a soak to confirm |

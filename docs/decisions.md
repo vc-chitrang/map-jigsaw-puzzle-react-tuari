@@ -4,6 +4,46 @@ Architectural decisions, newest first. Each entry: context → decision → cons
 
 ---
 
+## ADR-020 — Portrait and landscape ship as two separate installers
+
+**Date:** 2026-07-30 · **Status:** Accepted (client directive)
+
+**Context.** Orientation is a build-time flag (`VITE_ORIENTATION`), because the geometry tables and
+the footer mechanism are selected at module scope. With a single `productName` and `identifier`, a
+landscape build would install *over* the portrait one — same install directory, same app data, same
+Start-menu entry.
+
+Two options were put to the client:
+
+1. **Two products** — separate `productName`/`identifier`, two installers that coexist.
+2. **One product, orientation as a runtime setting** — read from a config file beside the exe, so one
+   artefact serves both kiosks.
+
+I recommended (2): one artefact to sign, one to deploy, and the operator flips a file.
+
+**Decision.** The client chose **two installers**.
+
+**Implementation.** `src-tauri/tauri.landscape.conf.json` is a config OVERLAY, passed with
+`tauri build --config`. It changes only `productName`, `identifier` and the development window; the
+base config keeps everything else, so there is one place to edit CSP, bundle settings and icons.
+`build.bat` takes an orientation word (`portrait` — the default — or `landscape`) in either argument
+position, sets `VITE_ORIENTATION` for the front end and adds the overlay for the shell.
+
+**Consequences.**
+- The two installers coexist. Different `identifier` also means separate WebView2 data and separate
+  `localStorage`, so **high scores do not carry across orientations** — correct, since the key is
+  per-artwork and the two kiosks are different machines anyway.
+- Both products share the version from `package.json`. A release is "v0.1.3 portrait" and
+  "v0.1.3 landscape", not independently numbered.
+- **Two artefacts to code-sign** rather than one, which doubles that step (B5).
+- Both installers land in the same `bundle/nsis/` folder, so `build.bat` matches its own orientation's
+  installer by name rather than globbing whichever sorted last.
+- The Cargo binary keeps one name (`map-jigsaw-puzzle.exe`), so a landscape build overwrites the
+  portable exe from a previous portrait build in `target/release/`. Only the *installers* are durable
+  side by side; if both portable exes are ever needed at once, copy them out between builds.
+
+---
+
 ## ADR-019 — One component tree per screen, except where the LAYOUT MECHANISM differs
 
 **Date:** 2026-07-30 · **Status:** Accepted

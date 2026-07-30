@@ -47,12 +47,29 @@ build.bat
 That is the whole thing. It installs dependencies if needed, generates fonts and icons if missing,
 **bumps the patch version**, runs the tests, builds, and prints the installer and `.exe` paths.
 
-| Command | Version effect |
-|---|---|
-| `build.bat` | patch: `0.1.0` → `0.1.1` |
-| `build.bat minor` | minor: `0.1.4` → `0.2.0` |
-| `build.bat major` | major: `0.2.7` → `1.0.0` |
-| `build.bat same` | unchanged — rebuild the current version |
+| Command | Orientation | Version effect |
+|---|---|---|
+| `build.bat` | portrait | patch: `0.1.0` → `0.1.1` |
+| `build.bat landscape` | landscape | patch |
+| `build.bat minor` | portrait | minor: `0.1.4` → `0.2.0` |
+| `build.bat landscape major` | landscape | major: `0.2.7` → `1.0.0` |
+| `build.bat same` | portrait | unchanged — rebuild the current version |
+
+Arguments may be given in either order. Version words: `patch` (default), `minor`, `major`, `same`.
+Orientation words: `portrait` (default), `landscape`.
+
+### Two products, one version
+
+Portrait and landscape are **separate installers** that coexist (ADR-020). The landscape build applies
+`src-tauri/tauri.landscape.conf.json` as a config overlay, changing only `productName` and
+`identifier`; everything else — CSP, bundle settings, icons — stays in the base config.
+
+Because the identifiers differ, the two products get separate WebView2 data and separate
+`localStorage`, so **high scores do not carry between orientations**. Both share the version from
+`package.json`.
+
+Note the Cargo binary keeps one name, so a landscape build overwrites the *portable* exe left by a
+portrait build. Only the installers are durable side by side.
 
 Output:
 

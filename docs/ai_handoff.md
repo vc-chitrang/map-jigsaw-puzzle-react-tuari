@@ -14,9 +14,14 @@ State for the next agent. Read this first, then [architecture.md](architecture.m
 | **Unity app** (shipping) | Live kiosk build. Active work: brand pass (fonts/colours), button press feedback, disabled-state styling, on-screen-keyboard investigation. See §7. |
 | **React + Tauri port** | **Phases 0–5 complete; Phase 6 part-done.** 276 tests green. The whole loop plays end to end in **portrait**, and the **landscape Puzzle screen** now renders from its own geometry table. Outstanding: landscape tables for the other four screens, the pixel diff (§10), perf/soak on real hardware, auto-start, and a decision on how a landscape build is packaged. |
 
-**Building:** `build.bat` at the repo root. Bumps the patch version, runs the tests, builds, prints
-the artefact paths. `build.bat minor|major|same` for the other version behaviours. `package.json` is
-the single source of truth for the version; see [README](../README.md).
+**Building:** `build.bat` at the repo root — `build.bat` for portrait, `build.bat landscape` for
+landscape. Bumps the patch version, runs the tests, builds, prints the artefact paths. Add `minor`,
+`major` or `same` in either argument position for the other version behaviours. Portrait and landscape
+are **two separate installers** that coexist (ADR-020). `package.json` is the single source of truth
+for the version; see [README](../README.md).
+
+**Starting a fresh session?** [next-session-prompt.md](next-session-prompt.md) is a paste-ready
+briefing that gets a new chat productive without re-reading everything.
 
 The port repo is this repository. `npm install && npm run build:fonts && npm run build:icons &&
 npm run tauri:dev` gets you running — see [README.md](../README.md).

@@ -1,0 +1,22 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "MAP Jigsaw Puzzle Landscape",
+  "identifier": "cloud.viitor.map.jigsaw-puzzle-landscape",
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "MAP Jigsaw Puzzle (Landscape)",
+        "width": 960,
+        "height": 540,
+        "resizable": true,
+        "decorations": true,
+        "fullscreen": false,
+        "alwaysOnTop": false,
+        "center": true,
+        "focus": true,
+        "dragDropEnabled": false
+      }
+    ]
+  }
+}
