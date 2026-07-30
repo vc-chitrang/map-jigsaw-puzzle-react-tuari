@@ -102,7 +102,8 @@
 }
 
 .divider {
-  object-fit: contain;
+  object-fit: fill;
+  background-color: rgb(255 255 255 / 0.4);
   pointer-events: none;
 }
 

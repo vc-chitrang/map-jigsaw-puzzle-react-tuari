@@ -11,6 +11,7 @@
   position: absolute;
   background: var(--colour-board-outline);
   pointer-events: none;
+  z-index: 0;
 }
 
 .tile {
@@ -25,6 +26,7 @@
   cursor: pointer;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
+  z-index: 2;
   /*
    * 140 ms OutCubic, compositor-only. `transform` and nothing else — animating
    * left/top would re-run layout on nine 4K elements every frame.
@@ -41,6 +43,7 @@
   background-repeat: no-repeat;
   background-color: var(--map-kohl);
   pointer-events: none;
+  z-index: 3;
 }
 
 .arrow {
@@ -57,6 +60,7 @@
   cursor: pointer;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
+  z-index: 1;
   /*
    * Idle pulse: a small oscillation over 250 ms, linear, DOTween Yoyo +
    * SetLoops(-1) => alternate + infinite. Each arrow nudges toward the

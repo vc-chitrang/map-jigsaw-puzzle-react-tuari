@@ -199,19 +199,55 @@ fn push_params(query: &mut Vec<(String, String)>, params: &CollectionParams) {
     }
 }
 
-/// Fetch a page of the collection.
-///
-/// Stale-response handling lives in the renderer (`AbortController` + a request
-/// id, mirroring Unity's `_fetchId`). This command stays stateless so two
-/// in-flight requests cannot interfere with each other here.
+fn collection_cache_dir(app: &tauri::AppHandle) -> Result<PathBuf, ApiError> {
+    app.path()
+        .app_cache_dir()
+        .map(|dir| dir.join("collection_cache"))
+        .map_err(|_| ApiError::Request("no cache directory".into()))
+}
+
+fn collection_cache_key(params: &CollectionParams) -> String {
+    let mut hasher = std::collections::hash_map::DefaultHasher::new();
+    format!("{:?}", params).hash(&mut hasher);
+    format!("col_{:016x}.json", hasher.finish())
+}
+
+/// Fetch a page of the collection with disk caching and timing logs.
 #[tauri::command]
-pub async fn collection_fetch(params: CollectionParams) -> Result<serde_json::Value, ApiError> {
+pub async fn collection_fetch(
+    app: tauri::AppHandle,
+    params: CollectionParams,
+) -> Result<serde_json::Value, ApiError> {
+    let start_time = std::time::Instant::now();
     let config = config::get();
     if !config.is_usable() {
         return Err(ApiError::NotConfigured);
     }
 
-    // Both are required: without the bearer token the endpoint answers HTTP 500.
+    // 1. Check disk cache
+    let cache_dir = collection_cache_dir(&app);
+    if let Ok(dir) = &cache_dir {
+        let cache_file = dir.join(collection_cache_key(&params));
+        if let Ok(metadata) = std::fs::metadata(&cache_file) {
+            if let Ok(modified) = metadata.modified() {
+                // Cache valid for 24 hours
+                if modified.elapsed().unwrap_or(Duration::from_secs(999999)) < Duration::from_secs(86400) {
+                    if let Ok(bytes) = std::fs::read(&cache_file) {
+                        if let Ok(val) = serde_json::from_slice::<serde_json::Value>(&bytes) {
+                            let elapsed = start_time.elapsed().as_millis();
+                            log::info!("[collection_fetch CACHE HIT] loaded in {}ms", elapsed);
+                            println!("[collection_fetch CACHE HIT] loaded in {}ms", elapsed);
+                            return Ok(val);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // 2. Cache miss — fetch from remote API
+    log::info!("[collection_fetch CACHE MISS] fetching from remote API...");
+    println!("[collection_fetch CACHE MISS] fetching from remote API...");
     let token = bearer_token().await?;
 
     let mut query: Vec<(String, String)> = vec![("key".into(), config.key.clone())];
@@ -223,8 +259,6 @@ pub async fn collection_fetch(params: CollectionParams) -> Result<serde_json::Va
         .query(&query)
         .send()
         .await
-        // The error is stringified WITHOUT the URL: reqwest includes the full URL
-        // in its Display output, and ours carries the key.
         .map_err(|error| ApiError::Request(scrub(&error)))?;
 
     let status = response.status();
@@ -232,10 +266,25 @@ pub async fn collection_fetch(params: CollectionParams) -> Result<serde_json::Va
         return Err(ApiError::Status(status.as_u16()));
     }
 
-    response
+    let val = response
         .json::<serde_json::Value>()
         .await
-        .map_err(|_| ApiError::Malformed)
+        .map_err(|_| ApiError::Malformed)?;
+
+    let elapsed = start_time.elapsed().as_millis();
+    log::info!("[collection_fetch NETWORK SUCCESS] fetched in {}ms", elapsed);
+    println!("[collection_fetch NETWORK SUCCESS] fetched in {}ms", elapsed);
+
+    // 3. Persist to disk cache (best-effort)
+    if let Ok(dir) = cache_dir {
+        let cache_file = dir.join(collection_cache_key(&params));
+        let _ = std::fs::create_dir_all(&dir);
+        if let Ok(bytes) = serde_json::to_vec(&val) {
+            let _ = std::fs::write(cache_file, bytes);
+        }
+    }
+
+    Ok(val)
 }
 
 /// A reqwest error rendered without any URL, so a leaked key cannot reach a log.

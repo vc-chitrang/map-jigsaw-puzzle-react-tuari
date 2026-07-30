@@ -175,12 +175,12 @@ export const IMAGE_SELECT_PORTRAIT = {
     codeSprite: '/assets/qr/qr-code.png',
   },
 
-  /** Decorative divider between the two choices. */
+  /** Horizontal divider between the top and bottom choices in portrait. */
   dividerRect: {
     kind: 'point',
     anchor: { x: 0.5, y: 0.5 },
-    pos: { x: 0, y: 68 },
-    size: { x: 2, y: 142 },
+    pos: { x: 0, y: -38 },
+    size: { x: 682, y: 2 },
     pivot: { x: 0.5, y: 0.5 },
   } satisfies LayoutRect,
   dividerSprite: '/assets/common/vertical-line.png',

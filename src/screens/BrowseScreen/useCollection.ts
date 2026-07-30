@@ -81,6 +81,7 @@ export function useCollection(): CollectionState & { actions: CollectionActions 
     setStatus('loading');
 
     const sort = SORT_MODES[sortIndex] ?? SORT_MODES[0];
+    const startTime = performance.now();
 
     void (async () => {
       try {
@@ -100,6 +101,9 @@ export function useCollection(): CollectionState & { actions: CollectionActions 
         );
 
         if (controller.signal.aborted) return;
+
+        const duration = Math.round(performance.now() - startTime);
+        console.log(`[browse] collection page ${page} loaded in ${duration}ms`);
 
         setData(result);
         if (!filtersPopulated.current && result.filters) {

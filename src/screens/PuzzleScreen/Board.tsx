@@ -53,9 +53,9 @@ function sliceStyle(tile: Tile, geometry: BoardGeometry, artworkUrl: string, col
  *
  * Layer order matches Unity sibling order (pixel-perfect §5):
  *   1. Outline — board + `tileSpacing` overhang, white, non-interactive
- *   2. Tiles
- *   3. Empty slot — gains the 9th slice on win
- *   4. Arrows — on top
+ *   2. Arrows — rendered behind tiles so they don't overlap tile faces
+ *   3. Tiles
+ *   4. Empty slot — gains the 9th slice on win
  *
  * `BoardPanel_Container` (holding the artwork title) mirrors the board rect and
  * renders above it.
@@ -120,6 +120,37 @@ export function Board({
           }}
         />
 
+        {arrowsVisible
+          ? arrows.map((arrow) => {
+              // up | down | left | right — drives the directional pulse class.
+              const dir = arrow.asset.replace('arrow-', '').replace('.png', '');
+              return (
+                <button
+                  key={arrow.index}
+                  type="button"
+                  className={`${styles.arrow} ${styles[`arrow-${dir}`]}`}
+                  style={
+                    {
+                      width: `${arrow.size}px`,
+                      height: `${arrow.size}px`,
+                      // Position via left/top, NOT transform: the pulse animates
+                      // `transform`, and combining it with a positioning
+                      // transform scales the position (drift to bottom-right).
+                      left: `${arrow.position.x}px`,
+                      top: `${arrow.position.y}px`,
+                      // Pulse travel, proportional to the arrow so every size
+                      // reads the same. Consumed by the @keyframes below.
+                      '--arrow-pulse-shift': `${arrow.size * 0.14}px`,
+                      backgroundImage: `url("/assets/gameplay/${arrow.asset}")`,
+                    } as CSSProperties
+                  }
+                  onClick={() => onArrowTap(arrow.targetCell)}
+                  aria-label={`Move the tile ${dir}`}
+                />
+              );
+            })
+          : null}
+
         {board.tiles.map((tile) => {
           const position = cellPosition(tile.currentCell, geometry);
           return (
@@ -160,37 +191,6 @@ export function Board({
             }}
           />
         ) : null}
-
-        {arrowsVisible
-          ? arrows.map((arrow) => {
-              // up | down | left | right — drives the directional pulse class.
-              const dir = arrow.asset.replace('arrow-', '').replace('.png', '');
-              return (
-                <button
-                  key={arrow.index}
-                  type="button"
-                  className={`${styles.arrow} ${styles[`arrow-${dir}`]}`}
-                  style={
-                    {
-                      width: `${arrow.size}px`,
-                      height: `${arrow.size}px`,
-                      // Position via left/top, NOT transform: the pulse animates
-                      // `transform`, and combining it with a positioning
-                      // transform scales the position (drift to bottom-right).
-                      left: `${arrow.position.x}px`,
-                      top: `${arrow.position.y}px`,
-                      // Pulse travel, proportional to the arrow so every size
-                      // reads the same. Consumed by the @keyframes below.
-                      '--arrow-pulse-shift': `${arrow.size * 0.14}px`,
-                      backgroundImage: `url("/assets/gameplay/${arrow.asset}")`,
-                    } as CSSProperties
-                  }
-                  onClick={() => onArrowTap(arrow.targetCell)}
-                  aria-label={`Move the tile ${dir}`}
-                />
-              );
-            })
-          : null}
       </div>
 
       {/* BoardPanel_Container — mirrors the board rect, renders above it. */}

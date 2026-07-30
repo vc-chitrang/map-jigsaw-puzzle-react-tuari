@@ -25,6 +25,19 @@ import styles from './BrowseScreen.module.css';
  * selected by orientation in `src/layout/screens.ts`.
  */
 
+function getPageNumbers(current: number, total: number): (number | '...')[] {
+  if (total <= 7) {
+    return Array.from({ length: total }, (_, i) => i + 1);
+  }
+  if (current <= 4) {
+    return [1, 2, 3, 4, 5, '...', total];
+  }
+  if (current >= total - 3) {
+    return [1, '...', total - 4, total - 3, total - 2, total - 1, total];
+  }
+  return [1, '...', current - 1, current, current + 1, '...', total];
+}
+
 const B = BROWSE_LAYOUT[ORIENTATION];
 
 interface BrowseScreenProps {
@@ -107,8 +120,9 @@ export function BrowseScreen({ onBack, onSelectArtwork }: BrowseScreenProps) {
   }, [collection.filters]);
 
   const pagination = collection.pagination;
-  const canPrev = collection.page > 1;
-  const canNext = pagination ? collection.page < pagination.last_page : false;
+  const isLoading = collection.status === 'loading';
+  const canPrev = !isLoading && collection.page > 1;
+  const canNext = !isLoading && (pagination ? collection.page < pagination.last_page : false);
 
   // Only artworks with an image can become a puzzle (game-logic §8.6).
   const playable = collection.items.filter(hasImage);
@@ -259,7 +273,7 @@ export function BrowseScreen({ onBack, onSelectArtwork }: BrowseScreenProps) {
           className={styles.resultCount}
           style={{ ...rectStyle(B.resultInfoBar.countRect), ...textStyle(B.resultInfoBar.count) }}
         >
-          {collection.status === 'loading' ? 'Loading...' : formatResultCount(pagination)}
+          {isLoading ? 'Loading...' : formatResultCount(pagination)}
         </span>
 
         <div
@@ -303,6 +317,13 @@ export function BrowseScreen({ onBack, onSelectArtwork }: BrowseScreenProps) {
 
       {/* ---- Card grid ---- */}
       <div className={styles.cardContainer} style={rectStyle(B.cardArea.containerRect)}>
+        {isLoading && playable.length > 0 ? (
+          <div className={styles.loadingOverlay}>
+            <div className={styles.loadingSpinner} aria-hidden="true" />
+            <span>Loading Page {collection.page}...</span>
+          </div>
+        ) : null}
+
         <button
           type="button"
           className={styles.pageArrow}
@@ -319,7 +340,10 @@ export function BrowseScreen({ onBack, onSelectArtwork }: BrowseScreenProps) {
           />
         </button>
 
-        <div className={styles.cardScroll} style={rectStyle(B.cardArea.scrollRect)}>
+        <div
+          className={`${styles.cardScroll} ${isLoading ? styles.blurLoading : ''}`}
+          style={rectStyle(B.cardArea.scrollRect)}
+        >
           {collection.status === 'unavailable' || collection.status === 'error' ? (
             <div className={styles.emptyState}>
               <p className={styles.emptyMessage}>{collection.errorMessage}</p>
@@ -345,9 +369,15 @@ export function BrowseScreen({ onBack, onSelectArtwork }: BrowseScreenProps) {
                 padding: `${B.cardArea.paddingPx.top}px ${B.cardArea.paddingPx.right}px ${B.cardArea.paddingPx.bottom}px ${B.cardArea.paddingPx.left}px`,
               }}
             >
-              {playable.map((item) => (
-                <ArtworkCard key={item.id} item={item} onSelect={onSelectArtwork} />
-              ))}
+              {isLoading && playable.length === 0
+                ? Array.from({ length: 12 }, (_, i) => (
+                    <div key={i} className={styles.skeletonCard}>
+                      <div className={styles.cardSpinner} aria-hidden="true" />
+                    </div>
+                  ))
+                : playable.map((item) => (
+                    <ArtworkCard key={item.id} item={item} onSelect={onSelectArtwork} />
+                  ))}
             </div>
           )}
         </div>
@@ -372,8 +402,36 @@ export function BrowseScreen({ onBack, onSelectArtwork }: BrowseScreenProps) {
 
       {/* ---- Pagination ---- */}
       <div className={styles.paginationBar} style={rectStyle(B.pagination.rect)}>
+        {pagination && pagination.last_page > 1 ? (
+          <div className={styles.pageNumbers}>
+            {getPageNumbers(collection.page, pagination.last_page).map((item, index) =>
+              item === '...' ? (
+                <span key={`ellipsis-${index}`} className={styles.pageEllipsis}>
+                  ...
+                </span>
+              ) : (
+                <button
+                  key={`page-${item}`}
+                  type="button"
+                  className={`${styles.pagePill} ${
+                    item === collection.page ? styles.pagePillActive : ''
+                  }`}
+                  onClick={() => actions.goToPage(Number(item))}
+                  disabled={isLoading}
+                >
+                  {item}
+                </button>
+              ),
+            )}
+          </div>
+        ) : null}
+
         <span className={styles.pageInfo} style={textStyle(B.pagination.info)}>
-          {pagination ? `Page ${pagination.current_page} of ${pagination.last_page}` : ''}
+          {isLoading
+            ? `Loading...`
+            : pagination
+            ? `Page ${pagination.current_page} of ${pagination.last_page}`
+            : ''}
         </span>
       </div>
 

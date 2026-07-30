@@ -1,5 +1,5 @@
-import { fetchCollection, fetchImageAsBlobUrl } from '../../api/client';
-import { hasImage, type ResultsData } from '../../api/types';
+import { fetchImageAsBlobUrl } from '../../api/client';
+import type { ResultsData } from '../../api/types';
 import { cropToSquare, pickFallbackArtwork, releaseArtwork } from '../../image/cropToSquare';
 import type { ArtworkIdentity } from '../../game';
 
@@ -107,20 +107,5 @@ export async function loadFallbackArtwork(rng: () => number = Math.random): Prom
  * showing an error message is worse than a kiosk showing a different picture.
  */
 export async function loadRandomArtwork(rng: () => number = Math.random): Promise<LoadedArtwork> {
-  try {
-    const data = await fetchCollection();
-    const playable = data.results.data.filter(hasImage);
-
-    if (playable.length > 0) {
-      const index = Math.min(Math.floor(rng() * playable.length), playable.length - 1);
-      const chosen = playable[index];
-      if (chosen) return await loadArtworkFromCollection(chosen);
-    }
-
-    console.info('[artwork] collection returned nothing playable; using the bundled set');
-  } catch (error) {
-    console.info('[artwork] collection unavailable; using the bundled set', error);
-  }
-
   return loadFallbackArtwork(rng);
 }

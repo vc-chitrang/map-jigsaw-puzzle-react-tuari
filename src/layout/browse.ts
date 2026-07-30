@@ -138,9 +138,9 @@ export const BROWSE_PORTRAIT = {
     titleRect: {
       kind: 'point',
       anchor: { x: 0, y: 1 },
-      pos: { x: 0, y: 92 },
-      size: { x: 0, y: 0 },
-      pivot: { x: 0, y: 1 },
+      pos: { x: 0, y: 18.77 },
+      size: { x: 300, y: 70 },
+      pivot: { x: 0, y: 0 },
     } satisfies LayoutRect,
     title: { fontSizePx: 42, colour: 'var(--map-white)', text: 'Filter By' } satisfies TextSpec,
     clearFiltersRect: {

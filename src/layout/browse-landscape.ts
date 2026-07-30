@@ -137,9 +137,9 @@ export const BROWSE_LANDSCAPE = {
     titleRect: {
       kind: 'point',
       anchor: { x: 0, y: 1 },
-      pos: { x: 0, y: 48.4 },
-      size: { x: 0, y: 0 },
-      pivot: { x: 0, y: 1 },
+      pos: { x: 0, y: 0 },
+      size: { x: 300, y: 54 },
+      pivot: { x: 0, y: 0 },
     } satisfies LayoutRect,
     /** 24.5 px — the only fractional font size in either scene. */
     title: { fontSizePx: 24.5, colour: 'var(--map-white)', text: 'Filter By' } satisfies TextSpec,

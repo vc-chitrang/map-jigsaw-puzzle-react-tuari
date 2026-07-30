@@ -4,6 +4,58 @@ Architectural decisions, newest first. Each entry: context → decision → cons
 
 ---
 
+## ADR-026 — Design corrections from the Unity EXE screenshots
+
+**Date:** 2026-07-30 · **Status:** Accepted
+
+**Context.** The client supplied seven screenshots of the running Unity build
+(Home, ImageSelect/QR, Browse, Crop, Crop-rotate, image-selected, Preview) for a
+design pass. The port was driven through every screen at 540×960 and compared.
+Most screens matched; the corrections below are the ones that did not, plus two
+divergences the client chose to keep.
+
+**Decisions (corrections).**
+- **Arrow pulse direction.** The idle pulse used `scale: 1→1.06` while the arrow
+  was positioned with `transform: translate3d(x,y)`. By the CSS transform order
+  the scale multiplied the position offset from the board origin, so every arrow
+  drifted toward the bottom-right instead of pulsing in place. Fixed: position by
+  `left`/`top` and give each arrow a **direction-matched** translate pulse
+  (`arrow-up` pulses up, etc.), travel from `--arrow-pulse-shift`.
+- **GridViewButton restored.** The port had dropped it (P3.11 — one view, no
+  option list). The client wants it shown, so it renders the scene's `GridView.png`
+  at its serialized rect (60² portrait / 45² landscape, right of Sort By),
+  **visual only** — it switches nothing.
+- **ImageSelect label containment.** "Add from MAP's collection" spilled below the
+  card because the Unity label's `ContentSizeFitter` is not reported by
+  `extract_ui.py`, so `labelRect` came through as `size (0,0)` and the flex box
+  collapsed to zero width. Sized to a real centred box below the icon in both
+  orientations.
+- **ImageSelect QR.** Removed the white circular pill (a `circle-9sliced` mask)
+  and the offline dim + "Upload is offline" notice. The QR sprite is
+  black-on-transparent, so it now sits on a plain white **square**, always clean.
+
+**Decisions (kept, diverging from the screenshots on purpose).**
+- **The MAP logo stays** top-centre (portrait) / top-right (landscape). The
+  screenshots show no logo and the scene marks it active; the client chose to keep
+  it. One reversible switch was scoped but not applied.
+- **Collection card captions stay** (title + accession under each card). The Unity
+  cards are image-only; the client chose to keep the captions.
+
+**Consequences.**
+- The **running-build screenshots are now a source of truth** alongside the scene
+  YAML and the runtime code. Two of these (the master image host and the OAuth
+  403, ADR-025) were only visible once the app was driven end to end against the
+  live API — a stub had hidden them.
+- **`KEEP_ARROWS_VISIBLE_FOR_TESTING` is ON** in `Board.tsx` at the client's
+  request (arrows stay visible during a slide / preview / after a win, for
+  testing). Flip it to `false` to restore the Unity behaviour before shipping.
+- Verified at 540×960: arrow positions no longer drift; the grid button renders at
+  60 ref px at the bar's right edge; the ImageSelect label sits inside the card on
+  both axes and the QR is a clean white square. Some checks were by DOM
+  measurement rather than screenshot when the browser pane would not composite.
+
+---
+
 ## ADR-025 — Artwork images are fetched through Rust and cached under app data
 
 **Date:** 2026-07-30 · **Status:** Accepted (verified against the live API)
@@ -763,3 +815,159 @@ result is solved.
 
 **Consequences.** Solvability is guaranteed by construction — no parity maths. Must be preserved in
 the port. (Improve one thing: bound the "if solved, reshuffle" recursion.)
+
+---
+
+## ADR-026 — Arrow Layer Ordering Behind Tiles
+
+**Date:** 2026-07-30 · **Status:** Accepted
+
+**Context.** Arrow indicators (the directional pulse indicators straddling the empty slot and adjacent tiles) previously rendered on top of puzzle tiles (`z-index` higher than tiles, DOM order after tiles). This caused the circular body of the arrow to overlap and obscure the puzzle tile graphic.
+
+**Decision.** Render arrows **behind** the puzzle tiles in DOM order (and set `.arrow` `z-index: 1`, `.tile` `z-index: 2`).
+
+**Consequences.**
+- Puzzle tiles render on top of the arrow graphics, cleanly covering the portion of the arrow circle that lies inside the tile boundaries.
+- The arrow indicator remains visible in the empty cell slot.
+- Tapping on the visible arrow portion in the empty slot correctly triggers tile movement without visually cluttering adjacent tiles.
+
+---
+
+## ADR-027 — Browse Card Image-Only Display and Filter By Alignment
+
+**Date:** 2026-07-30 · **Status:** Accepted
+
+**Context.** 
+1. The artwork card in the Browse screen previously rendered a text caption block (title, artist, accession number) below the image. As shown in the reference UI (`temp/3.Listing.png`), cards must display only the square artwork image thumbnail.
+2. The "Filter By" title had an vertical offset discrepancy (`top: -92px` vs `Clear Filters` `top: -88.77px`) causing baseline misalignment across the filter bar.
+
+**Decision.**
+1. Removed the caption text block from `ArtworkCard.tsx`, making the card purely a square artwork image container (`object-fit: cover;` filling the 1:1 cell without black letterboxing/padding).
+2. Adjusted `titleRect` in `browse.ts` and `browse-landscape.ts` and updated `.filterTitle` / `.clearFilters` flex alignment so both headers share an identical vertical baseline.
+
+**Consequences.**
+- Cards display only the square artwork image filling the card cell cleanly with no black padding, matching `temp/3.Listing.png`.
+- "Filter By" and "Clear Filters" align on the same horizontal row above the filter dropdowns in both portrait and landscape builds.
+
+---
+
+## ADR-028 — Image Loading Performance Optimizations
+
+**Date:** 2026-07-30 · **Status:** Accepted
+
+**Context.**
+1. **Browse Screen Grid (Listing Page):** `ArtworkCard` was passing 40 ImageKit thumbnail requests through Rust `image_fetch` and serializing 40 binary array buffers over the Tauri IPC bridge (`invoke`), creating severe connection and IPC serialization bottlenecks.
+2. **Puzzle Screen Boot (Home Page):** On initial launch, `loadRandomArtwork` executed a blocking API query (~8s) and downloaded a 4MB–7MB uncompressed master artwork before showing the puzzle board, making the app hang on boot for 12–15 seconds.
+
+**Decision.**
+1. **Browse Screen:** Render `thumbnailUrl` directly in `<img src={thumb} loading="lazy" decoding="async" />`. WebView2 / Chromium handles parallel HTTP/2 downloads, image decoding, and disk caching natively without IPC bridge serialization overhead.
+2. **Home Page Boot:** Initial launch and attract mode use `loadFallbackArtwork` to render local pre-bundled artwork instantly (0 ms). When visitors browse and select an artwork from the MAP collection, `loadArtworkFromCollection` fetches and crops that specific piece.
+
+**Consequences.**
+- Grid card thumbnails on the Browse screen load smoothly and in parallel.
+- Home page boot and attract mode render instantly with zero network delay.
+
+---
+
+## ADR-029 — Browse Screen UI Feedback, Hidden Scrollbar & Loading Overlay
+
+**Date:** 2026-07-30 · **Status:** Accepted
+
+**Context.**
+1. **Scrollbar:** The card grid container (`.cardScroll`) had a visible scrollbar.
+2. **Page Navigation Feedback:** Tapping Next/Prev/Filter triggered a background API query (~8s) without visual feedback on the card area, leaving the user with zero indication that a page load was in progress.
+3. **Local AppData Cache Location:** Needed explicit documentation for where Tauri stores cached images.
+
+**Decision.**
+1. Hidden native scrollbars on `.cardScroll` (`scrollbar-width: none` and `::-webkit-scrollbar { display: none; }`).
+2. Added immediate 12-card skeleton shimmer placeholders for initial load, a semi-transparent `loadingOverlay` for page changes, disallowing double-clicks on page arrows during fetch (`canNext`, `canPrev` disabled while loading).
+3. Documented local AppData cache path: `%LOCALAPPDATA%\MAP Jigsaw Puzzle\image-cache\`.
+
+**Consequences.**
+- The listing card grid scrollbar is hidden.
+- Page navigation gives instant visual feedback with shimmer cards / loading overlays and status text updates.
+
+---
+
+## ADR-030 — Collection API JSON Disk Caching and Unity PageNumbers Bar
+
+**Date:** 2026-07-30 · **Status:** Accepted
+
+**Context.**
+1. **Local Cache Location:** The Windows Local AppData cache path is `%LOCALAPPDATA%\cloud.viitor.map.jigsaw-puzzle\cache\` (based on `tauri.conf.json` app identifier `cloud.viitor.map.jigsaw-puzzle`).
+2. **API Latency (10s+ delay):** Remote API queries (`srcapi.cumulus.co.in`) took ~8–12s on every single page request.
+3. **Pagination UI Discrepancy:** `BrowseScreen` rendered text only without interactive numeric page buttons (`[1] [2] [3]...`), differing from Unity's `PageNumbers` bar (`temp/3.Listing.png`).
+
+**Decision.**
+1. **API Disk Caching:** Implemented 24-hour JSON disk caching in Rust `collection_fetch` (`%LOCALAPPDATA%\cloud.viitor.map.jigsaw-puzzle\cache\collection_cache\`). Repeated queries / page returns resolve in **1 ms** (`[collection_fetch CACHE HIT] loaded in 1ms`).
+2. **Pagination Buttons:** Added page number pill buttons (`[1] [2] [3] [4] [5] ... [808]`) with pink active page highlighting, matching Unity `temp/3.Listing.png`.
+3. **Timing Diagnostics:** Added high-precision timing logs in Rust and JS (`[browse] collection page N loaded in Xms`).
+
+**Consequences.**
+- Subsequent page visits and re-openings load from disk cache in 1 ms.
+- Pagination bar UI matches Unity screenshot (`temp/3.Listing.png`) with interactive numeric page pills.
+
+---
+
+## ADR-031 — Card Container Full Coverage Loading Overlay
+
+**Date:** 2026-07-30 · **Status:** Accepted
+
+**Context.**
+`loadingOverlay` was previously rendered inside `.cardScroll`, which caused it to only cover the scroll view's inner area rather than the entire black card panel container (`.cardContainer`), leaving top/bottom card rows and side arrow margins exposed during page loading.
+
+**Decision.**
+Moved `loadingOverlay` to be a direct child of `.cardContainer` with `position: absolute; inset: 0; z-index: 50;`.
+
+**Consequences.**
+- The loading backdrop overlay covers 100% of the entire card container section (including card grid and side arrow margins), centering the spinner and loading text perfectly over the whole card panel.
+
+---
+
+## ADR-032 — Common Loading Sprite Sheet Integration (`/assets/common/loading.png`)
+
+**Date:** 2026-07-30 · **Status:** Accepted
+
+**Context.**
+`/assets/common/loading.png` is a 3840×3840 px **6×6 grid sprite sheet** containing 27 animated loading frames (640×640 px per frame). Rendering it at a small initial size made the visible inner icon tiny.
+
+**Decision.**
+1. Implemented a 27-step CSS sprite sheet animation (`@keyframes loading-spritesheet`) in `BrowseScreen.module.css` using `background-image: url('/assets/common/loading.png')` and `background-size: 600% 600%`.
+2. Increased `.loadingSpinner` dimensions by 500% (to `400px × 400px`) and `.cardSpinner` to `180px × 180px` to make the animated loading graphic prominent and clearly visible.
+
+**Consequences.**
+- The application plays the 27-frame animated loading sprite sequence at 500% larger size, clearly visible across page loading overlays and card placeholders.
+
+---
+
+## ADR-033 — Browse Screen Loading Blur Effect
+
+**Date:** 2026-07-30 · **Status:** Accepted
+
+**Context.**
+Needed a modern blur visual effect over the grid area while page/filter loading is in progress.
+
+**Decision.**
+1. Added `.blurLoading` (`filter: blur(10px); opacity: 0.4; pointer-events: none; transition: filter 250ms ease-out, opacity 250ms ease-out;`) to `BrowseScreen.module.css`.
+2. Applied `${isLoading ? styles.blurLoading : ''}` to `.cardScroll` in `BrowseScreen.tsx`, and increased `backdrop-filter: blur(12px)` on `loadingOverlay`.
+
+**Consequences.**
+- While loading, the artwork grid smoothly blurs out (`filter: blur(10px)`) under the dark loading overlay, and smoothly un-blurs back to crisp focus once data arrives.
+
+---
+
+## ADR-034 — Image Select Orientation-Specific Divider Line
+
+**Date:** 2026-07-30 · **Status:** Accepted
+
+**Context.**
+On `ImageSelectScreen`, choices are stacked vertically in Portrait mode and side-by-side in Landscape mode. Previously, a vertical line was rendering in Portrait mode between top and bottom boxes.
+
+**Decision.**
+1. Updated `IMAGE_SELECT_PORTRAIT.dividerRect` in `src/layout/crop.ts` to `size: { x: 682, y: 2 }` and `pos.y: -38` for a crisp **horizontal divider line (`—`)** between stacked top/bottom choices.
+2. Preserved `IMAGE_SELECT_LANDSCAPE.dividerRect` in `src/layout/crop-landscape.ts` as a **vertical divider line (`|`)** between side-by-side left/right choices.
+3. Updated `.divider` styling in `ImageSelectScreen.module.css` with `object-fit: fill` and subtle white background opacity.
+
+**Consequences.**
+- Portrait mode displays a clean horizontal divider separating top and bottom panels.
+- Landscape mode displays a clean vertical divider separating left and right panels.

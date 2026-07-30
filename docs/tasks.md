@@ -171,6 +171,15 @@ and comparing against Unity, not by a landscape-only difference.
 | B6 | Auto-start on boot + crash auto-restart | **DONE** | Same item as P6.11 — ADR-024. See `scripts/kiosk/` |
 | B7 | A git remote that accepts pushes | **DONE** | 2026-07-30. `origin` is now `https://github.com/vc-chitrang/map-jigsaw-puzzle-react-tuari.git`, matching the stored credential; the old remote belonged to another account and every push 403'd. `main` tracks it and nothing is unpushed |
 | B8 | `copy-assets.ps1` must not hard-fail on a Unity-less machine | **DONE** | 2026-07-30. The `predev`/`prebuild` hooks call it on every run; it `throw`/`Join-Path`-crashed when the Unity drive was absent, blocking dev AND build even with `public/assets` already populated. Now skips gracefully (exit 0) when the assets exist, and still fails loudly on a truly empty checkout. Makes the README "copy the three artefacts" path actually work |
+| F5 | Arrow layer ordering (puzzle arrows rendered behind puzzle pieces) | **DONE** | ADR-026. Puzzle board z-indexes updated so board arrows appear behind puzzle tiles |
+| F6 | Browse screen card display (image-only, square, no text overlay or letterboxing) | **DONE** | ADR-027. Text caption block removed; image uses object-fit cover to fill 1:1 card grid |
+| F7 | "Filter By" header alignment | **DONE** | ADR-027. Shared vertical baseline alignment with "Clear Filters" in portrait and landscape |
+| F8 | Eager image loading & instant attract boot | **DONE** | ADR-028. CDN thumbnail parallel loading over HTTP/2; 0ms instant attract mode launch using local fallback |
+| F9 | Browse screen scrollbar hiding | **DONE** | ADR-029. Hidden native scrollbars on card container grid |
+| F10 | Collection API 24-hr disk caching & Unity numeric PageNumbers bar | **DONE** | ADR-030. Rust API proxy disk caching (1ms cache hits); interactive numeric page pills (`[1] [2] ... [808]`) matching Unity |
+| F11 | Card section full-coverage loading overlay | **DONE** | ADR-031. Loading overlay positioned over 100% of card section including arrow regions |
+| F12 | 27-frame `/assets/common/loading.png` sprite sheet animation & blur effect | **DONE** | ADR-032, ADR-033. 500% scaled (400px) 27-frame CSS step animation with smooth 10px blur transition |
+| F13 | ImageSelect orientation-specific divider line | **DONE** | ADR-034. Horizontal divider line in portrait, vertical divider line in landscape |
 
 ### §12 parity checklist status
 
