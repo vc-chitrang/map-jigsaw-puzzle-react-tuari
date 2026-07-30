@@ -67,7 +67,7 @@ export const BROWSE_LANDSCAPE = {
       anchorMin: { x: 0.868, y: 0.8511 },
       anchorMax: { x: 0.9337, y: 0.926 },
     } satisfies LayoutRect,
-    sprite: '/assets/gameplay/map-logo.png',
+    sprite: '/assets/gameplay/map-logo.svg',
   },
 
   /** `BackButton.png` at alpha 0.85, as in portrait — Back, not Home. */

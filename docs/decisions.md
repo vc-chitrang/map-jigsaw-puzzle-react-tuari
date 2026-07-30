@@ -1021,3 +1021,22 @@ When installing the packaged release executable on a new machine without a `.env
 - Packaged release binaries run out-of-the-box on any new machine/kiosk with pre-configured API access.
 - Local `.env` files and system environment variables continue to override the compile-time defaults if specified.
 - 308 Vitest unit tests pass and release build v0.1.8 verified.
+
+---
+
+## ADR-038 — Clean Vector Up/Down Arrows & MAP Logo Header Asset Fix
+
+**Date:** 2026-07-30 · **Status:** Accepted
+
+**Context.**
+1. `arrow-up.svg` and `arrow-down.svg` contained an unneeded solid black background path (`fill="#000000"`), which blended into the dark puzzle board background and rendered up/down directional arrows invisible.
+2. `map-logo.svg` was a placeholder solid white rectangle, causing the MAP Museum logo header at the top center of every screen to render invisibly or fail to display.
+
+**Decision.**
+1. Replaced `arrow-up.svg` and `arrow-down.svg` with clean vector rotations (`rotate(90deg)` and `rotate(-90deg)`) of the green-and-white arrow icon.
+2. Replaced `map-logo.svg` with a high-DPI vector SVG emblem featuring the MAP Museum of Art & Photography logo typography (`M A P`) and accent emblem, and updated layout tables (`portrait.ts`, `landscape.ts`, `browse.ts`, `browse-landscape.ts`, `crop.ts`, `crop-landscape.ts`) to use `map-logo.svg`.
+
+**Consequences.**
+- Up and Down directional tile arrows are fully visible and pulse cleanly during gameplay.
+- The MAP Museum logo header renders crisp and centered across all screens.
+- 308 Vitest unit tests pass and release build v0.1.9 verified.

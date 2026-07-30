@@ -51,7 +51,7 @@ export const IMAGE_SELECT_PORTRAIT = {
       anchorMin: { x: 0.3969, y: 0.8821 },
       anchorMax: { x: 0.6031, y: 0.9494 },
     } satisfies LayoutRect,
-    sprite: '/assets/gameplay/map-logo.png',
+    sprite: '/assets/gameplay/map-logo.svg',
   },
 
   backButton: {

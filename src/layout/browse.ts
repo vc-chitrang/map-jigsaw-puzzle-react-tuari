@@ -76,7 +76,7 @@ export const BROWSE_PORTRAIT = {
       anchorMin: { x: 0.3969, y: 0.8821 },
       anchorMax: { x: 0.6031, y: 0.9494 },
     } satisfies LayoutRect,
-    sprite: '/assets/gameplay/map-logo.png',
+    sprite: '/assets/gameplay/map-logo.svg',
   },
 
   /** `BackButton.png` at alpha 0.85 — note this screen uses Back, not Home. */
