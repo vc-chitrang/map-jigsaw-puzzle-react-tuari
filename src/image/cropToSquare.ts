@@ -76,9 +76,9 @@ export function releaseArtwork(artwork: SquareArtwork | null): void {
  * front of these.
  */
 export const FALLBACK_ARTWORK = [
-  '/assets/fallback/fallback-00.png',
-  '/assets/fallback/fallback-01.png',
-  '/assets/fallback/fallback-02.png',
+  '/assets/fallback/fallback-00.jpg',
+  '/assets/fallback/fallback-01.jpg',
+  '/assets/fallback/fallback-02.jpg',
 ] as const;
 
 export function pickFallbackArtwork(rng: () => number = Math.random): string {
