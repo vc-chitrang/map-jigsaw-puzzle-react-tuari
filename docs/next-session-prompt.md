@@ -4,7 +4,7 @@ Paste everything between the horizontal rules as the first message of a fresh ch
 
 Keep this file updated at the end of each session — it is the fast path back into the work.
 
-**Last updated:** 2026-07-30 · **State:** phases 0–5 complete, phase 6 geometry complete, 308 tests green
+**Last updated:** 2026-07-30 · **State:** phases 0–5 complete, phase 6 geometry complete, 308 tests green, everything pushed to `origin/main`
 
 ---
 
@@ -23,6 +23,17 @@ The Unity original (source of truth for geometry and behaviour):
 
     D:\Chitrang_ViitorCloud\R&D\Sliding-Puzzle
 
+Git: `origin` is `https://github.com/vc-chitrang/map-jigsaw-puzzle-react-tuari.git`, `main` tracks it,
+and nothing is unpushed. The earlier 403 is gone (the remote used to belong to a different account).
+Work on a branch off `main` and open a PR; commit only when asked.
+
+**If the Unity path above does not exist on this machine, say so before doing anything else.** A fresh
+clone is missing three gitignored, Unity-generated things — `public/assets/` (44 sprites),
+`public/fonts/` (Conduit ITC woff2) and `src-tauri/.env` (API key + OAuth credentials) — so
+`npm run dev` will render an unstyled, imageless app until they are regenerated
+(`npm run copy:assets`, `npm run build:fonts`, `npm run extract:api-config`) or copied over. Icons are
+committed. See README §"Moving to another machine".
+
 ## READ FIRST, IN THIS ORDER
 
 1. `AGENTS.md` — the working agreement. Follow it, including keeping `docs/tasks.md`,
@@ -37,7 +48,7 @@ The Unity original (source of truth for geometry and behaviour):
 ## THE MOST IMPORTANT LESSON
 
 **The Unity SCENE is the source of truth — not the prose docs, not the C# field initialisers, and not
-the generated element dumps.** This has now bitten four times:
+the generated element dumps.** This has now bitten FIVE times:
 
 | ADR | What the docs said | What actually ships |
 |---|---|---|
@@ -107,9 +118,9 @@ In this order:
   `scripts/capture-window.ps1` are written, but `Graphics.CopyFromScreen` fails from a
   non-interactive shell — run it from a normal interactive terminal. Procedure in
   `docs/ai_handoff.md` §10.
-* **`git push` fails with 403.** The stored credential is `vc-chitrang`; the remote belongs to
-  `chitrang313`, and `origin/main` is gone locally. Commits are waiting locally. The user must grant access, repoint the remote, or
-  swap credentials — do not attempt to work around authentication.
+* ~~`git push` fails with 403~~ — **RESOLVED 2026-07-30.** `origin` is now
+  `https://github.com/vc-chitrang/map-jigsaw-puzzle-react-tuari.git`, which matches the stored
+  credential. Everything up to and including the landscape work is pushed; `main` tracks `origin/main`.
 * **Code signing (B5).** The installer is unsigned, so SmartScreen warns on first run. Needs a
   certificate from the client.
 * **`PerPageDD` (P3.11).** Active in the scene but its option list is in neither the scene nor the
@@ -133,7 +144,8 @@ renderer's Tauri capability set grants window control and nothing else.
 
 ## HOW TO VERIFY — measure, do not eyeball
 
-`npm test` and `npm run build` must both stay green (276 tests).
+`npm test` and `npm run build` must both stay green (**308 tests**). Check the build in BOTH
+orientations: `npm run build`, then `VITE_ORIENTATION=landscape npx vite build`.
 
 For screens, run `npm run dev` (add `VITE_ORIENTATION=landscape` for the landscape build) and drive it
 in a browser at **540×960** (portrait) or **960×540** (landscape), stubbing the Rust side:
@@ -180,3 +192,6 @@ Report honestly: give numbers for what you verified, and say plainly what you di
 
       python docs/tools/extract_ui.py
       python docs/tools/asset_manifest.py
+
+* Those two tools hardcode the Unity path in a `ROOT` constant; the three PowerShell scripts take
+  `-UnityRoot <path>` instead. On a machine where the Unity repo lives elsewhere, both need adjusting.

@@ -166,7 +166,8 @@ and comparing against Unity, not by a landscape-only difference.
 | B3 | Version badge, bottom-left of the screen | **DONE** | `src/ui/VersionBadge.tsx`, viewport-fixed so it is outside the scaled canvas. `VITE_HIDE_VERSION=1` hides it for parity captures |
 | B4 | `.gitattributes` pinning `*.bat` to CRLF | **DONE** | `cmd.exe` mis-parses an LF-only batch file and claims it does not exist |
 | B5 | Code signing for the installer | **TODO** | Unsigned today → SmartScreen warning on first run on the kiosk. Needs a certificate from the client |
-| B6 | Auto-start on boot + crash auto-restart | **TODO** | Phase 6 |
+| B6 | Auto-start on boot + crash auto-restart | **TODO** | Phase 6 (same item as P6.11) |
+| B7 | A git remote that accepts pushes | **DONE** | 2026-07-30. `origin` is now `https://github.com/vc-chitrang/map-jigsaw-puzzle-react-tuari.git`, matching the stored credential; the old remote belonged to another account and every push 403'd. `main` tracks it and nothing is unpushed |
 
 ### §12 parity checklist status
 

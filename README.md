@@ -27,6 +27,42 @@ The Unity project must be reachable for asset and font extraction. Default locat
 
 ---
 
+## Moving to another machine — what this repo does NOT contain
+
+**The built app has no dependency on Unity at all.** A finished installer is self-contained. But a
+fresh clone cannot be *built* from this repository alone: three things are deliberately gitignored and
+are regenerated from the Unity project.
+
+| Missing after a clone | Size | Regenerate with | Reads from Unity |
+|---|---|---|---|
+| `public/assets/` — 44 sprites | 8.4 MB | `npm run copy:assets` (runs automatically before `dev`/`build`) | `Assets/Games/Sliding-Puzzle/**` + the popup module |
+| `public/fonts/` — Conduit ITC Bold + Regular `woff2` | 48 KB | `npm run build:fonts` | `Assets/Games/Sliding-Puzzle/UI/fonts` |
+| `src-tauri/.env` — API key + OAuth credentials | <1 KB | `npm run extract:api-config` | `Scripts/API/API.cs` + `MAP_PuzzleScene_Portrait.unity` |
+
+App icons are **committed** (`src-tauri/icons/` + `icon-source.png`), so `build:icons` is not needed on
+a new machine.
+
+So, moving systems, pick one:
+
+* **Bring the Unity repo too** (recommended — it is also the source of truth for any new geometry) and
+  either put it at `D:/Chitrang_ViitorCloud/R&D/Sliding-Puzzle` or pass `-UnityRoot <path>` to
+  `copy-assets.ps1`, `build-fonts.ps1` and `extract-api-config.ps1`. `docs/tools/*.py` hardcode the
+  path in a `ROOT` constant — edit it there.
+* **Or copy the three artefacts above** out of this working copy (`public/assets`, `public/fonts`,
+  `src-tauri/.env`) into the new checkout. Then `npm install && npm run tauri:dev` works with no Unity
+  present, but nothing that needs to re-read the scene will.
+
+Either way, `src-tauri/.env` must be moved **out of band** — it holds the collection API key and the
+OAuth `client_secret`, and it must never be committed (ADR-009). Copy it manually or regenerate it.
+
+Two more things still need the Unity side, independent of the move:
+
+* **The pixel-parity capture** (`docs/ai_handoff.md` §10) needs a *built Unity player* to photograph.
+* **Any geometry that is not yet transcribed** — the scenes are the source of truth, and the card
+  prefab (P3.12) is missing from the Unity repo, so that one is blocked in either place.
+
+---
+
 ## First run
 
 ```bash

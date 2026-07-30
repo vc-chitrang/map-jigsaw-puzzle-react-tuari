@@ -26,6 +26,17 @@ briefing that gets a new chat productive without re-reading everything.
 The port repo is this repository. `npm install && npm run build:fonts && npm run build:icons &&
 npm run tauri:dev` gets you running — see [README.md](../README.md).
 
+**Moving to another machine:** the built app needs nothing from Unity, but a fresh clone cannot be
+built without it — `public/assets/` (44 sprites, 8.4 MB), `public/fonts/` (2 woff2) and
+`src-tauri/.env` are gitignored and regenerated from the Unity project. Icons *are* committed. Full
+procedure and the alternative (copy those three artefacts instead) are in
+[README §Moving to another machine](../README.md).
+
+**Git (settled 2026-07-30).** `origin` is
+`https://github.com/vc-chitrang/map-jigsaw-puzzle-react-tuari.git`, `main` tracks it, and everything
+through the landscape work is pushed. The long-standing 403 is gone: the old remote belonged to a
+different account than the stored credential. Work on a branch off `main` and open a PR.
+
 ---
 
 ## 2. What Phase 0 delivered
