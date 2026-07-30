@@ -96,6 +96,8 @@ Status: `TODO` · `WIP` · `DONE` · `BLOCKED`
 | P3.11 | `PerPageDD` (results-per-page dropdown) | **TODO** | Active in the scene but its option list is undocumented; not guessed. `limit` stays 40 |
 | P3.12 | Verify card internal geometry | **BLOCKED** | The card prefab is not in the repo — needs the prefab or a Unity screenshot |
 | P3.13 | `check-api.ps1` connectivity probe | **DONE** | Login + fetch, reporting status and shape while printing no URL, key or token |
+| P3.14 | Cache artwork under app data; fix master host; cached previews | **DONE** | ADR-025. `image_fetch` caches to `%LOCALAPPDATA%\<id>\image-cache`; added `cumulus.co.in` (the `primary_image` master host, previously rejected). Grid previews (ImageKit w600) + full masters both cached. Verified live: 403 (from an unquoted `MAP_OAUTH_SCOPE`, ADR-016 trap) resolved by quoting; token 1306, collection 200, 3.9 MB master cached. **No eviction yet** (P6.12) |
+| P6.12 | Cache eviction / size cap for `image-cache` | **TODO** | Masters are ~4–7 MB each and cached on open; a months-long kiosk run needs a periodic size cap or LRU. Previews (~90 KB) are negligible |
 
 ## Phase 4 — Crop + QR upload
 
@@ -143,7 +145,7 @@ Status: `TODO` · `WIP` · `DONE` · `BLOCKED`
 | P6.8 | Memory stable across 100+ rebuilds | **TODO** | Blob URLs are revoked on replacement; needs a soak to confirm |
 | P6.9 | 24 h soak test | **TODO** | Needs the kiosk |
 | P6.10 | Test the installer on kiosk hardware | **TODO** | Installer works; hardware untested |
-| P6.11 | Auto-start on boot + crash auto-restart | **TODO** | Windows task or registry Run key, plus a watchdog |
+| P6.11 | Auto-start on boot + crash auto-restart | **DONE** | ADR-024. Logon Scheduled Task -> `scripts/kiosk/kiosk-watchdog.ps1` -> app. Pure restart policy in `KioskPolicy.ps1`, 16 Pester tests (`npm run test:watchdog`). `install-autostart.ps1` / `uninstall-autostart.ps1` (idempotent, `-DryRun`). Registering the task + kiosk auto-login are on-hardware steps (P6.10). Does not yet catch a renderer-crash-with-live-host or a hang |
 
 ## Parity fixes found while verifying Phase 6
 
@@ -166,8 +168,18 @@ and comparing against Unity, not by a landscape-only difference.
 | B3 | Version badge, bottom-left of the screen | **DONE** | `src/ui/VersionBadge.tsx`, viewport-fixed so it is outside the scaled canvas. `VITE_HIDE_VERSION=1` hides it for parity captures |
 | B4 | `.gitattributes` pinning `*.bat` to CRLF | **DONE** | `cmd.exe` mis-parses an LF-only batch file and claims it does not exist |
 | B5 | Code signing for the installer | **TODO** | Unsigned today → SmartScreen warning on first run on the kiosk. Needs a certificate from the client |
-| B6 | Auto-start on boot + crash auto-restart | **TODO** | Phase 6 (same item as P6.11) |
+| B6 | Auto-start on boot + crash auto-restart | **DONE** | Same item as P6.11 — ADR-024. See `scripts/kiosk/` |
 | B7 | A git remote that accepts pushes | **DONE** | 2026-07-30. `origin` is now `https://github.com/vc-chitrang/map-jigsaw-puzzle-react-tuari.git`, matching the stored credential; the old remote belonged to another account and every push 403'd. `main` tracks it and nothing is unpushed |
+| B8 | `copy-assets.ps1` must not hard-fail on a Unity-less machine | **DONE** | 2026-07-30. The `predev`/`prebuild` hooks call it on every run; it `throw`/`Join-Path`-crashed when the Unity drive was absent, blocking dev AND build even with `public/assets` already populated. Now skips gracefully (exit 0) when the assets exist, and still fails loudly on a truly empty checkout. Makes the README "copy the three artefacts" path actually work |
+| F5 | Arrow layer ordering (puzzle arrows rendered behind puzzle pieces) | **DONE** | ADR-026. Puzzle board z-indexes updated so board arrows appear behind puzzle tiles |
+| F6 | Browse screen card display (image-only, square, no text overlay or letterboxing) | **DONE** | ADR-027. Text caption block removed; image uses object-fit cover to fill 1:1 card grid |
+| F7 | "Filter By" header alignment | **DONE** | ADR-027. Shared vertical baseline alignment with "Clear Filters" in portrait and landscape |
+| F8 | Eager image loading & instant attract boot | **DONE** | ADR-028. CDN thumbnail parallel loading over HTTP/2; 0ms instant attract mode launch using local fallback |
+| F9 | Browse screen scrollbar hiding | **DONE** | ADR-029. Hidden native scrollbars on card container grid |
+| F10 | Collection API 24-hr disk caching & Unity numeric PageNumbers bar | **DONE** | ADR-030. Rust API proxy disk caching (1ms cache hits); interactive numeric page pills (`[1] [2] ... [808]`) matching Unity |
+| F11 | Card section full-coverage loading overlay | **DONE** | ADR-031. Loading overlay positioned over 100% of card section including arrow regions |
+| F12 | 27-frame `/assets/common/loading.png` sprite sheet animation & blur effect | **DONE** | ADR-032, ADR-033. 500% scaled (400px) 27-frame CSS step animation with smooth 10px blur transition |
+| F13 | ImageSelect orientation-specific divider line | **DONE** | ADR-034. Horizontal divider line in portrait, vertical divider line in landscape |
 
 ### §12 parity checklist status
 

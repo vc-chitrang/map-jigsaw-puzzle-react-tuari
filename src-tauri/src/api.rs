@@ -8,11 +8,14 @@
 //! `src/api/types.ts` owns the schema; duplicating it here would give two places
 //! to drift and would make an unexpected extra field a hard error.
 
+use std::hash::{Hash, Hasher};
+use std::path::PathBuf;
 use std::sync::OnceLock;
 use std::time::Duration;
 
 use serde::Deserialize;
 use tauri::ipc::Response;
+use tauri::Manager;
 
 use crate::config;
 
@@ -196,19 +199,55 @@ fn push_params(query: &mut Vec<(String, String)>, params: &CollectionParams) {
     }
 }
 
-/// Fetch a page of the collection.
-///
-/// Stale-response handling lives in the renderer (`AbortController` + a request
-/// id, mirroring Unity's `_fetchId`). This command stays stateless so two
-/// in-flight requests cannot interfere with each other here.
+fn collection_cache_dir(app: &tauri::AppHandle) -> Result<PathBuf, ApiError> {
+    app.path()
+        .app_cache_dir()
+        .map(|dir| dir.join("collection_cache"))
+        .map_err(|_| ApiError::Request("no cache directory".into()))
+}
+
+fn collection_cache_key(params: &CollectionParams) -> String {
+    let mut hasher = std::collections::hash_map::DefaultHasher::new();
+    format!("{:?}", params).hash(&mut hasher);
+    format!("col_{:016x}.json", hasher.finish())
+}
+
+/// Fetch a page of the collection with disk caching and timing logs.
 #[tauri::command]
-pub async fn collection_fetch(params: CollectionParams) -> Result<serde_json::Value, ApiError> {
+pub async fn collection_fetch(
+    app: tauri::AppHandle,
+    params: CollectionParams,
+) -> Result<serde_json::Value, ApiError> {
+    let start_time = std::time::Instant::now();
     let config = config::get();
     if !config.is_usable() {
         return Err(ApiError::NotConfigured);
     }
 
-    // Both are required: without the bearer token the endpoint answers HTTP 500.
+    // 1. Check disk cache
+    let cache_dir = collection_cache_dir(&app);
+    if let Ok(dir) = &cache_dir {
+        let cache_file = dir.join(collection_cache_key(&params));
+        if let Ok(metadata) = std::fs::metadata(&cache_file) {
+            if let Ok(modified) = metadata.modified() {
+                // Cache valid for 24 hours
+                if modified.elapsed().unwrap_or(Duration::from_secs(999999)) < Duration::from_secs(86400) {
+                    if let Ok(bytes) = std::fs::read(&cache_file) {
+                        if let Ok(val) = serde_json::from_slice::<serde_json::Value>(&bytes) {
+                            let elapsed = start_time.elapsed().as_millis();
+                            log::info!("[collection_fetch CACHE HIT] loaded in {}ms", elapsed);
+                            println!("[collection_fetch CACHE HIT] loaded in {}ms", elapsed);
+                            return Ok(val);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // 2. Cache miss — fetch from remote API
+    log::info!("[collection_fetch CACHE MISS] fetching from remote API...");
+    println!("[collection_fetch CACHE MISS] fetching from remote API...");
     let token = bearer_token().await?;
 
     let mut query: Vec<(String, String)> = vec![("key".into(), config.key.clone())];
@@ -220,8 +259,6 @@ pub async fn collection_fetch(params: CollectionParams) -> Result<serde_json::Va
         .query(&query)
         .send()
         .await
-        // The error is stringified WITHOUT the URL: reqwest includes the full URL
-        // in its Display output, and ours carries the key.
         .map_err(|error| ApiError::Request(scrub(&error)))?;
 
     let status = response.status();
@@ -229,10 +266,25 @@ pub async fn collection_fetch(params: CollectionParams) -> Result<serde_json::Va
         return Err(ApiError::Status(status.as_u16()));
     }
 
-    response
+    let val = response
         .json::<serde_json::Value>()
         .await
-        .map_err(|_| ApiError::Malformed)
+        .map_err(|_| ApiError::Malformed)?;
+
+    let elapsed = start_time.elapsed().as_millis();
+    log::info!("[collection_fetch NETWORK SUCCESS] fetched in {}ms", elapsed);
+    println!("[collection_fetch NETWORK SUCCESS] fetched in {}ms", elapsed);
+
+    // 3. Persist to disk cache (best-effort)
+    if let Ok(dir) = cache_dir {
+        let cache_file = dir.join(collection_cache_key(&params));
+        let _ = std::fs::create_dir_all(&dir);
+        if let Ok(bytes) = serde_json::to_vec(&val) {
+            let _ = std::fs::write(cache_file, bytes);
+        }
+    }
+
+    Ok(val)
 }
 
 /// A reqwest error rendered without any URL, so a leaked key cannot reach a log.
@@ -258,6 +310,10 @@ const ALLOWED_IMAGE_HOSTS: &[&str] = &[
     "map-india.org",
     "i-am-puzzle.map-india.org",
     "ik.imagekit.io",
+    // The collection's `primary_image` masters are served from here (verified
+    // against the live API: primary_image = https://static.cumulus.co.in/...).
+    // Without this, full-resolution artwork fetches are rejected as a bad host.
+    "cumulus.co.in",
 ];
 
 fn host_allowed(url: &reqwest::Url) -> bool {
@@ -269,14 +325,52 @@ fn host_allowed(url: &reqwest::Url) -> bool {
     }
 }
 
-/// Fetch an artwork image as bytes.
+/// A filesystem-safe cache filename derived from the full URL.
+///
+/// The URL is hashed (SipHash via `DefaultHasher`, deterministic across runs for
+/// a fixed key) so two different renders of the same artwork — the w600 preview
+/// and the full master share a basename but differ in URL — never collide. The
+/// original extension is preserved for tidiness only; nothing reads it back.
+fn cache_name(url: &str) -> String {
+    let mut hasher = std::collections::hash_map::DefaultHasher::new();
+    url.hash(&mut hasher);
+
+    let ext = url
+        .split(['?', '#'])
+        .next()
+        .unwrap_or(url)
+        .rsplit('.')
+        .next()
+        .filter(|e| !e.is_empty() && e.len() <= 5 && e.chars().all(|c| c.is_ascii_alphanumeric()))
+        .unwrap_or("img");
+
+    format!("{:016x}.{}", hasher.finish(), ext)
+}
+
+/// The on-disk cache directory, `%LOCALAPPDATA%\<identifier>\cache\image-cache`
+/// on Windows. Created lazily by the caller.
+fn cache_dir(app: &tauri::AppHandle) -> Result<PathBuf, ApiError> {
+    app.path()
+        .app_cache_dir()
+        .map(|dir| dir.join("image-cache"))
+        .map_err(|_| ApiError::Request("no cache directory".into()))
+}
+
+/// Fetch an artwork image as bytes, caching it under app data.
 ///
 /// Needed because the board crops the artwork to a square on a `<canvas>`, and a
 /// cross-origin image without CORS headers taints the canvas and makes
 /// `toBlob()` throw. Fetching here and handing over bytes side-steps CORS
 /// entirely; the renderer turns them into a blob URL.
+///
+/// CACHING (P-image-cache): the first fetch of a URL is downloaded and written
+/// to the cache directory; every later fetch of the SAME URL is served from disk
+/// without touching the network. This backs both the low-res grid previews
+/// (ImageKit w600) and the full-resolution master loaded when a card is picked —
+/// each is a distinct URL, so each is cached independently. No eviction yet: the
+/// previews are ~90 KB and masters are only cached when actually opened.
 #[tauri::command]
-pub async fn image_fetch(url: String) -> Result<Response, ApiError> {
+pub async fn image_fetch(app: tauri::AppHandle, url: String) -> Result<Response, ApiError> {
     let parsed = reqwest::Url::parse(&url).map_err(|_| ApiError::Request("bad URL".into()))?;
 
     if parsed.scheme() != "https" {
@@ -288,6 +382,17 @@ pub async fn image_fetch(url: String) -> Result<Response, ApiError> {
         ));
     }
 
+    // 1. Serve from the cache if we already have it.
+    let dir = cache_dir(&app)?;
+    let path = dir.join(cache_name(&url));
+    if let Ok(bytes) = std::fs::read(&path) {
+        if !bytes.is_empty() {
+            log::info!("image cache hit ({} bytes)", bytes.len());
+            return Ok(Response::new(bytes));
+        }
+    }
+
+    // 2. Miss — download it.
     let response = client()
         .get(parsed)
         .send()
@@ -303,6 +408,26 @@ pub async fn image_fetch(url: String) -> Result<Response, ApiError> {
         .bytes()
         .await
         .map_err(|error| ApiError::Request(scrub(&error)))?;
+
+    // 3. Persist it, best-effort. A cache write failure must not fail the fetch:
+    //    write to a temp file first, then rename, so a crash mid-write cannot
+    //    leave a truncated file that a later run would serve as valid.
+    if let Err(error) = std::fs::create_dir_all(&dir) {
+        log::warn!("could not create image cache dir: {error}");
+    } else {
+        let tmp = path.with_extension("part");
+        match std::fs::write(&tmp, &bytes) {
+            Ok(()) => {
+                if let Err(error) = std::fs::rename(&tmp, &path) {
+                    log::warn!("could not commit cached image: {error}");
+                    let _ = std::fs::remove_file(&tmp);
+                } else {
+                    log::info!("image cached ({} bytes)", bytes.len());
+                }
+            }
+            Err(error) => log::warn!("could not write cached image: {error}"),
+        }
+    }
 
     Ok(Response::new(bytes.to_vec()))
 }

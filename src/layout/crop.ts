@@ -51,7 +51,7 @@ export const IMAGE_SELECT_PORTRAIT = {
       anchorMin: { x: 0.3969, y: 0.8821 },
       anchorMax: { x: 0.6031, y: 0.9494 },
     } satisfies LayoutRect,
-    sprite: '/assets/gameplay/map-logo.png',
+    sprite: '/assets/gameplay/map-logo.svg',
   },
 
   backButton: {
@@ -62,7 +62,7 @@ export const IMAGE_SELECT_PORTRAIT = {
       size: { x: 124, y: 124 },
       pivot: { x: 0, y: 0.5 },
     } satisfies LayoutRect,
-    sprite: '/assets/gameplay/back-button.png',
+    sprite: '/assets/gameplay/back-button.svg',
   },
 
   /** Translucent panel holding both choices. #000000 at alpha 0.5098. */
@@ -124,13 +124,18 @@ export const IMAGE_SELECT_PORTRAIT = {
       size: { x: 162, y: 162 },
       pivot: { x: 0.5, y: 0.5 },
     } satisfies LayoutRect,
-    iconSprite: '/assets/select/gallery-add.png',
+    iconSprite: '/assets/select/gallery-add.svg',
+    // The Unity label uses a ContentSizeFitter, which extract_ui.py cannot
+    // report (AGENTS.md), so the dump gave size (0,0). A zero-width flex box
+    // collapses the text to one word per line and spills below the card. Sized
+    // to a real box below the icon, centred, to match the Unity screenshot: two
+    // lines, "Add from" / "MAP's collection".
     labelRect: {
       kind: 'point',
-      anchor: { x: 0.5, y: 0 },
-      pos: { x: 0, y: 150.18 },
-      size: { x: 0, y: 0 },
-      pivot: { x: 0.5, y: 0 },
+      anchor: { x: 0.5, y: 0.5 },
+      pos: { x: 0, y: -120 },
+      size: { x: 600, y: 170 },
+      pivot: { x: 0.5, y: 0.5 },
     } satisfies LayoutRect,
     // Authored with an explicit newline.
     label: {
@@ -170,12 +175,12 @@ export const IMAGE_SELECT_PORTRAIT = {
     codeSprite: '/assets/qr/qr-code.png',
   },
 
-  /** Decorative divider between the two choices. */
+  /** Horizontal divider between the top and bottom choices in portrait. */
   dividerRect: {
     kind: 'point',
     anchor: { x: 0.5, y: 0.5 },
-    pos: { x: 0, y: 68 },
-    size: { x: 2, y: 142 },
+    pos: { x: 0, y: -38 },
+    size: { x: 682, y: 2 },
     pivot: { x: 0.5, y: 0.5 },
   } satisfies LayoutRect,
   dividerSprite: '/assets/common/vertical-line.png',
@@ -216,7 +221,7 @@ export const CROP_PORTRAIT = {
   } satisfies TextSpec,
 
   /** Initial guide overlay; `CropGridResizer` resizes it at runtime. */
-  gridSprite: '/assets/crop/crop-reference-frame.png',
+  gridSprite: '/assets/crop/crop-reference-frame.svg',
   gridInitialSize: 500,
 
   /** Corner handles and the minimum grid size — see `CROP_SHARED` (ADR-022). */
@@ -243,11 +248,11 @@ export const CROP_PORTRAIT = {
   startButton: {
     rect: {
       kind: 'fractional',
-      anchorMin: { x: 0.376, y: 0.2454 },
-      anchorMax: { x: 0.624, y: 0.299 },
+      anchorMin: { x: 0.148, y: 0.108 },
+      anchorMax: { x: 0.852, y: 0.147 },
     } satisfies LayoutRect,
-    sprite: '/assets/gameplay/start-button.png',
-    pressedSprite: '/assets/gameplay/start-button-pressed.png',
+    sprite: '/assets/gameplay/start-button.svg',
+    pressedSprite: '/assets/gameplay/start-button-pressed.svg',
     label: { fontSizePx: 100, colour: 'var(--map-white)', text: 'START' } satisfies TextSpec,
   },
 } as const;

@@ -132,8 +132,8 @@ export const WIN_LANDSCAPE = {
       size: { x: 475.04, y: 120 },
       pivot: { x: 0.5, y: 0 },
     } satisfies LayoutRect,
-    sprite: '/assets/gameplay/play-again-button.png',
-    pressedSprite: '/assets/gameplay/play-again-button-pressed.png',
+    sprite: '/assets/gameplay/play-again-button.svg',
+    pressedSprite: '/assets/gameplay/play-again-button-pressed.svg',
     label: {
       fontSizePx: 68,
       colour: 'var(--map-white)',

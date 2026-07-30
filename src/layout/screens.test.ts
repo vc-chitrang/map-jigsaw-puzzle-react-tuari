@@ -86,9 +86,9 @@ describe('ImageSelect — landscape', () => {
     expect(ISP.collectionButton.label.fontSizePx).toBe(52);
   });
 
-  it('uses a thinner, shorter divider BELOW centre', () => {
+  it('uses a horizontal divider in portrait and vertical divider in landscape', () => {
     expect(ISL.dividerRect).toMatchObject({ size: { x: 1, y: 78 }, pos: { x: 0, y: -32 } });
-    expect(ISP.dividerRect).toMatchObject({ size: { x: 2, y: 142 }, pos: { x: 0, y: 68 } });
+    expect(ISP.dividerRect).toMatchObject({ size: { x: 682, y: 2 }, pos: { x: 0, y: -38 } });
   });
 });
 

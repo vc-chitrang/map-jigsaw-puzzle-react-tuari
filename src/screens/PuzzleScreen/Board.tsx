@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, type CSSProperties } from 'react';
 import {
   BOARD_TUNING,
   arrowPlacements,
@@ -53,9 +53,9 @@ function sliceStyle(tile: Tile, geometry: BoardGeometry, artworkUrl: string, col
  *
  * Layer order matches Unity sibling order (pixel-perfect §5):
  *   1. Outline — board + `tileSpacing` overhang, white, non-interactive
- *   2. Tiles
- *   3. Empty slot — gains the 9th slice on win
- *   4. Arrows — on top
+ *   2. Arrows — rendered behind tiles so they don't overlap tile faces
+ *   3. Tiles
+ *   4. Empty slot — gains the 9th slice on win
  *
  * `BoardPanel_Container` (holding the artwork title) mirrors the board rect and
  * renders above it.
@@ -91,8 +91,14 @@ export function Board({
   const outline = outlineRect(geometry);
   const revealed = revealedSliceCell(state);
 
-  // Arrows are hidden during a slide and stay hidden after the win.
-  const arrowsVisible = !state.isAnimating && !state.isSolved && !state.previewVisible;
+  // TESTING (2026-07-30): keep the movement arrows on at all times so the
+  // affordance can be checked during a slide / preview / after a win too. Flip
+  // to false to restore the Unity behaviour (arrows hide while animating, after
+  // a win, and while the preview is held).
+  const KEEP_ARROWS_VISIBLE_FOR_TESTING = true;
+  const arrowsVisible =
+    KEEP_ARROWS_VISIBLE_FOR_TESTING ||
+    (!state.isAnimating && !state.isSolved && !state.previewVisible);
 
   const boardBox = {
     left: `${rect.left}px`,
@@ -113,6 +119,37 @@ export function Board({
             height: `${outline.height}px`,
           }}
         />
+
+        {arrowsVisible
+          ? arrows.map((arrow) => {
+              // up | down | left | right — drives the directional pulse class.
+              const dir = arrow.asset.replace('arrow-', '').replace(/\.(png|svg)$/, '');
+              return (
+                <button
+                  key={arrow.index}
+                  type="button"
+                  className={`${styles.arrow} ${styles[`arrow-${dir}`]}`}
+                  style={
+                    {
+                      width: `${arrow.size}px`,
+                      height: `${arrow.size}px`,
+                      // Position via left/top, NOT transform: the pulse animates
+                      // `transform`, and combining it with a positioning
+                      // transform scales the position (drift to bottom-right).
+                      left: `${arrow.position.x}px`,
+                      top: `${arrow.position.y}px`,
+                      // Pulse travel, proportional to the arrow so every size
+                      // reads the same. Consumed by the @keyframes below.
+                      '--arrow-pulse-shift': `${arrow.size * 0.14}px`,
+                      backgroundImage: `url("/assets/gameplay/${arrow.asset}")`,
+                    } as CSSProperties
+                  }
+                  onClick={() => onArrowTap(arrow.targetCell)}
+                  aria-label={`Move the tile ${dir}`}
+                />
+              );
+            })
+          : null}
 
         {board.tiles.map((tile) => {
           const position = cellPosition(tile.currentCell, geometry);
@@ -154,24 +191,6 @@ export function Board({
             }}
           />
         ) : null}
-
-        {arrowsVisible
-          ? arrows.map((arrow) => (
-              <button
-                key={arrow.index}
-                type="button"
-                className={styles.arrow}
-                style={{
-                  width: `${arrow.size}px`,
-                  height: `${arrow.size}px`,
-                  transform: `translate3d(${arrow.position.x}px, ${arrow.position.y}px, 0)`,
-                  backgroundImage: `url("/assets/gameplay/${arrow.asset}")`,
-                }}
-                onClick={() => onArrowTap(arrow.targetCell)}
-                aria-label={`Move the tile ${arrow.asset.replace('arrow-', '').replace('.png', '')}`}
-              />
-            ))
-          : null}
       </div>
 
       {/* BoardPanel_Container — mirrors the board rect, renders above it. */}

@@ -67,7 +67,7 @@ export const BROWSE_LANDSCAPE = {
       anchorMin: { x: 0.868, y: 0.8511 },
       anchorMax: { x: 0.9337, y: 0.926 },
     } satisfies LayoutRect,
-    sprite: '/assets/gameplay/map-logo.png',
+    sprite: '/assets/gameplay/map-logo.svg',
   },
 
   /** `BackButton.png` at alpha 0.85, as in portrait — Back, not Home. */
@@ -79,7 +79,7 @@ export const BROWSE_LANDSCAPE = {
       size: { x: 72, y: 72 },
       pivot: { x: 0, y: 0.5 },
     } satisfies LayoutRect,
-    sprite: '/assets/gameplay/back-button.png',
+    sprite: '/assets/gameplay/back-button.svg',
     opacity: 0.85,
   },
 
@@ -125,7 +125,7 @@ export const BROWSE_LANDSCAPE = {
       size: { x: 70, y: 0 },
       pivot: { x: 0, y: 0.5 },
     } satisfies LayoutRect,
-    searchSprite: '/assets/browse/search-button.png',
+    searchSprite: '/assets/browse/search-button.svg',
   },
 
   filterBar: {
@@ -137,9 +137,9 @@ export const BROWSE_LANDSCAPE = {
     titleRect: {
       kind: 'point',
       anchor: { x: 0, y: 1 },
-      pos: { x: 0, y: 48.4 },
-      size: { x: 0, y: 0 },
-      pivot: { x: 0, y: 1 },
+      pos: { x: 0, y: 0 },
+      size: { x: 300, y: 54 },
+      pivot: { x: 0, y: 0 },
     } satisfies LayoutRect,
     /** 24.5 px — the only fractional font size in either scene. */
     title: { fontSizePx: 24.5, colour: 'var(--map-white)', text: 'Filter By' } satisfies TextSpec,
@@ -213,6 +213,19 @@ export const BROWSE_LANDSCAPE = {
       pivot: { x: 1, y: 0.5 },
     } satisfies LayoutRect,
     sortLabel: { fontSizePx: 24, colour: 'var(--map-white)', text: 'Sort By' } satisfies TextSpec,
+    /**
+     * GridViewButton — 45x45 here (60x60 in portrait), anchor (1,0.5),
+     * pivot (1,0.5). Visual only, sprite GridView.png (pink tile). See the
+     * portrait table for the rationale.
+     */
+    gridViewRect: {
+      kind: 'point',
+      anchor: { x: 1, y: 0.5 },
+      pos: { x: 0, y: 0 },
+      size: { x: 45, y: 45 },
+      pivot: { x: 1, y: 0.5 },
+    } satisfies LayoutRect,
+    gridViewSprite: '/assets/browse/grid-view.svg',
   },
 
   cardArea: {
@@ -247,7 +260,7 @@ export const BROWSE_LANDSCAPE = {
       size: { x: 75, y: -870 },
       pivot: { x: 1, y: 0.5 },
     } satisfies LayoutRect,
-    arrowSprite: '/assets/browse/pagination-arrow.png',
+    arrowSprite: '/assets/browse/pagination-arrow.svg',
     arrowSize: 40,
 
     /** Grid maths — code, not scene, so identical in both builds. */

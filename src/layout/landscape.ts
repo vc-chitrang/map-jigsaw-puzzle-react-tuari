@@ -46,7 +46,7 @@ export const PUZZLE_LANDSCAPE = {
       anchorMin: { x: 0.868, y: 0.8511 },
       anchorMax: { x: 0.9337, y: 0.926 },
     } satisfies LayoutRect,
-    sprite: '/assets/gameplay/map-logo.png',
+    sprite: '/assets/gameplay/map-logo.svg',
   },
 
   /** 72² and vertically centred, versus portrait's 124² offset upward. */
@@ -58,7 +58,7 @@ export const PUZZLE_LANDSCAPE = {
       size: { x: 72, y: 72 },
       pivot: { x: 0, y: 0.5 },
     } satisfies LayoutRect,
-    sprite: '/assets/gameplay/home-button.png',
+    sprite: '/assets/gameplay/home-button.svg',
   },
 
   /** A 196 px band whose bottom edge sits 40 px above the screen bottom. */
@@ -108,7 +108,7 @@ export const PUZZLE_LANDSCAPE = {
   /** Shown during gameplay; mutually exclusive with START. */
   timer: {
     size: { x: 315, y: 121 },
-    sprite: '/assets/gameplay/timer-background.png',
+    sprite: '/assets/gameplay/timer-background.svg',
     label: {
       fontSizePx: 82,
       colour: 'var(--map-white)',
@@ -118,8 +118,8 @@ export const PUZZLE_LANDSCAPE = {
 
   startButton: {
     size: { x: 290, y: 121 },
-    sprite: '/assets/gameplay/start-button.png',
-    pressedSprite: '/assets/gameplay/start-button-pressed.png',
+    sprite: '/assets/gameplay/start-button.svg',
+    pressedSprite: '/assets/gameplay/start-button-pressed.svg',
     // Authored lowercase and uppercased by CSS, as in portrait.
     label: {
       fontSizePx: 82,
@@ -165,8 +165,8 @@ export const PUZZLE_LANDSCAPE = {
   footerButtons: {
     reset: {
       size: { x: 290, y: 121 },
-      sprite: '/assets/gameplay/reset-button.png',
-      pressedSprite: '/assets/gameplay/reset-button-pressed.png',
+      sprite: '/assets/gameplay/reset-button.svg',
+      pressedSprite: '/assets/gameplay/reset-button-pressed.svg',
       label: {
         fontSizePx: 44,
         colour: 'var(--map-white)',
@@ -175,7 +175,7 @@ export const PUZZLE_LANDSCAPE = {
         marginPx: { left: 48, top: 0, right: 0, bottom: 12 },
       } satisfies TextSpec,
       icon: {
-        sprite: '/assets/gameplay/icon-reset.png',
+        sprite: '/assets/gameplay/icon-reset.svg',
         rect: {
           kind: 'point',
           anchor: { x: 0, y: 0.5 },
@@ -188,8 +188,8 @@ export const PUZZLE_LANDSCAPE = {
 
     preview: {
       size: { x: 290, y: 121 },
-      sprite: '/assets/gameplay/preview-button.png',
-      pressedSprite: '/assets/gameplay/preview-button-pressed.png',
+      sprite: '/assets/gameplay/preview-button.svg',
+      pressedSprite: '/assets/gameplay/preview-button-pressed.svg',
       label: {
         fontSizePx: 44,
         colour: 'var(--map-white)',
@@ -198,7 +198,7 @@ export const PUZZLE_LANDSCAPE = {
         marginPx: { left: 72, top: 0, right: 0, bottom: 12 },
       } satisfies TextSpec,
       icon: {
-        sprite: '/assets/gameplay/icon-preview.png',
+        sprite: '/assets/gameplay/icon-preview.svg',
         rect: {
           kind: 'point',
           anchor: { x: 0, y: 0.5 },
@@ -211,8 +211,8 @@ export const PUZZLE_LANDSCAPE = {
 
     newImage: {
       size: { x: 290, y: 121 },
-      sprite: '/assets/gameplay/new-image-button.png',
-      pressedSprite: '/assets/gameplay/new-image-button-pressed.png',
+      sprite: '/assets/gameplay/new-image-button.svg',
+      pressedSprite: '/assets/gameplay/new-image-button-pressed.svg',
       label: {
         fontSizePx: 44,
         colour: 'var(--map-white)',
@@ -221,7 +221,7 @@ export const PUZZLE_LANDSCAPE = {
         marginPx: { left: 72, top: 0, right: 0, bottom: 12 },
       } satisfies TextSpec,
       icon: {
-        sprite: '/assets/gameplay/icon-new-image.png',
+        sprite: '/assets/gameplay/icon-new-image.svg',
         rect: {
           kind: 'point',
           anchor: { x: 0, y: 0.5 },

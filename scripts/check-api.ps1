@@ -39,7 +39,9 @@ foreach ($line in Get-Content -LiteralPath $EnvFile) {
     if ($line -match '^\s*#') { continue }
     if ($line -notmatch '=') { continue }
     $pair = $line -split '=', 2
-    $config[$pair[0].Trim()] = $pair[1].Trim()
+    $val = $pair[1].Trim()
+    if ($val -match '^"(.*)"$') { $val = $Matches[1] }
+    $config[$pair[0].Trim()] = $val
 }
 
 function Get-Value([string] $Name) {

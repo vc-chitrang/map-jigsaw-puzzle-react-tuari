@@ -38,11 +38,36 @@ if ([string]::IsNullOrWhiteSpace($Dest)) {
     $Dest = Join-Path $repoRoot 'public/assets'
 }
 
-$gameRoot   = Join-Path $UnityRoot 'Assets/Games/Sliding-Puzzle'
-$modulesDir = Join-Path $UnityRoot 'Assets/Modules'
+# Is the Unity source reachable? Probe the ROOT before joining onto it: Join-Path
+# throws DriveNotFoundException when the drive (e.g. D:) is absent, so a bare
+# Join-Path here would crash before any fallback could run.
+$unityReachable = $false
+try { $unityReachable = Test-Path -LiteralPath $UnityRoot } catch { $unityReachable = $false }
 
-if (-not (Test-Path -LiteralPath $gameRoot)) {
-    throw "Unity game folder not found: $gameRoot`nPass -UnityRoot if the project moved."
+$gameRoot   = ''
+$modulesDir = ''
+$gameOk     = $false
+if ($unityReachable) {
+    $gameRoot   = Join-Path $UnityRoot 'Assets/Games/Sliding-Puzzle'
+    $modulesDir = Join-Path $UnityRoot 'Assets/Modules'
+    $gameOk     = Test-Path -LiteralPath $gameRoot
+}
+
+if (-not $gameOk) {
+    # A machine WITHOUT the Unity project is fine IF the assets were already
+    # generated and copied here (README "Moving to another machine"). The
+    # predev/prebuild hooks call this script on every run, so failing hard would
+    # block dev AND build on any Unity-less checkout. Skip only when the assets
+    # are actually present; a truly empty checkout still fails loudly.
+    if (Test-Path -LiteralPath (Join-Path $Dest 'NAME_MAP.md')) {
+        Write-Host "Unity project not found at $UnityRoot."
+        Write-Host 'public/assets is already populated (NAME_MAP.md present) -- skipping copy.'
+        Write-Host 'Pass -UnityRoot <path> to re-copy from the Unity project.'
+        exit 0
+    }
+    throw ("Unity game folder not found and public/assets is empty.`n" +
+        "Bring the Unity project, or copy public/assets from a build machine (see README).`n" +
+        "Looked for: $UnityRoot`nPass -UnityRoot if the project moved.")
 }
 
 # ---------------------------------------------------------------------------

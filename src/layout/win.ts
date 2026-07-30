@@ -107,8 +107,8 @@ export const WIN_PORTRAIT = {
       size: { x: 530, y: 178 },
       pivot: { x: 0.5, y: 0 },
     } satisfies LayoutRect,
-    sprite: '/assets/gameplay/play-again-button.png',
-    pressedSprite: '/assets/gameplay/play-again-button-pressed.png',
+    sprite: '/assets/gameplay/play-again-button.svg',
+    pressedSprite: '/assets/gameplay/play-again-button-pressed.svg',
     label: {
       fontSizePx: 82,
       colour: 'var(--map-white)',

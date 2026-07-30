@@ -76,7 +76,7 @@ export const BROWSE_PORTRAIT = {
       anchorMin: { x: 0.3969, y: 0.8821 },
       anchorMax: { x: 0.6031, y: 0.9494 },
     } satisfies LayoutRect,
-    sprite: '/assets/gameplay/map-logo.png',
+    sprite: '/assets/gameplay/map-logo.svg',
   },
 
   /** `BackButton.png` at alpha 0.85 — note this screen uses Back, not Home. */
@@ -88,7 +88,7 @@ export const BROWSE_PORTRAIT = {
       size: { x: 124, y: 124 },
       pivot: { x: 0, y: 0.5 },
     } satisfies LayoutRect,
-    sprite: '/assets/gameplay/back-button.png',
+    sprite: '/assets/gameplay/back-button.svg',
     opacity: 0.85,
   },
 
@@ -126,7 +126,7 @@ export const BROWSE_PORTRAIT = {
       size: { x: 70, y: 70 },
       pivot: { x: 0, y: 0.5 },
     } satisfies LayoutRect,
-    searchSprite: '/assets/browse/search-button.png',
+    searchSprite: '/assets/browse/search-button.svg',
   },
 
   filterBar: {
@@ -138,9 +138,9 @@ export const BROWSE_PORTRAIT = {
     titleRect: {
       kind: 'point',
       anchor: { x: 0, y: 1 },
-      pos: { x: 0, y: 92 },
-      size: { x: 0, y: 0 },
-      pivot: { x: 0, y: 1 },
+      pos: { x: 0, y: 18.77 },
+      size: { x: 300, y: 70 },
+      pivot: { x: 0, y: 0 },
     } satisfies LayoutRect,
     title: { fontSizePx: 42, colour: 'var(--map-white)', text: 'Filter By' } satisfies TextSpec,
     clearFiltersRect: {
@@ -210,6 +210,20 @@ export const BROWSE_PORTRAIT = {
     } satisfies LayoutRect,
     sortLabel: { fontSizePx: 24, colour: 'var(--map-white)', text: 'Sort By' } satisfies TextSpec,
     /**
+     * GridViewButton — scene rect: anchor (1,0.5), pos (0,0), size 60x60,
+     * pivot (1,0.5), sprite GridView.png tinted #FFFFFF (the sprite is the pink
+     * tile itself). Rendered VISUAL ONLY: there is a single grid view, so it
+     * does not switch anything. The pink pill sits at the right end of the bar.
+     */
+    gridViewRect: {
+      kind: 'point',
+      anchor: { x: 1, y: 0.5 },
+      pos: { x: 0, y: 0 },
+      size: { x: 60, y: 60 },
+      pivot: { x: 1, y: 0.5 },
+    } satisfies LayoutRect,
+    gridViewSprite: '/assets/browse/grid-view.svg',
+    /**
      * `PerPageDD` at (0.535, 0.2001)-(0.6823, 0.7999) is active in the scene but
      * its option list is neither in the scene nor in the docs, so it is NOT
      * ported rather than guessed. `limit` stays at the documented 40.
@@ -239,7 +253,7 @@ export const BROWSE_PORTRAIT = {
       size: { x: 100, y: 581.4 },
       pivot: { x: 1, y: 0.5 },
     } satisfies LayoutRect,
-    arrowSprite: '/assets/browse/pagination-arrow.png',
+    arrowSprite: '/assets/browse/pagination-arrow.svg',
     arrowSize: 60,
 
     /** Grid maths — `UpdateGridCellSize`, ui-spec §5. See `CARD_GRID`. */

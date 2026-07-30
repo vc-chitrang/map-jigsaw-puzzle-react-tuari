@@ -4,6 +4,177 @@ Architectural decisions, newest first. Each entry: context → decision → cons
 
 ---
 
+## ADR-026 — Design corrections from the Unity EXE screenshots
+
+**Date:** 2026-07-30 · **Status:** Accepted
+
+**Context.** The client supplied seven screenshots of the running Unity build
+(Home, ImageSelect/QR, Browse, Crop, Crop-rotate, image-selected, Preview) for a
+design pass. The port was driven through every screen at 540×960 and compared.
+Most screens matched; the corrections below are the ones that did not, plus two
+divergences the client chose to keep.
+
+**Decisions (corrections).**
+- **Arrow pulse direction.** The idle pulse used `scale: 1→1.06` while the arrow
+  was positioned with `transform: translate3d(x,y)`. By the CSS transform order
+  the scale multiplied the position offset from the board origin, so every arrow
+  drifted toward the bottom-right instead of pulsing in place. Fixed: position by
+  `left`/`top` and give each arrow a **direction-matched** translate pulse
+  (`arrow-up` pulses up, etc.), travel from `--arrow-pulse-shift`.
+- **GridViewButton restored.** The port had dropped it (P3.11 — one view, no
+  option list). The client wants it shown, so it renders the scene's `GridView.png`
+  at its serialized rect (60² portrait / 45² landscape, right of Sort By),
+  **visual only** — it switches nothing.
+- **ImageSelect label containment.** "Add from MAP's collection" spilled below the
+  card because the Unity label's `ContentSizeFitter` is not reported by
+  `extract_ui.py`, so `labelRect` came through as `size (0,0)` and the flex box
+  collapsed to zero width. Sized to a real centred box below the icon in both
+  orientations.
+- **ImageSelect QR.** Removed the white circular pill (a `circle-9sliced` mask)
+  and the offline dim + "Upload is offline" notice. The QR sprite is
+  black-on-transparent, so it now sits on a plain white **square**, always clean.
+
+**Decisions (kept, diverging from the screenshots on purpose).**
+- **The MAP logo stays** top-centre (portrait) / top-right (landscape). The
+  screenshots show no logo and the scene marks it active; the client chose to keep
+  it. One reversible switch was scoped but not applied.
+- **Collection card captions stay** (title + accession under each card). The Unity
+  cards are image-only; the client chose to keep the captions.
+
+**Consequences.**
+- The **running-build screenshots are now a source of truth** alongside the scene
+  YAML and the runtime code. Two of these (the master image host and the OAuth
+  403, ADR-025) were only visible once the app was driven end to end against the
+  live API — a stub had hidden them.
+- **`KEEP_ARROWS_VISIBLE_FOR_TESTING` is ON** in `Board.tsx` at the client's
+  request (arrows stay visible during a slide / preview / after a win, for
+  testing). Flip it to `false` to restore the Unity behaviour before shipping.
+- Verified at 540×960: arrow positions no longer drift; the grid button renders at
+  60 ref px at the bar's right edge; the ImageSelect label sits inside the card on
+  both axes and the QR is a clean white square. Some checks were by DOM
+  measurement rather than screenshot when the browser pane would not composite.
+
+---
+
+## ADR-025 — Artwork images are fetched through Rust and cached under app data
+
+**Date:** 2026-07-30 · **Status:** Accepted (verified against the live API)
+
+**Context.** Two image defects surfaced once the collection was driven against the
+live API rather than a stub:
+
+1. **The full-resolution master was an unreachable host.** `primary_image` is
+   served from `static.cumulus.co.in`, which was not in `image_fetch`'s host
+   allow-list, so every full-res fetch was rejected as a bad host. Card previews
+   worked only because they loaded ImageKit (`ik.imagekit.io`) straight through an
+   `<img>`, bypassing the allow-list.
+2. **A reduced-scope token → HTTP 403 on the collection.** The hand-edited
+   `.env` (Unity absent, so the generator could not run) had
+   `MAP_OAUTH_SCOPE=read-artwork read-department` **unquoted**. `dotenvy` stops at
+   the first unquoted space, so the app logged in without the scope (token 1263 vs
+   1306 chars) and the collection endpoint answered **403**. `check-api.ps1` has
+   its own parser that tolerated the space, which masked the fault at 200. This is
+   the ADR-016 trap a second time.
+
+**Decision.**
+- Add `cumulus.co.in` to `ALLOWED_IMAGE_HOSTS` (covers `static.cumulus.co.in`).
+- `image_fetch` now **caches to app data**: the URL is hashed to
+  `%LOCALAPPDATA%\<identifier>\image-cache\<hash>.<ext>`; a hit is served from disk
+  without touching the network, a miss is downloaded then written (temp file +
+  rename, so a crash cannot leave a truncated file served as valid). It backs both
+  the low-res grid previews (ImageKit **w600**, ~90 KB) and the full-resolution
+  master loaded when a card is opened (~4–7 MB) — distinct URLs, cached
+  independently.
+- `ArtworkCard` loads its preview through `image_fetch` (a cached blob, revoked on
+  unmount) instead of a raw CDN `<img>`, so previews are cached too and go through
+  the one image path.
+- The `.env` fix is to **quote** the scope value. It is not a code change; a
+  `.env` with a spaced, unquoted value must be quoted (the generator already does
+  this).
+
+**Consequences.**
+- Verified live: login token back to 1306 chars, collection **200**, and a boot
+  fetch wrote a **3.9 MB** master to the cache dir; a second fetch of the same URL
+  is served from disk. Front-end build, `cargo check`, vitest (308) all green.
+- **No eviction yet.** Previews are tiny; masters are cached only when opened. A
+  months-long kiosk run should add a periodic cache-size cap (tracked below).
+- Pure-browser dev (no Tauri, no stub) no longer shows previews, since they route
+  through Rust. The kiosk and the stubbed dev harness are unaffected.
+- **The running build beats the stub, again.** The 4K-master host and the 403 were
+  both invisible until the live API was driven end to end — a stubbed render had
+  hidden them.
+
+---
+
+## ADR-024 — Auto-start and crash-restart: a logon scheduled task drives an external watchdog
+
+**Date:** 2026-07-30 · **Status:** Accepted
+
+**Context.** The kiosk must launch the app on boot and bring it back if it dies,
+with no staff present. This is P6.11 / B6, and the only Phase-6 item that can be
+built and tested without the kiosk hardware. Two things have to be true: the app
+starts by itself, and a crash does not leave a black screen until Monday.
+
+**Decision.** Two layers, both outside the app (see `scripts/kiosk/`):
+
+```
+scheduled task (at logon)  --runs-->  kiosk-watchdog.ps1  --launches-->  app
+        (backstop: restart-on-failure)      (relaunch on crash)
+```
+
+- **Auto-start is a Scheduled Task** triggered at logon, RunLevel Highest, no
+  execution-time-limit, `restart on failure` as a backstop for the watchdog
+  process itself. `install-autostart.ps1` registers it (idempotent, `-DryRun`);
+  `uninstall-autostart.ps1` removes it.
+- **Crash-restart is a separate watchdog process** (`kiosk-watchdog.ps1`): launch
+  the app, wait for exit, decide, repeat. It must be external — a restart
+  mechanism *inside* the app cannot restart the app once the app's process is
+  gone.
+- **The relaunch decision is one pure function**, `Get-RestartDecision` in
+  `KioskPolicy.ps1`: exit code `0` ⇒ **Stop** (a clean exit is the staff
+  double-Esc; auto-relaunching it would trap staff with no way out); any other
+  code ⇒ **relaunch** after a short backoff; ≥5 fast crashes in a row ⇒
+  **cool off** 5 min instead of pinning the CPU. A run ≥60 s counts as healthy
+  and resets the fast-crash counter.
+- **PowerShell, not TypeScript or a Tauri plugin.** PowerShell 5.1 is guaranteed
+  on the kiosk with zero extra runtime (Node and Pester are dev-only). The pure
+  logic is unit-tested with **Pester** (`npm run test:watchdog`, 16 tests); the
+  vitest suite (`npm test`) stays 308 and orientation-agnostic.
+
+**Rejected.**
+- *Registry `Run` key* — cannot elevate, cannot restart on crash, and starts at
+  logon only with no supervision.
+- *`tauri-plugin-autostart`* — registers a launch entry but has no crash-restart,
+  and an in-process watchdog dies with the process it is meant to revive.
+- *Windows Service* — runs in session 0 with no desktop, so a WebView2 GUI never
+  appears. The same reason the task triggers on **logon**, not startup.
+
+**Consequences.**
+- **Opt-in, off by default.** The app build restarts nothing; auto-start is only
+  the scheduled task, installed on demand (`enable-autostart.cmd` /
+  `disable-autostart.cmd` are the click wrappers, or the `install-`/
+  `uninstall-autostart.ps1` scripts directly). **It must stay off wherever a
+  separate launcher owns the app lifecycle** — a watchdog that reopens the app on
+  close fights a launcher that closes it to switch apps.
+- The kiosk must be set to **auto-login** a dedicated account (a hardware step,
+  P6.10); the task fires on that logon. Documented in the README.
+- **Not covered:** a WebView2 renderer that crashes while the host process stays
+  alive (blank board), and a hang. Both need a health signal from the running app
+  and the real kiosk to validate — tracked with P6.7–P6.10. Process-death restart
+  is what is buildable and testable now.
+- **Two products (ADR-020) ⇒ two tasks**, two install dirs, two task names.
+  `KioskPolicy.ps1` derives all three from the orientation, matched to the tauri
+  configs and asserted in the Pester tests.
+- The clean-exit code (`0`) is coupled to Tauri's clean-close behaviour. If a
+  future Tauri version changes it, `CleanExitCode` in `KioskPolicy.ps1` is the one
+  line to update — called out in a comment there.
+- Verified here without touching the scheduler: the watchdog loop was driven with
+  stub exes (exit 7 ⇒ relaunch with backoff then bounded stop; exit 0 ⇒ stop), the
+  installer/uninstaller were run with `-DryRun`, and the policy has 16 Pester
+  tests. Registering the real task needs an elevated shell on the kiosk.
+
+---
+
 ## ADR-023 — A blob URL is revoked by whoever created it, never by a screen that only reads it
 
 **Date:** 2026-07-30 · **Status:** Accepted
@@ -644,3 +815,244 @@ result is solved.
 
 **Consequences.** Solvability is guaranteed by construction — no parity maths. Must be preserved in
 the port. (Improve one thing: bound the "if solved, reshuffle" recursion.)
+
+---
+
+## ADR-026 — Arrow Layer Ordering Behind Tiles
+
+**Date:** 2026-07-30 · **Status:** Accepted
+
+**Context.** Arrow indicators (the directional pulse indicators straddling the empty slot and adjacent tiles) previously rendered on top of puzzle tiles (`z-index` higher than tiles, DOM order after tiles). This caused the circular body of the arrow to overlap and obscure the puzzle tile graphic.
+
+**Decision.** Render arrows **behind** the puzzle tiles in DOM order (and set `.arrow` `z-index: 1`, `.tile` `z-index: 2`).
+
+**Consequences.**
+- Puzzle tiles render on top of the arrow graphics, cleanly covering the portion of the arrow circle that lies inside the tile boundaries.
+- The arrow indicator remains visible in the empty cell slot.
+- Tapping on the visible arrow portion in the empty slot correctly triggers tile movement without visually cluttering adjacent tiles.
+
+---
+
+## ADR-027 — Browse Card Image-Only Display and Filter By Alignment
+
+**Date:** 2026-07-30 · **Status:** Accepted
+
+**Context.** 
+1. The artwork card in the Browse screen previously rendered a text caption block (title, artist, accession number) below the image. As shown in the reference UI (`temp/3.Listing.png`), cards must display only the square artwork image thumbnail.
+2. The "Filter By" title had an vertical offset discrepancy (`top: -92px` vs `Clear Filters` `top: -88.77px`) causing baseline misalignment across the filter bar.
+
+**Decision.**
+1. Removed the caption text block from `ArtworkCard.tsx`, making the card purely a square artwork image container (`object-fit: cover;` filling the 1:1 cell without black letterboxing/padding).
+2. Adjusted `titleRect` in `browse.ts` and `browse-landscape.ts` and updated `.filterTitle` / `.clearFilters` flex alignment so both headers share an identical vertical baseline.
+
+**Consequences.**
+- Cards display only the square artwork image filling the card cell cleanly with no black padding, matching `temp/3.Listing.png`.
+- "Filter By" and "Clear Filters" align on the same horizontal row above the filter dropdowns in both portrait and landscape builds.
+
+---
+
+## ADR-028 — Image Loading Performance Optimizations
+
+**Date:** 2026-07-30 · **Status:** Accepted
+
+**Context.**
+1. **Browse Screen Grid (Listing Page):** `ArtworkCard` was passing 40 ImageKit thumbnail requests through Rust `image_fetch` and serializing 40 binary array buffers over the Tauri IPC bridge (`invoke`), creating severe connection and IPC serialization bottlenecks.
+2. **Puzzle Screen Boot (Home Page):** On initial launch, `loadRandomArtwork` executed a blocking API query (~8s) and downloaded a 4MB–7MB uncompressed master artwork before showing the puzzle board, making the app hang on boot for 12–15 seconds.
+
+**Decision.**
+1. **Browse Screen:** Render `thumbnailUrl` directly in `<img src={thumb} loading="lazy" decoding="async" />`. WebView2 / Chromium handles parallel HTTP/2 downloads, image decoding, and disk caching natively without IPC bridge serialization overhead.
+2. **Home Page Boot:** Initial launch and attract mode use `loadFallbackArtwork` to render local pre-bundled artwork instantly (0 ms). When visitors browse and select an artwork from the MAP collection, `loadArtworkFromCollection` fetches and crops that specific piece.
+
+**Consequences.**
+- Grid card thumbnails on the Browse screen load smoothly and in parallel.
+- Home page boot and attract mode render instantly with zero network delay.
+
+---
+
+## ADR-029 — Browse Screen UI Feedback, Hidden Scrollbar & Loading Overlay
+
+**Date:** 2026-07-30 · **Status:** Accepted
+
+**Context.**
+1. **Scrollbar:** The card grid container (`.cardScroll`) had a visible scrollbar.
+2. **Page Navigation Feedback:** Tapping Next/Prev/Filter triggered a background API query (~8s) without visual feedback on the card area, leaving the user with zero indication that a page load was in progress.
+3. **Local AppData Cache Location:** Needed explicit documentation for where Tauri stores cached images.
+
+**Decision.**
+1. Hidden native scrollbars on `.cardScroll` (`scrollbar-width: none` and `::-webkit-scrollbar { display: none; }`).
+2. Added immediate 12-card skeleton shimmer placeholders for initial load, a semi-transparent `loadingOverlay` for page changes, disallowing double-clicks on page arrows during fetch (`canNext`, `canPrev` disabled while loading).
+3. Documented local AppData cache path: `%LOCALAPPDATA%\MAP Jigsaw Puzzle\image-cache\`.
+
+**Consequences.**
+- The listing card grid scrollbar is hidden.
+- Page navigation gives instant visual feedback with shimmer cards / loading overlays and status text updates.
+
+---
+
+## ADR-030 — Collection API JSON Disk Caching and Unity PageNumbers Bar
+
+**Date:** 2026-07-30 · **Status:** Accepted
+
+**Context.**
+1. **Local Cache Location:** The Windows Local AppData cache path is `%LOCALAPPDATA%\cloud.viitor.map.jigsaw-puzzle\cache\` (based on `tauri.conf.json` app identifier `cloud.viitor.map.jigsaw-puzzle`).
+2. **API Latency (10s+ delay):** Remote API queries (`srcapi.cumulus.co.in`) took ~8–12s on every single page request.
+3. **Pagination UI Discrepancy:** `BrowseScreen` rendered text only without interactive numeric page buttons (`[1] [2] [3]...`), differing from Unity's `PageNumbers` bar (`temp/3.Listing.png`).
+
+**Decision.**
+1. **API Disk Caching:** Implemented 24-hour JSON disk caching in Rust `collection_fetch` (`%LOCALAPPDATA%\cloud.viitor.map.jigsaw-puzzle\cache\collection_cache\`). Repeated queries / page returns resolve in **1 ms** (`[collection_fetch CACHE HIT] loaded in 1ms`).
+2. **Pagination Buttons:** Added page number pill buttons (`[1] [2] [3] [4] [5] ... [808]`) with pink active page highlighting, matching Unity `temp/3.Listing.png`.
+3. **Timing Diagnostics:** Added high-precision timing logs in Rust and JS (`[browse] collection page N loaded in Xms`).
+
+**Consequences.**
+- Subsequent page visits and re-openings load from disk cache in 1 ms.
+- Pagination bar UI matches Unity screenshot (`temp/3.Listing.png`) with interactive numeric page pills.
+
+---
+
+## ADR-031 — Card Container Full Coverage Loading Overlay
+
+**Date:** 2026-07-30 · **Status:** Accepted
+
+**Context.**
+`loadingOverlay` was previously rendered inside `.cardScroll`, which caused it to only cover the scroll view's inner area rather than the entire black card panel container (`.cardContainer`), leaving top/bottom card rows and side arrow margins exposed during page loading.
+
+**Decision.**
+Moved `loadingOverlay` to be a direct child of `.cardContainer` with `position: absolute; inset: 0; z-index: 50;`.
+
+**Consequences.**
+- The loading backdrop overlay covers 100% of the entire card container section (including card grid and side arrow margins), centering the spinner and loading text perfectly over the whole card panel.
+
+---
+
+## ADR-032 — Common Loading Sprite Sheet Integration (`/assets/common/loading.png`)
+
+**Date:** 2026-07-30 · **Status:** Accepted
+
+**Context.**
+`/assets/common/loading.png` is a 3840×3840 px **6×6 grid sprite sheet** containing 27 animated loading frames (640×640 px per frame). Rendering it at a small initial size made the visible inner icon tiny.
+
+**Decision.**
+1. Implemented a 27-step CSS sprite sheet animation (`@keyframes loading-spritesheet`) in `BrowseScreen.module.css` using `background-image: url('/assets/common/loading.png')` and `background-size: 600% 600%`.
+2. Increased `.loadingSpinner` dimensions by 500% (to `400px × 400px`) and `.cardSpinner` to `180px × 180px` to make the animated loading graphic prominent and clearly visible.
+
+**Consequences.**
+- The application plays the 27-frame animated loading sprite sequence at 500% larger size, clearly visible across page loading overlays and card placeholders.
+
+---
+
+## ADR-033 — Browse Screen Loading Blur Effect
+
+**Date:** 2026-07-30 · **Status:** Accepted
+
+**Context.**
+Needed a modern blur visual effect over the grid area while page/filter loading is in progress.
+
+**Decision.**
+1. Added `.blurLoading` (`filter: blur(10px); opacity: 0.4; pointer-events: none; transition: filter 250ms ease-out, opacity 250ms ease-out;`) to `BrowseScreen.module.css`.
+2. Applied `${isLoading ? styles.blurLoading : ''}` to `.cardScroll` in `BrowseScreen.tsx`, and increased `backdrop-filter: blur(12px)` on `loadingOverlay`.
+
+**Consequences.**
+- While loading, the artwork grid smoothly blurs out (`filter: blur(10px)`) under the dark loading overlay, and smoothly un-blurs back to crisp focus once data arrives.
+
+---
+
+## ADR-034 — Image Select Orientation-Specific Divider Line
+
+**Date:** 2026-07-30 · **Status:** Accepted
+
+**Context.**
+On `ImageSelectScreen`, choices are stacked vertically in Portrait mode and side-by-side in Landscape mode. Previously, a vertical line was rendering in Portrait mode between top and bottom boxes.
+
+**Decision.**
+1. Updated `IMAGE_SELECT_PORTRAIT.dividerRect` in `src/layout/crop.ts` to `size: { x: 682, y: 2 }` and `pos.y: -38` for a crisp **horizontal divider line (`—`)** between stacked top/bottom choices.
+2. Preserved `IMAGE_SELECT_LANDSCAPE.dividerRect` in `src/layout/crop-landscape.ts` as a **vertical divider line (`|`)** between side-by-side left/right choices.
+3. Updated `.divider` styling in `ImageSelectScreen.module.css` with `object-fit: fill` and subtle white background opacity.
+
+**Consequences.**
+- Portrait mode displays a clean horizontal divider separating top and bottom panels.
+- Landscape mode displays a clean vertical divider separating left and right panels.
+
+---
+
+## ADR-035 — Gameplay SVG Vector Asset Migration
+
+**Date:** 2026-07-30 · **Status:** Accepted
+
+**Context.**
+Added 21 vector SVG files (`back-button.svg`, `home-button.svg`, `start-button.svg`, `reset-button.svg`, `preview-button.svg`, `new-image-button.svg`, `play-again-button.svg`, `timer-background.svg`, `arrow-up.svg`, `arrow-down.svg`, `arrow-left.svg`, `arrow-right.svg`, etc.) to `public/assets/gameplay/` for resolution-independent 4K rendering.
+
+**Decision.**
+Updated layout configurations (`portrait.ts`, `landscape.ts`, `crop.ts`, `crop-landscape.ts`, `win.ts`, `win-landscape.ts`, `browse.ts`, `browse-landscape.ts`) and game moves logic (`moves.ts`, `Board.tsx`) to load vector `.svg` assets. `map-logo.png` retained as PNG pending logo path verification.
+
+**Consequences.**
+- UI buttons, icons, directional controls, and timer backgrounds render crisp vector lines at 4K resolution.
+- 308 Vitest unit tests pass and release build verified.
+
+---
+
+## ADR-036 — Visible Mouse Cursor in Production Release Builds
+
+**Date:** 2026-07-30 · **Status:** Accepted
+
+**Context.**
+Production builds previously set `data-cursor="hidden"` on `document.documentElement` in `src/main.tsx`, enforcing `cursor: none` across the app in packaged builds.
+
+**Decision.**
+Updated `src/main.tsx` to keep the mouse pointer visible in production release builds by default (gated under `import.meta.env.VITE_HIDE_CURSOR === '1'` if hidden cursor is explicitly needed).
+
+**Consequences.**
+- The mouse pointer is visible during mouse interactions and testing in release builds.
+- 308 Vitest unit tests pass and release build v0.1.7 verified.
+
+---
+
+## ADR-037 — Compile-Time Fallback API Configuration Embedding
+
+**Date:** 2026-07-30 · **Status:** Accepted
+
+**Context.**
+When installing the packaged release executable on a new machine without a `.env` file present beside the executable, `std::env::var()` calls returned empty strings, logging `base_url MISSING, key MISSING, client_id MISSING, client_secret MISSING` and falling back to bundled offline artwork.
+
+**Decision.**
+1. Updated `src-tauri/build.rs` to read `src-tauri/.env` at build time and emit `cargo:rustc-env` variables for all `MAP_*` configuration keys.
+2. Updated `src-tauri/src/config.rs` to use `option_env!(...)` compile-time fallbacks when runtime environment variables and local `.env` files are absent.
+
+**Consequences.**
+- Packaged release binaries run out-of-the-box on any new machine/kiosk with pre-configured API access.
+- Local `.env` files and system environment variables continue to override the compile-time defaults if specified.
+- 308 Vitest unit tests pass and release build v0.1.8 verified.
+
+---
+
+## ADR-038 — Clean Vector Up/Down Arrows & MAP Logo Header Asset Fix
+
+**Date:** 2026-07-30 · **Status:** Accepted
+
+**Context.**
+1. `arrow-up.svg` and `arrow-down.svg` contained an unneeded solid black background path (`fill="#000000"`), which blended into the dark puzzle board background and rendered up/down directional arrows invisible.
+2. `map-logo.svg` was a placeholder solid white rectangle, causing the MAP Museum logo header at the top center of every screen to render invisibly or fail to display.
+
+**Decision.**
+1. Replaced `arrow-up.svg` and `arrow-down.svg` with clean vector rotations (`rotate(90deg)` and `rotate(-90deg)`) of the green-and-white arrow icon.
+2. Replaced `map-logo.svg` with a high-DPI vector SVG emblem featuring the MAP Museum of Art & Photography logo typography (`M A P`) and accent emblem, and updated layout tables (`portrait.ts`, `landscape.ts`, `browse.ts`, `browse-landscape.ts`, `crop.ts`, `crop-landscape.ts`) to use `map-logo.svg`.
+
+**Consequences.**
+- Up and Down directional tile arrows are fully visible and pulse cleanly during gameplay.
+- The MAP Museum logo header renders crisp and centered across all screens.
+- 308 Vitest unit tests pass and release build v0.1.9 verified.
+
+---
+
+## ADR-039 — Full SVG Asset Integration Across Browse, Crop, and Select Screens
+
+**Date:** 2026-07-30 · **Status:** Accepted
+
+**Context.**
+Added 7 additional SVG vector files (`grid-view.svg`, `page-selection-box.svg`, `pagination-arrow.svg`, `search-button.svg`, `crop-reference-frame.svg`, `export-arrow.svg`, `gallery-add.svg`) across `public/assets/browse/`, `public/assets/crop/`, and `public/assets/select/`.
+
+**Decision.**
+Updated layout configurations (`browse.ts`, `browse-landscape.ts`, `crop.ts`, `crop-landscape.ts`) to use `.svg` vector asset paths for search icons, grid view buttons, pagination arrows, crop reference frames, and gallery add buttons.
+
+**Consequences.**
+- UI icons across all screens now render crisp vector graphics at 4K resolution.
+- 308 Vitest unit tests pass and release build v0.1.10 verified.

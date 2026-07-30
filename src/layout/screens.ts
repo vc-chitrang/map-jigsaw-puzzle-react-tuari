@@ -158,6 +158,9 @@ export interface BrowseLayout {
     readonly sortRect: LayoutRect;
     readonly sortLabelRect: LayoutRect;
     readonly sortLabel: TextSpec;
+    /** GridViewButton — visual only (there is a single grid view to switch to). */
+    readonly gridViewRect: LayoutRect;
+    readonly gridViewSprite: string;
   };
   readonly cardArea: {
     readonly containerRect: LayoutRect;
