@@ -248,8 +248,8 @@ export const CROP_PORTRAIT = {
   startButton: {
     rect: {
       kind: 'fractional',
-      anchorMin: { x: 0.148, y: 0.108 },
-      anchorMax: { x: 0.852, y: 0.147 },
+      anchorMin: { x: 0.148, y: 0.2476 },
+      anchorMax: { x: 0.852, y: 0.294 },
     } satisfies LayoutRect,
     sprite: '/assets/gameplay/start-button.svg',
     pressedSprite: '/assets/gameplay/start-button-pressed.svg',

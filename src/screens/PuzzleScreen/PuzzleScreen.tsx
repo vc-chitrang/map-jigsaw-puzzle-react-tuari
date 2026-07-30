@@ -48,6 +48,7 @@ interface PuzzleScreenProps {
    * fresh random artwork is loaded — the cropped blob has been revoked by then.
    */
   readonly onPlayAgain?: () => void;
+  readonly onNewImage?: () => void;
   /**
    * Reports whether a game is in progress, which the Back rule needs: Back on the
    * Puzzle screen abandons a game mid-play but QUITS the app in attract mode
@@ -83,6 +84,7 @@ export function PuzzleScreen({
   onStart,
   onHome,
   onPlayAgain,
+  onNewImage,
   onMidGameChange,
   resetToken = 0,
 }: PuzzleScreenProps = {}) {
@@ -204,10 +206,14 @@ export function PuzzleScreen({
   }, [state.board, state.identity, state.highScoreSeconds]);
 
   const handleNewImage = useCallback(() => {
-    startGameplayImmediately.current = false;
-    dispatch({ type: 'RESET_TO_LAUNCH_MODE' });
-    setBuildToken((token) => token + 1);
-  }, []);
+    if (onNewImage) {
+      onNewImage();
+    } else {
+      startGameplayImmediately.current = false;
+      dispatch({ type: 'RESET_TO_LAUNCH_MODE' });
+      setBuildToken((token) => token + 1);
+    }
+  }, [onNewImage]);
 
   /**
    * `ResetToLaunchMode(true)` — a new image that goes STRAIGHT into gameplay,

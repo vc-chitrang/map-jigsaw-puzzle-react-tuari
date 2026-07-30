@@ -128,7 +128,7 @@ describe('Crop — landscape', () => {
   });
 
   it('uses a point-anchored START of the landscape footer size', () => {
-    expect(CL.startButton.rect).toMatchObject({ size: { x: 315, y: 121 }, pos: { x: 0, y: 100 } });
+    expect(CL.startButton.rect).toMatchObject({ size: { x: 315, y: 121 }, pos: { x: 0, y: 77 } });
     expect(CL.startButton.label.fontSizePx).toBe(82);
     // Portrait authors the label uppercase at 100 px in a fractional rect.
     expect(CP.startButton.rect.kind).toBe('fractional');

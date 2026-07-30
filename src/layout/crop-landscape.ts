@@ -265,7 +265,7 @@ export const CROP_LANDSCAPE = {
     rect: {
       kind: 'point',
       anchor: { x: 0.5, y: 0 },
-      pos: { x: 0, y: 100 },
+      pos: { x: 0, y: 77 },
       size: { x: 315, y: 121 },
       pivot: { x: 0.5, y: 0 },
     } satisfies LayoutRect,

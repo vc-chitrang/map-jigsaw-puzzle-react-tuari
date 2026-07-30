@@ -1056,3 +1056,22 @@ Updated layout configurations (`browse.ts`, `browse-landscape.ts`, `crop.ts`, `c
 **Consequences.**
 - UI icons across all screens now render crisp vector graphics at 4K resolution.
 - 308 Vitest unit tests pass and release build v0.1.10 verified.
+
+---
+
+## ADR-040 — New Image Navigation to QR Screen & Crop Screen Start Button Y-Alignment
+
+**Date:** 2026-07-30 · **Status:** Accepted
+
+**Context.**
+1. Pressing the "New Image" button on the home/puzzle screen previously triggered a local artwork re-shuffle rather than navigating to the QR upload screen (`ImageSelectScreen`).
+2. The `START` button on `CropScreen` was vertically misaligned relative to the `New Image` button baseline on the home screen.
+
+**Decision.**
+1. Updated `PuzzleScreen.tsx` and `App.tsx` so clicking "New Image" routes directly to `ImageSelectScreen` (`go('select')`).
+2. Updated `startButton.rect` Y-anchors in `crop.ts` (`anchorMin.y: 0.2476`, `anchorMax.y: 0.294`) and `crop-landscape.ts` (`pos.y: 77`) to align the `START` button on the `CropScreen` with the `New Image` button Y-baseline on the home screen.
+
+**Consequences.**
+- Clicking "New Image" opens the QR scan / selection screen as expected.
+- The `START` button on the `CropScreen` aligns with the `New Image` button vertical position across screens.
+- 308 Vitest unit tests pass and release build v0.1.11 verified.
