@@ -2,8 +2,12 @@
 
 /*
  * Transparent: the scene's Background image is at alpha 0, so the solved board
- * and the preview behind remain visible. Pointer events pass through everywhere
- * except the popup, so a stray tap on the board does nothing.
+ * and the preview behind remain visible. The overlay is full-screen (screenRect
+ * is `stretch`) and CAPTURES pointer events, so while the win popup is up the
+ * controls behind it — the footer buttons, the timer, the home button — are not
+ * clickable. Only the popup and its Play Again button receive taps. (The board
+ * area still does nothing on tap, as before; the difference is the background
+ * buttons are now blocked too.)
  *
  * z-index must beat the preview panel (10). In Unity the WinScreen is a separate
  * screen ROOT and therefore a later sibling than the whole Puzzle screen, so it
@@ -11,28 +15,41 @@
  * say so explicitly. Without this the popup is invisible — the preview covers it.
  */
 .screen {
-  pointer-events: none;
+  pointer-events: auto;
   z-index: 20;
+  /* Shared corner radius for the win boxes; ~matches the button art corners. */
+  --win-box-radius: 20px;
 }
 
 .popup {
   /* The "You Win!" banner hangs above the popup's top edge. */
   overflow: visible;
   pointer-events: auto;
+  /* Rounded panel with the scene's thin white Outline. Colour is set inline
+     from `outlineColour`; radius/width are shared with the pattern layer. */
+  --win-popup-radius: 56px;
+  --win-outline-width: 5px;
+  border-radius: var(--win-popup-radius);
+  border: var(--win-outline-width) solid;
 }
 
-.mask,
 .pattern {
   position: absolute;
   inset: 0;
+  border-radius: var(--win-popup-radius);
   pointer-events: none;
 }
 
+/*
+ * One radius for every rounded box on the win screen, matching the corner of the
+ * SpriteButton art (Play Again / the footer buttons). Was 16 on the banner and 12
+ * on the score boxes — visibly inconsistent.
+ */
 .youWin {
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 16px;
+  border-radius: var(--win-box-radius);
 }
 
 .youWinText {
@@ -63,7 +80,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 12px;
+  border-radius: var(--win-box-radius);
 }
 
 .scoreValue {

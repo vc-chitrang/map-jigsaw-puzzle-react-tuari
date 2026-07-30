@@ -159,6 +159,20 @@ export function PuzzleScreen({
     }
   }, [state.phase, state.timer.elapsedSeconds, state.identity, state.highScoreSeconds]);
 
+  // Debug/QA cheat: Ctrl+Shift+Alt+S instantly solves the board and shows the
+  // win popup. `e.code === 'KeyS'` is used so the modifier combination cannot
+  // remap the produced character. Capture phase so an input field cannot eat it.
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.ctrlKey && event.shiftKey && event.altKey && event.code === 'KeyS') {
+        event.preventDefault();
+        dispatch({ type: 'SOLVE_CHEAT' });
+      }
+    };
+    window.addEventListener('keydown', onKeyDown, { capture: true });
+    return () => window.removeEventListener('keydown', onKeyDown, { capture: true });
+  }, []);
+
   // Release the blob URLs when the screen goes away.
   useEffect(() => () => artwork?.release(), [artwork]);
 

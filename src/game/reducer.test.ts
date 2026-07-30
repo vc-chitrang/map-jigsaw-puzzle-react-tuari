@@ -306,3 +306,40 @@ describe('HIGH_SCORE_LOADED', () => {
     expect(state.highScoreSeconds).toBe(77);
   });
 });
+
+describe('SOLVE_CHEAT (debug/QA hotkey)', () => {
+  const allHome = (state: GameState) =>
+    !!state.board &&
+    state.board.tiles.every(
+      (t) => t.currentCell.x === t.correctCell.x && t.currentCell.y === t.correctCell.y,
+    );
+
+  it('solves an unsolved board and enters the reveal sequence', () => {
+    const state = gameReducer(built(oneMoveFromSolved), { type: 'SOLVE_CHEAT' });
+    expect(allHome(state)).toBe(true);
+    expect(state.isSolved).toBe(true);
+    expect(state.phase).toBe('revealing');
+    expect(state.mode).toBe('gameplay');
+    expect(state.isAnimating).toBe(false);
+    expect(state.timer.running).toBe(false);
+  });
+
+  it('the reveal delay then advances to the win screen', () => {
+    const won = run(
+      built(oneMoveFromSolved),
+      { type: 'SOLVE_CHEAT' },
+      { type: 'WIN_DELAY_ELAPSED' },
+    );
+    expect(won.phase).toBe('won');
+    expect(won.previewVisible).toBe(true);
+  });
+
+  it('is a no-op once solving/won, so a second press cannot re-enter', () => {
+    const revealing = gameReducer(built(oneMoveFromSolved), { type: 'SOLVE_CHEAT' });
+    expect(gameReducer(revealing, { type: 'SOLVE_CHEAT' })).toBe(revealing);
+  });
+
+  it('is a no-op with no board', () => {
+    expect(gameReducer(INITIAL_GAME_STATE, { type: 'SOLVE_CHEAT' })).toBe(INITIAL_GAME_STATE);
+  });
+});
