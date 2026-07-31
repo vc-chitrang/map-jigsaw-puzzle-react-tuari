@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState } from 'react';
+import { invoke } from '@tauri-apps/api/core';
 import {
   formatResultCount,
   hasImage,
@@ -12,8 +13,7 @@ import { ArtworkCard } from './ArtworkCard';
 import { FilterDropdown, type DropdownOption } from './FilterDropdown';
 import { SortDropdown } from './SortDropdown';
 import { useCollection } from './useCollection';
-import { OnScreenKeyboard } from '../../ui/keyboard/OnScreenKeyboard';
-import { isTap, keyboardHeight } from '../../ui/keyboard/layout';
+import { isTap } from '../../ui/pointer';
 import styles from './BrowseScreen.module.css';
 
 /**
@@ -56,49 +56,46 @@ export function BrowseScreen({ onBack, onSelectArtwork }: BrowseScreenProps) {
    */
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
 
-  /**
-   * Which field the on-screen keyboard is serving: the main search box, or the
-   * search input inside one filter popup. `null` means the keyboard is closed.
-   */
-  const [keyboardTarget, setKeyboardTarget] = useState<'search' | { filter: string } | null>(null);
-
-  /** Popup search text, per dropdown. Lifted so the keyboard can drive it. */
+  /** Popup search text, per dropdown. */
   const [filterSearch, setFilterSearch] = useState<Record<string, string>>({});
 
-  const setOneFilterSearch = (key: string, next: string | ((previous: string) => string)) =>
-    setFilterSearch((current) => ({
-      ...current,
-      [key]: typeof next === 'function' ? next(current[key] ?? '') : next,
-    }));
+  const setOneFilterSearch = (key: string, next: string) =>
+    setFilterSearch((current) => ({ ...current, [key]: next }));
 
   /**
-   * Route the keyboard's updater to whichever field it is serving. An updater
-   * rather than a value, so fast typing composes instead of overwriting.
+   * Dismiss the Windows touch keyboard by giving up focus.
+   *
+   * The app no longer ships its own keyboard (ADR-049): the kiosk uses the Windows
+   * TabTip keyboard only, and TabTip is driven ENTIRELY by focus. Windows raises it
+   * when an editable field takes focus and hides it when that focus goes, so
+   * blurring is the whole of "close the keyboard". Nothing is toggled directly —
+   * `ITipInvocation.Toggle` is a blind flip that double-fired, which is what made
+   * the Unity build's keyboard blink (ADR-006).
    */
-  const applyKeyboardEdit = (updater: (previous: string) => string) => {
-    if (keyboardTarget === null) return;
-    if (keyboardTarget === 'search') actions.setSearchText(updater);
-    else setOneFilterSearch(keyboardTarget.filter, updater);
+  const dismissKeyboard = () => {
+    const active = document.activeElement;
+    if (active instanceof HTMLElement) active.blur();
+    invoke('close_tabtip').catch((e) => console.warn('Failed to close keyboard', e));
   };
 
   /**
-   * Open exactly one popup (or none), dismissing the on-screen keyboard.
+   * Open exactly one popup (or none), and let the keyboard go with it.
    *
-   * Every route into a popup goes through here: touching a dropdown control, or
-   * choosing an option, or Clear Filters. The keyboard is 1/3 of the screen, so
-   * leaving it up over a list the visitor is now reading hides most of it —
-   * and if it was serving the popup that just closed, it would be typing into a
-   * field that no longer exists.
+   * Every route into a popup goes through here: touching a dropdown control,
+   * choosing an option, or Clear Filters. The keyboard covers a third of the
+   * screen, so leaving it up over a list the visitor is now reading hides most of
+   * it — and if it was serving the popup that just closed, it would be typing into
+   * a field that no longer exists.
    */
   const showOnly = (next: string | null) => {
     setOpenDropdown(next);
-    setKeyboardTarget(null);
+    dismissKeyboard();
   };
 
   /**
    * Pointer-down position, for the tap-versus-drag test on dismiss.
    * `HandleKeyboardDismiss`: on pointer UP, a movement under 15 px is a tap and
-   * closes the keyboard; a drag is a scroll and must not (docs/ui-spec.md §5).
+   * dismisses; a drag is a scroll and must not (docs/ui-spec.md §5).
    */
   const dismissStart = useRef<{ x: number; y: number } | null>(null);
 
@@ -110,11 +107,11 @@ export function BrowseScreen({ onBack, onSelectArtwork }: BrowseScreenProps) {
   const handleBackdropPointerUp = (event: React.PointerEvent) => {
     const start = dismissStart.current;
     dismissStart.current = null;
-    if (!start || keyboardTarget === null) return;
+    if (!start) return;
 
-    // A tap on an input re-targets rather than dismissing; those elements stop
-    // propagation themselves, so anything reaching here is outside them.
-    if (isTap(start.x, start.y, event.clientX, event.clientY)) setKeyboardTarget(null);
+    // A tap on an input keeps focus (those elements stop propagation themselves),
+    // so anything reaching here is outside them and should drop the keyboard.
+    if (isTap(start.x, start.y, event.clientX, event.clientY)) dismissKeyboard();
   };
 
   const optionsFor = useMemo<Record<string, readonly DropdownOption[]>>(() => {
@@ -210,17 +207,16 @@ export function BrowseScreen({ onBack, onSelectArtwork }: BrowseScreenProps) {
             onKeyDown={(event) => {
               if (event.key === 'Enter') actions.submitSearch();
             }}
-            // Focus opens the in-app keyboard (ADR-006). `readOnly` would block
-            // a physical keyboard, which staff use for setup, so both work.
-            onFocus={() => setKeyboardTarget('search')}
+            // Focus is what raises the Windows TabTip keyboard (ADR-049), so this
+            // field must stay a real focusable <input> — `readOnly` would suppress
+            // both TabTip and the physical keyboard staff use for setup.
             // Deliberately does NOT stopPropagation: the event must reach the
             // search bar's handler above, which is what closes an open popup.
-            // Retargets rather than closes — a keyboard serving a filter popup
-            // moves to this field, so the visitor can type straight away.
-            onPointerDown={() => setKeyboardTarget('search')}
             autoComplete="off"
             spellCheck={false}
             aria-label="Search the collection"
+            inputMode="none"
+            onFocus={() => invoke('open_tabtip').catch((e) => console.warn('Failed to open keyboard', e))}
           />
 
           {/* Visible only when the field has text (UpdateSearchControls). */}
@@ -232,7 +228,7 @@ export function BrowseScreen({ onBack, onSelectArtwork }: BrowseScreenProps) {
               onClick={() => {
                 // Clearing the field is the end of typing, so the keyboard goes.
                 actions.clearSearch();
-                setKeyboardTarget(null);
+                dismissKeyboard();
               }}
               aria-label="Clear the search"
             >
@@ -246,10 +242,9 @@ export function BrowseScreen({ onBack, onSelectArtwork }: BrowseScreenProps) {
           className={styles.searchSubmit}
           style={rectStyle(B.searchBar.searchButtonRect)}
           onClick={() => {
-            // Submitting is the end of typing, so the keyboard goes — matching
-            // the keyboard's own SEARCH key, which already closed itself.
+            // Submitting is the end of typing, so the keyboard goes.
             actions.submitSearch();
-            setKeyboardTarget(null);
+            dismissKeyboard();
           }}
           aria-label="Search"
         >
@@ -298,7 +293,6 @@ export function BrowseScreen({ onBack, onSelectArtwork }: BrowseScreenProps) {
             disabled={collection.filters === null}
             search={filterSearch[item.key] ?? ''}
             onSearchChange={(next) => setOneFilterSearch(item.key, next)}
-            onSearchFocus={() => setKeyboardTarget({ filter: item.key })}
           />
         ))}
       </div>
@@ -465,23 +459,9 @@ export function BrowseScreen({ onBack, onSelectArtwork }: BrowseScreenProps) {
         </span>
       </div>
 
-      {/* ---- On-screen keyboard ----
-          Anchored to the bottom of the screen and centred. Rendered last so it
-          sits above the grid and the pagination bar. */}
-      {keyboardTarget !== null ? (
-        <div className={styles.keyboardDock} style={{ bottom: '0px', height: `${keyboardHeight()}px` }}>
-          <OnScreenKeyboard
-            onChange={applyKeyboardEdit}
-            onSubmit={() => {
-              // Submitting the main field runs the query; a filter popup's field
-              // only narrows its own list, so there is nothing to submit there.
-              if (keyboardTarget === 'search') actions.submitSearch();
-              setKeyboardTarget(null);
-            }}
-            onClose={() => setKeyboardTarget(null)}
-          />
-        </div>
-      ) : null}
+      {/* No on-screen keyboard is rendered. The kiosk uses the Windows TabTip
+          keyboard only (ADR-049), which Windows raises and hides from field focus —
+          shipping one as well put TWO keyboards on screen at once. */}
     </div>
   );
 }

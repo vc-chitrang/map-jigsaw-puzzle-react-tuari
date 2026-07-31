@@ -668,25 +668,8 @@
   touch-action: manipulation;
 }
 
-/* ---- Keyboard dock --------------------------------------------------------- */
-/*
- * Bottom-anchored and centred. Above the grid and pagination, below the
- * transition overlay (z-index 2000).
- */
-.keyboardDock {
-  position: absolute;
-  left: 0;
-  right: 0;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  z-index: 100;
-  pointer-events: none;
-}
-
-.keyboardDock > * {
-  pointer-events: auto;
-}
+/* No keyboard dock. The kiosk uses the Windows TabTip keyboard only (ADR-049) —
+   it is a separate OS window, not something this stylesheet positions. */
 
 /* ---- Pagination ------------------------------------------------------------ */
 .paginationBar {

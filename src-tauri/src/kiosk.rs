@@ -118,6 +118,17 @@ pub fn reassert(app: &tauri::AppHandle) {
         return;
     }
 
+    // KEYBOARD GUARD: TabTip steals OS focus when it opens, which fires a
+    // `Focused(false)` event here. If we reassert `always_on_top` at that
+    // moment we instantly bury the keyboard behind the kiosk window.
+    // Stand down while the keyboard is visible; normal kiosk protection
+    // resumes the moment the visitor closes it (matches the stateless
+    // IsCloaked check in the original Unity `OnScreenKeyboard.cs`).
+    if crate::keyboard::is_tabtip_visible() {
+        log::info!("[kiosk] TabTip keyboard visible — skipping reassert to avoid hiding it.");
+        return;
+    }
+
     let Some(window) = app.get_webview_window("main") else {
         return;
     };

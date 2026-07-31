@@ -12,6 +12,7 @@
 mod api;
 mod config;
 mod kiosk;
+mod keyboard;
 
 // `Manager` brings `app_handle()` into scope for the window-event handler below.
 use tauri::Manager;
@@ -28,6 +29,8 @@ pub fn run() {
             api::collection_fetch,
             api::image_fetch,
             api::public_config,
+            keyboard::open_tabtip,
+            keyboard::close_tabtip,
         ])
         // Keep the kiosk on top for the whole run, not just at startup.
         //
