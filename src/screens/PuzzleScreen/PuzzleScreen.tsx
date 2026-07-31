@@ -22,12 +22,8 @@ import { SpriteButton } from '../../ui/SpriteButton';
 import { highScoreStore } from '../../storage/localStore';
 import { Board } from './Board';
 import { useAutoShuffle, useGameTimer, useMoveSettler, useWinDelay } from './hooks';
-import {
-  adoptPreparedArtwork,
-  loadCollectionArtwork,
-  loadRandomArtwork,
-  type LoadedArtwork,
-} from './loadArtwork';
+import { adoptPreparedArtwork, loadRandomArtwork, type LoadedArtwork } from './loadArtwork';
+import { LoadingOverlay } from '../../ui/LoadingOverlay';
 import { WinScreen } from '../WinScreen/WinScreen';
 import styles from './PuzzleScreen.module.css';
 
@@ -101,12 +97,37 @@ export function PuzzleScreen({
   const [buildToken, setBuildToken] = useState(0);
   const startGameplayImmediately = useRef(false);
 
+  /**
+   * True from the moment a build starts until the board AND its title are up.
+   * Drives the loading scrim.
+   */
+  const [building, setBuilding] = useState(true);
+
   // ---- Load artwork, then build a shuffled board ----------------------------
+  /**
+   * ONE effect owns the board's artwork.
+   *
+   * It used to be two: this one loaded the bundled image immediately and a second
+   * swapped in a collection piece afterwards (ADR-043). Two owners for one piece
+   * of state raced, and because the bundled load always carries a TITLE-LESS
+   * identity, whenever it settled second it wiped the name off a perfectly good
+   * collection artwork. That is what made the title appear only sometimes: the
+   * warm Rust caches (ADR-025, ADR-030) return a cached page in ~1 ms, so the
+   * supposedly slow load frequently won the race. Superseded by ADR-045.
+   *
+   * `RESET_TO_LAUNCH_MODE` compounds it — it returns `INITIAL_GAME_STATE`, which
+   * clears `identity` while `artwork` (React state, not reducer state) keeps the
+   * image, so Home left the picture up with no name until a build finished. Hence
+   * the scrim: neither is shown until both are ready.
+   */
   useEffect(() => {
     let cancelled = false;
+    setBuilding(true);
 
     void (async () => {
       try {
+        // Collection FIRST, bundled set on any failure — `loadRandomArtwork`
+        // decides, and never surfaces an error state.
         const loaded = preparedArtwork
           ? adoptPreparedArtwork(preparedArtwork.url, preparedArtwork.title)
           : await loadRandomArtwork();
@@ -134,8 +155,12 @@ export function PuzzleScreen({
         });
         startGameplayImmediately.current = false;
       } catch (error) {
-        // Both sources failed, so a bundled asset is missing — a packaging fault.
+        // Even the bundled set failed, so an asset is missing — a packaging fault.
         console.error('[puzzle] artwork load failed', error);
+      } finally {
+        // Lifts the scrim even on failure. A spinner that never clears is worse
+        // than a board with no picture, and staff keep their exit gesture.
+        if (!cancelled) setBuilding(false);
       }
     })();
 
@@ -144,66 +169,6 @@ export function PuzzleScreen({
     };
   }, [buildToken, preparedArtwork]);
 
-  /**
-   * Whether swapping the board's artwork underneath the visitor is still safe:
-   * attract mode, nothing solved. Read from the background load below, which
-   * resolves long after its effect closed over `state`, so it must be a ref.
-   */
-  const attractRef = useRef(true);
-  attractRef.current = state.mode === 'launch' && !state.isSolved;
-
-  /**
-   * Upgrade attract mode from the bundled image to a titled collection piece.
-   *
-   * The bundled artwork has no title, so the name above the board was blank on
-   * the home screen while gameplay (reached through Browse) showed one. Unity
-   * has no such gap: its launch mode loads from the API and takes `chosen.title`.
-   *
-   * Runs AFTER the instant fallback, so ADR-028's 0 ms boot is untouched — the
-   * board is playable immediately and the titled artwork replaces it when it
-   * arrives. Offline, or once the visitor has started playing, nothing happens.
-   */
-  useEffect(() => {
-    // A cropped image owns the board; never override the visitor's own picture.
-    if (preparedArtwork) return;
-
-    let cancelled = false;
-
-    void (async () => {
-      try {
-        const loaded = await loadCollectionArtwork();
-
-        // The visitor may have started playing while this was in flight.
-        if (cancelled || !attractRef.current) {
-          loaded.release();
-          return;
-        }
-
-        setArtwork((previous) => {
-          previous?.release();
-          return loaded;
-        });
-
-        dispatch({
-          type: 'BUILD',
-          board: createShuffledBoard().board,
-          identity: loaded.identity,
-          highScoreSeconds: readHighScore(highScoreStore),
-        });
-      } catch (error) {
-        // Offline, or the collection is unreachable. The bundled image is
-        // already on screen and stays — a kiosk showing a different picture
-        // beats a kiosk showing an error (project-overview non-negotiable 4).
-        // Logged, not swallowed: silent means a real fault here is invisible,
-        // and the only symptom is a missing title.
-        console.info('[puzzle] attract artwork stayed on the bundled set', error);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [buildToken, preparedArtwork]);
 
   // ---- Effects that drive the state machine --------------------------------
   useGameTimer(state.timer.running, state.isSolved, dispatch);
@@ -476,6 +441,12 @@ export function PuzzleScreen({
           <img className={styles.previewImage} src={artwork.url} alt="" draggable={false} />
         </div>
       ) : null}
+
+      {/* Build scrim. Rendered LAST and z-index 40, so it covers the board, the
+          preview panel (10) and the win popup (20) — the screen is not ready and
+          nothing behind it should be reachable. Lifts only once the artwork, the
+          board and the title are all in place. */}
+      {building ? <LoadingOverlay label="Building the puzzle..." /> : null}
     </div>
   );
 }

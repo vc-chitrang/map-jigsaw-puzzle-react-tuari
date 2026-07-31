@@ -229,7 +229,11 @@ export function BrowseScreen({ onBack, onSelectArtwork }: BrowseScreenProps) {
               type="button"
               className={styles.searchClear}
               style={rectStyle(B.searchBar.clearButtonRect)}
-              onClick={actions.clearSearch}
+              onClick={() => {
+                // Clearing the field is the end of typing, so the keyboard goes.
+                actions.clearSearch();
+                setKeyboardTarget(null);
+              }}
               aria-label="Clear the search"
             >
               <img src={B.searchBar.clearSprite} alt="" draggable={false} />
@@ -241,7 +245,12 @@ export function BrowseScreen({ onBack, onSelectArtwork }: BrowseScreenProps) {
           type="button"
           className={styles.searchSubmit}
           style={rectStyle(B.searchBar.searchButtonRect)}
-          onClick={actions.submitSearch}
+          onClick={() => {
+            // Submitting is the end of typing, so the keyboard goes — matching
+            // the keyboard's own SEARCH key, which already closed itself.
+            actions.submitSearch();
+            setKeyboardTarget(null);
+          }}
           aria-label="Search"
         >
           <img src={B.searchBar.searchSprite} alt="" draggable={false} />

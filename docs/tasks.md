@@ -208,6 +208,17 @@ stubbed collection unless noted.
 | C13 | "Clear Filters" sized like "Filter By" | **DONE** | 24→42 portrait, 23→24.5 landscape. A deliberate divergence from the scene; `screens.test.ts` now asserts the two MATCH rather than asserting the scene numbers |
 | C14 | Dropdown option text overlaps the row below | **DONE** | `.dropdownItem` had a fixed `height: 60px`; real artist names ("Abanindranath Tagore (Guided by Shuvaprasana Bhattacharya)") wrapped and spilled onto the next row. Now `min-height` + a two-line clamp with ellipsis and a `title` tooltip. Verified with the client's own names: 0 overlapping rows, short rows keep the 60 px touch target |
 
+### Third round, same day
+
+| # | Item | Status | Notes |
+|---|---|---|---|
+| C15 | Artwork title still intermittent, missing in gameplay too | **DONE** | ADR-045. **Root cause was not the title element** — it measures correct. Two defects: (a) ADR-043 gave two effects ownership of the board artwork and they raced, and the bundled load always carries a title-less identity, so with the Rust caches warm (~1 ms) it settled second and wiped the title; (b) `RESET_TO_LAUNCH_MODE` returns `INITIAL_GAME_STATE`, clearing `identity` while `artwork` survives, so Home left the picture up with no name. Plus the picker could choose an untitled record. Now ONE sequential owner, collection-first, titled-record preference. **Verified 8 rebuilds alternating warm/cold: 0 blank titles**. Live API confirmed via `check-api.ps1` — HTTP 200, and `first title` is the exact artwork from the client's screenshots |
+| C16 | Show a full loading screen while the puzzle builds | **DONE** | ADR-045. New shared `ui/LoadingOverlay` reusing the ADR-032 sprite sheet. Up from the start of a build until artwork + board + title are all ready; lifts in a `finally` so a failure cannot leave it stuck. **Gives up ADR-028's 0 ms boot on purpose** — that is what the client asked for |
+| C17 | Search submit + clear buttons close the keyboard | **DONE** | Both are the end of typing. Verified: open → clear → closed; reopen → submit → closed |
+| C18 | Version badge shows only the version | **DONE** | Orientation moved to a `data-orientation` attribute rather than deleted — it was the only thing distinguishing the two installers' bundles (ADR-020), so it stays greppable with nothing on screen |
+| C19 | Dropdown CONTROL label runs under the chevron | **DONE** | The real bug behind "text overlapping". `.dropdownLabel` had `padding-right: 56px`, but the label's inline `textStyle(...)` emits `paddingRight: '0px'` from the TMP margin, and inline beats the class — clearance was silently zero. Now a `right: 56px` inset, which `textStyle` never sets. Verified: all 6 controls clear their arrow; the long value ellipsises |
+| C20 | Dropdown popup must sit above the loading overlay | **DONE** | Both were `z-index: 50`, and the card container comes after the filter bar in DOM order, so the scrim won. Popup is now 60. Verified with the scrim live: overlay 50, popup 60, hit-test lands on the popup |
+
 ### §12 parity checklist status
 
 | Item | Status |

@@ -100,26 +100,45 @@ export async function loadFallbackArtwork(rng: () => number = Math.random): Prom
 }
 
 /**
- * Boot / "New Image" artwork: the bundled set, loaded instantly.
+ * Boot / "New Image" / "Play Again" artwork: a collection piece, falling back to
+ * the bundled set.
  *
- * Deliberately does NOT touch the network (ADR-028): a blocking collection query
- * plus a 4-7 MB master made the app hang for 12-15 s on launch. The collection
- * piece arrives afterwards, in the background — see `loadCollectionArtwork`.
+ * **Collection FIRST, and awaited.** An earlier version returned the bundled
+ * image immediately and let a second effect swap in the collection piece
+ * afterwards (ADR-043). That gave two owners for one piece of board state and
+ * they raced: the bundled load always carries a title-less identity, so whenever
+ * it settled second — which the warm Rust caches make common, since a cached
+ * collection page resolves in ~1 ms while cropping a bundled JPEG does not — it
+ * overwrote the titled identity and the artwork name vanished. Superseded by
+ * ADR-045: one sequential load, one owner, and a loading screen over it.
+ *
+ * Every failure path ends in the bundled set rather than an error state — a kiosk
+ * showing a different picture beats a kiosk showing an error
+ * (project-overview.md non-negotiable 4).
  */
 export async function loadRandomArtwork(rng: () => number = Math.random): Promise<LoadedArtwork> {
-  return loadFallbackArtwork(rng);
+  try {
+    return await loadCollectionArtwork(rng);
+  } catch (error) {
+    console.info('[puzzle] collection unavailable; using the bundled artwork', error);
+    return loadFallbackArtwork(rng);
+  }
 }
 
 /**
- * A random collection artwork, for attract mode.
+ * A random collection artwork.
  *
- * Unity's launch mode does the same thing — `GameManager.OnAPIDataForLaunch`
- * picks a random API result and takes `chosen.title` — which is why the attract
- * board has an artwork name above it there and the bundled images have none.
+ * Mirrors Unity's launch mode — `GameManager.OnAPIDataForLaunch` picks a random
+ * API result and takes `chosen.title`, which is why its attract board carries an
+ * artwork name and the bundled images do not.
  *
- * The port calls this AFTER the bundled image is already on screen, so the 0 ms
- * boot from ADR-028 is kept and the titled artwork replaces it a moment later.
- * Throws on any failure; the caller keeps the bundled image and stays silent.
+ * **Prefers an item that actually has a title.** Not every collection record has
+ * one, and picking blind meant the name above the board was sometimes empty on a
+ * perfectly good image — indistinguishable from the bug above. Falls back to any
+ * playable item if the whole page is untitled, since a picture with no name still
+ * beats no picture.
+ *
+ * Throws on any failure; `loadRandomArtwork` is what degrades to the bundled set.
  */
 export async function loadCollectionArtwork(
   rng: () => number = Math.random,
@@ -130,8 +149,11 @@ export async function loadCollectionArtwork(
   const playable = data.results.data.filter(hasImage);
   if (playable.length === 0) throw new Error('the collection returned no artwork with an image');
 
-  const index = Math.min(Math.floor(rng() * playable.length), playable.length - 1);
-  const item = playable[index] ?? playable[0];
+  const titled = playable.filter((item) => (item.title ?? '').trim().length > 0);
+  const pool = titled.length > 0 ? titled : playable;
+
+  const index = Math.min(Math.floor(rng() * pool.length), pool.length - 1);
+  const item = pool[index] ?? pool[0];
   if (!item) throw new Error('the collection returned no artwork with an image');
 
   return loadArtworkFromCollection(item);

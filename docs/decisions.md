@@ -9,6 +9,61 @@ Architectural decisions, newest first. Each entry: context → decision → cons
 
 ---
 
+## ADR-045 — One owner for the board's artwork, behind a build scrim
+
+**Date:** 2026-07-31 · **Status:** Accepted · **Supersedes:** ADR-043
+
+**Context.** The artwork title appeared only *sometimes* — the client had two
+screenshots of the same piece, "Ram with Sita, Lakshman and Hanuman (Ram Darbar)",
+one titled and one not. `check-api.ps1` confirmed that is literally the first item
+of collection page 1, so it was a real collection artwork in both, not a bundled
+fallback.
+
+Two compounding defects, neither of them in the title element itself (which
+measures correct: 62 px, `#FFA300`, 100 px band 10 px above the board):
+
+1. **Two owners of one piece of state, racing.** ADR-043 loaded the bundled image
+   in one effect and swapped in a collection piece from a second. Both called
+   `setArtwork` and dispatched `BUILD`. The bundled load *always* carries a
+   title-less identity, so whenever it settled second it wiped the name off a good
+   collection artwork. It settled second often, because the warm Rust caches
+   (ADR-025, ADR-030) return a cached page in ~1 ms while cropping a bundled JPEG
+   on a canvas does not — so the "slow" path frequently won. Cold cache → title;
+   warm cache → no title. Hence the intermittency.
+2. **`RESET_TO_LAUNCH_MODE` returns `INITIAL_GAME_STATE`**, which clears
+   `identity`, while `artwork` is React state and survives. Home therefore left the
+   picture on screen with no name until a rebuild finished.
+
+A third, smaller one: the random pick could land on a record whose `title` is
+empty, which looks identical to the bug.
+
+**Decision.**
+- **One effect owns the artwork.** It awaits `loadRandomArtwork()`, which now tries
+  the collection FIRST and degrades to the bundled set on any failure. The second
+  effect is deleted, along with its `attractRef` guard.
+- **A build scrim** (`ui/LoadingOverlay`, the ADR-032 sprite sheet) covers the
+  screen from the moment a build starts until the artwork, board and title are all
+  in place. This is what buys back the wait that ADR-028 was avoiding: the visitor
+  sees honest progress instead of a board that changes under them.
+- **The picker prefers titled records**, falling back to any playable item if a
+  whole page is untitled.
+
+**Consequences.**
+- Verified: **8 consecutive rebuilds, 0 blank titles**, alternating a 1 ms (warm)
+  and 400 ms (cold) collection response — the exact condition that produced the
+  race. The untitled fixture was never chosen. The scrim always cleared.
+- **ADR-028's 0 ms boot is given up on purpose.** Boot now waits for the
+  collection (~8 s cold, ~1 ms from the 24 h disk cache) behind the scrim. That was
+  the client's explicit request: show a loading screen until the puzzle and its
+  name are ready.
+- The scrim lifts in a `finally`, so a failed load cannot leave a spinner up
+  forever — staff keep their exit gesture.
+- `LoadingOverlay` duplicates the sprite-sheet keyframes that `BrowseScreen` also
+  has. Left duplicated: Browse's overlay additionally blurs the grid and disables
+  the page arrows, a different job. Worth folding together on a third caller.
+
+---
+
 ## ADR-044 — One radius token, and rounded control plates are drawn in CSS
 
 **Date:** 2026-07-31 · **Status:** Accepted
@@ -47,7 +102,12 @@ them. Both are drawn from Unity art the port cannot restyle — the badge throug
 
 ## ADR-043 — Attract mode upgrades to a titled collection artwork in the background
 
-**Date:** 2026-07-31 · **Status:** Accepted (client directive)
+**Date:** 2026-07-31 · **Status:** SUPERSEDED by ADR-045, same day
+
+> **Why it failed.** The background upgrade gave two effects ownership of one piece
+> of board state, and they raced. The bundled load always carries a title-less
+> identity, so whenever it settled second it wiped the title — which the warm Rust
+> caches made common. Read ADR-045; do not reinstate this shape.
 
 **Context.** The client asked to see the artwork name whenever a puzzle is built.
 It showed during gameplay reached through Browse but never on the home screen.

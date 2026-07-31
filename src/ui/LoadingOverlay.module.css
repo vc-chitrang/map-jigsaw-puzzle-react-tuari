@@ -1,0 +1,73 @@
+/*
+ * Reference px — used inside <ScaledCanvas>.
+ *
+ * The 27-frame sprite sheet (ADR-032). `/assets/common/loading.png` is a
+ * 3840x3840 6x6 grid of 640x640 frames, so `background-size: 600% 600%` shows one
+ * frame and the keyframes step across it. 27 frames, not 36: the last nine cells
+ * are empty, which is why the final step jumps back to 0% rather than continuing.
+ */
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  background: rgb(0 0 0 / 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: var(--map-white);
+  font-family: var(--font-display);
+  /* Above the board, the preview panel (10) and the win popup (20); below the
+     Browse screen's dropdown popups, which set their own higher value. */
+  z-index: 40;
+  /* Swallows taps, so a half-built board cannot be played. */
+  pointer-events: auto;
+}
+
+.spinner {
+  background-image: url('/assets/common/loading.png');
+  background-size: 600% 600%;
+  animation: loading-spritesheet 1.2s steps(1) infinite;
+  user-select: none;
+  pointer-events: none;
+}
+
+.label {
+  font-size: 44px;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+}
+
+@keyframes loading-spritesheet {
+  0% { background-position: 0% 0%; }
+  3.7% { background-position: 20% 0%; }
+  7.4% { background-position: 40% 0%; }
+  11.1% { background-position: 60% 0%; }
+  14.8% { background-position: 80% 0%; }
+  18.5% { background-position: 100% 0%; }
+  22.2% { background-position: 0% 20%; }
+  25.9% { background-position: 20% 20%; }
+  29.6% { background-position: 40% 20%; }
+  33.3% { background-position: 60% 20%; }
+  37.0% { background-position: 80% 20%; }
+  40.7% { background-position: 100% 20%; }
+  44.4% { background-position: 0% 40%; }
+  48.1% { background-position: 20% 40%; }
+  51.8% { background-position: 40% 40%; }
+  55.5% { background-position: 60% 40%; }
+  59.2% { background-position: 80% 40%; }
+  62.9% { background-position: 100% 40%; }
+  66.6% { background-position: 0% 60%; }
+  70.3% { background-position: 20% 60%; }
+  74.0% { background-position: 40% 60%; }
+  77.7% { background-position: 60% 60%; }
+  81.4% { background-position: 80% 60%; }
+  85.1% { background-position: 100% 60%; }
+  88.8% { background-position: 0% 80%; }
+  92.5% { background-position: 20% 80%; }
+  96.2% { background-position: 40% 80%; }
+  100% { background-position: 0% 0%; }
+}

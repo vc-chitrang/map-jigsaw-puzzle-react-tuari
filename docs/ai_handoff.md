@@ -20,6 +20,26 @@ nine done and verified at 540×960, one blocked on the client. Full table in
   filter popup. It is now `SortDropdown.tsx`, sharing `openDropdown` with the
   filters.
 
+**A third round (C15–C20) found the real artwork-title bug — read ADR-045.** The
+title element was never at fault. ADR-043 (one day old) gave *two effects* ownership
+of the board's artwork; they raced, and because the bundled load always carries a
+title-less identity, the warm Rust caches (~1 ms) made it settle second and wipe the
+title. `RESET_TO_LAUNCH_MODE` compounded it by clearing `identity` while `artwork`
+survived. Now **one sequential owner**, collection-first, behind a build scrim
+(`ui/LoadingOverlay`). This **gives up ADR-028's 0 ms boot deliberately** — the
+client asked for a loading screen instead. Verified 8 rebuilds alternating warm/cold
+caches: 0 blank titles.
+
+Two traps worth keeping:
+
+* **Inline `textStyle(...)` beats your CSS class.** It emits `paddingRight` as a
+  longhand from the TMP margin, so `.dropdownLabel`'s `padding-right: 56px` was
+  silently zero and long values ran under the chevron. Use an inset (`right`) for
+  anything `textStyle` might also set.
+* **Equal `z-index` is decided by DOM order.** The dropdown popup and the Browse
+  loading overlay were both 50, and the card container comes later, so the scrim
+  covered a popup the visitor had just opened.
+
 A second round the same day added four more (C11–C14), all done:
 
 * **ADR-043 — attract mode now upgrades to a titled collection artwork** in the
