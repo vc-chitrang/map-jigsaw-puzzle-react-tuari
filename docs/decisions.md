@@ -9,6 +9,62 @@ Architectural decisions, newest first. Each entry: context → decision → cons
 
 ---
 
+## ADR-046 — Kiosk fullscreen and always-on-top are re-asserted, not set once
+
+**Date:** 2026-07-31 · **Status:** Accepted · **Extends:** ADR-012
+
+**Context.** The client's final requirement for both installers: always fullscreen,
+always in front of every other app, on 4K panels — 3840×2160 landscape and
+2160×3840 portrait.
+
+Two of the three already held. ADR-012's `kiosk.rs` promotes the window to
+fullscreen / undecorated / non-resizable / always-on-top in any release build, and
+the reference resolutions are exactly the two 4K sizes, so `computeScaleFactor`
+returns **1.0** on a native 4K panel — the UI is 1:1 with no scaling. Both are
+asserted in `reference.test.ts`.
+
+The gap was lifetime. `kiosk::apply` ran **once**, in `setup`. On Windows
+`HWND_TOPMOST` is surrendered whenever another process claims the top slot — another
+app going fullscreen, a UAC prompt, an Explorer restart, some installers and screen
+savers — and fullscreen itself can be dropped by a display or resolution change. So
+"always in front" held only until the first such event, after which the kiosk sat
+behind something with no staff present. Exactly the class of failure ADR-024's
+watchdog exists for, except a covered window is still a live process, so the
+watchdog cannot see it.
+
+**Decision.** Add `kiosk::reassert`, called from an `on_window_event` handler on
+`WindowEvent::Focused(false)` and `WindowEvent::Resized(_)` — the two events those
+losses arrive as. It re-applies always-on-top unconditionally and fullscreen only
+when `is_fullscreen()` reports it was lost, so the common case is a no-op and it
+cannot recurse through the `Resized` event that setting fullscreen emits. Gated on
+the same `kiosk_requested()` check, so `tauri dev` is untouched.
+
+`lock_down` also now logs the display it landed on — physical size, DPI scale and
+name.
+
+**Consequences.**
+- Applies to **both installers** identically: one binary, one code path, orientation
+  only changes `productName`/`identifier` and the dev window (ADR-020).
+- **It deliberately does NOT call `set_focus()` on focus loss.** Grabbing focus back
+  every time fights UAC and system dialogs and can leave a machine that is very hard
+  to service. Topmost is sufficient — a tap lands on the kiosk and brings focus with
+  it, so the staff double-Esc still works. This is the deliberate limit on "always in
+  front": the window is always *on top*, not always *focused*.
+- The monitor log makes two otherwise-identical-looking faults a one-line diagnosis:
+  fullscreen on the wrong display (the window starts centred on the PRIMARY monitor
+  and `set_fullscreen` fills whichever it is on), and a 4K panel actually running a
+  scaled-down desktop resolution.
+- **DPI scaling is self-correcting and needs no code.** At 200 % Windows scaling on a
+  3840×2160 panel the webview reports `innerWidth` 1920, so the scale factor is 0.5
+  and the 3840×2160 reference canvas renders to 1920×1080 CSS px — filling the
+  viewport — which WebView2 then paints at 2× into 3840×2160 physical pixels. Sharp
+  and correct. The aspect ratio is what matters, not the absolute number.
+- Verified by `cargo check`; **not launched.** Starting a fullscreen always-on-top
+  window would take over the developer's display, so on-hardware confirmation is
+  `MAP_KIOSK=1 npm run tauri:dev` plus the new log line (tracked with P6.10).
+
+---
+
 ## ADR-045 — One owner for the board's artwork, behind a build scrim
 
 **Date:** 2026-07-31 · **Status:** Accepted · **Supersedes:** ADR-043

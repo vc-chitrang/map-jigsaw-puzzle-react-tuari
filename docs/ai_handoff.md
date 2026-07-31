@@ -20,6 +20,19 @@ nine done and verified at 540×960, one blocked on the client. Full table in
   filter popup. It is now `SortDropdown.tsx`, sharing `openDropdown` with the
   filters.
 
+A fifth round (C23–C25) covered the kiosk display requirements for **both**
+installers. Fullscreen and the 4K reference sizes already held — `REFERENCE` is
+exactly 3840×2160 / 2160×3840, so the scale factor is **1.0** on a native 4K panel
+and `reference.test.ts` already asserted it. The real gap was **lifetime**:
+`kiosk::apply` ran once in `setup`, and Windows surrenders `HWND_TOPMOST` whenever
+another process claims it. `kiosk::reassert` now runs on `Focused(false)` and
+`Resized(_)` (ADR-046). It deliberately does **not** steal focus back — the window is
+always on *top*, not always *focused*, because re-focusing fights UAC and can leave a
+machine unserviceable. `lock_down` also logs the display it landed on, which
+distinguishes "fullscreen on the wrong monitor" from "4K panel running a scaled
+desktop resolution". **Not launched** — `cargo check` only, since a fullscreen
+always-on-top window would take over the dev display.
+
 A fourth round (C21–C22) closed it out with two design tweaks: the high-score badge
 gained the thin white frame the timer plate already had (shared
 `--colour-control-frame`), and START grew ~10% about its centre with its label

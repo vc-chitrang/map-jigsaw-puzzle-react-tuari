@@ -13,6 +13,9 @@ mod api;
 mod config;
 mod kiosk;
 
+// `Manager` brings `app_handle()` into scope for the window-event handler below.
+use tauri::Manager;
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -26,6 +29,21 @@ pub fn run() {
             api::image_fetch,
             api::public_config,
         ])
+        // Keep the kiosk on top for the whole run, not just at startup.
+        //
+        // Windows takes `HWND_TOPMOST` away whenever another process claims it
+        // (another app going fullscreen, a UAC prompt, an Explorer restart), and a
+        // display or resolution change can drop fullscreen. Both arrive as one of
+        // these two events, so re-asserting here is what makes "always fullscreen,
+        // always in front" survive an unattended run rather than holding only until
+        // the first interruption. `kiosk::reassert` is gated on kiosk mode and is a
+        // no-op when nothing was lost.
+        .on_window_event(|window, event| match event {
+            tauri::WindowEvent::Focused(false) | tauri::WindowEvent::Resized(_) => {
+                kiosk::reassert(window.app_handle());
+            }
+            _ => {}
+        })
         .setup(|app| {
             kiosk::apply(app.handle());
             // Resolve the config at startup so a misconfiguration shows up in the

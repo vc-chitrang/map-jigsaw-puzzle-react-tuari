@@ -233,6 +233,23 @@ Two tests had to change, both because they hardcoded a value that is now client-
 
 **Note on the reference image:** `actual-refrence.png` was mentioned but not visible in the attachment set, so the outline was implemented from the written description and the START increase was a judgement call under the client's explicit "you take a call". Worth a look before it is signed off.
 
+### Fifth round — kiosk display requirements (both installers)
+
+| # | Item | Status | Notes |
+|---|---|---|---|
+| C23 | Always open fullscreen | **DONE (already held)** | ADR-012: `kiosk.rs` promotes the window in any release build. Verified the code path; `tauri.conf.json` stays windowed on purpose so `tauri dev` does not cover the developer's editor |
+| C24 | 4K — landscape 3840x2160, portrait 2160x3840 | **DONE (already held)** | `REFERENCE` is exactly those two sizes, so `computeScaleFactor` returns **1.0** on a native 4K panel — 1:1, no scaling. Already asserted `toBe(1)` for both in `reference.test.ts`, so no new test was added. **DPI scaling needs no code**: at 200% the webview reports half the pixels, the scale factor halves to 0.5, and WebView2 paints the result at 2x — correct and sharp |
+| C25 | Always in front of all apps | **DONE (was the real gap)** | ADR-046. `kiosk::apply` ran once in `setup`, but Windows surrenders `HWND_TOPMOST` whenever another process claims it (another app going fullscreen, UAC, Explorer restart), and fullscreen can be dropped by a resolution change. New `kiosk::reassert` runs on `Focused(false)` and `Resized(_)`. **Does not steal focus back** — that fights UAC and can make a machine unserviceable; topmost is enough for taps and the staff double-Esc. So: always on *top*, not always *focused* |
+
+`lock_down` now logs the display it landed on (physical size, DPI scale, name). That
+turns two look-alike faults into a one-line diagnosis: fullscreen on the wrong
+monitor (the window starts centred on the PRIMARY display), and a 4K panel actually
+running a scaled-down desktop resolution.
+
+**Not launched.** `cargo check` is clean, but starting a fullscreen always-on-top
+window would take over the developer's display, so on-hardware confirmation is still
+`MAP_KIOSK=1 npm run tauri:dev` plus the new log line — part of P6.10.
+
 ### §12 parity checklist status
 
 | Item | Status |
