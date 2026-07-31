@@ -62,46 +62,27 @@
   -webkit-tap-highlight-color: transparent;
   z-index: 1;
   /*
-   * Idle pulse: a small oscillation over 250 ms, linear, DOTween Yoyo +
-   * SetLoops(-1) => alternate + infinite. Each arrow nudges toward the
-   * direction it points, so `transform: translate` is per-direction (below).
+   * Idle pulse — Unity `ArrowController.SetVisible`:
+   *
+   *   transform.localScale = Vector3.one;
+   *   transform.DOScale(1.06f, 0.25f).SetEase(Ease.Linear).SetLoops(-1, LoopType.Yoyo);
+   *
+   * A uniform SCALE about the centre, 1.0 -> 1.06 over 250 ms, linear, Yoyo +
+   * SetLoops(-1) => `alternate infinite`. Not a translate: the port briefly
+   * nudged each arrow toward the direction it points, which is not what ships.
    *
    * The arrow is POSITIONED with left/top (set inline), NOT with transform, so
-   * the pulse can own `transform` outright. The previous scale-based pulse
-   * combined with a positioning transform and scaled the arrow's offset from
-   * the board origin — every arrow drifted toward the bottom-right corner.
+   * the pulse owns `transform` outright. That is what makes scale safe here —
+   * an earlier scale pulse combined with a positioning transform and multiplied
+   * the arrow's offset from the board origin, drifting every arrow toward the
+   * bottom-right corner.
    */
-  --arrow-pulse-shift: 0px;
+  animation: arrow-pulse var(--duration-arrow-pulse) linear infinite alternate;
 }
 
-@keyframes arrow-pulse-up {
-  from { transform: translateY(0); }
-  to   { transform: translateY(calc(-1 * var(--arrow-pulse-shift))); }
-}
-@keyframes arrow-pulse-down {
-  from { transform: translateY(0); }
-  to   { transform: translateY(var(--arrow-pulse-shift)); }
-}
-@keyframes arrow-pulse-left {
-  from { transform: translateX(0); }
-  to   { transform: translateX(calc(-1 * var(--arrow-pulse-shift))); }
-}
-@keyframes arrow-pulse-right {
-  from { transform: translateX(0); }
-  to   { transform: translateX(var(--arrow-pulse-shift)); }
-}
-
-.arrow-up {
-  animation: arrow-pulse-up var(--duration-arrow-pulse) linear infinite alternate;
-}
-.arrow-down {
-  animation: arrow-pulse-down var(--duration-arrow-pulse) linear infinite alternate;
-}
-.arrow-left {
-  animation: arrow-pulse-left var(--duration-arrow-pulse) linear infinite alternate;
-}
-.arrow-right {
-  animation: arrow-pulse-right var(--duration-arrow-pulse) linear infinite alternate;
+@keyframes arrow-pulse {
+  from { transform: scale(1); }
+  to   { transform: scale(1.06); }
 }
 
 .titleContainer {

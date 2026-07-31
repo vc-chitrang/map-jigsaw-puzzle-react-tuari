@@ -27,8 +27,22 @@ describe('rectStyle — stretch', () => {
 
 describe('rectStyle — fractional anchors (Idiom A)', () => {
   it('flips Y: top = (1 − anchorMax.y)', () => {
-    // StartPuzzleButton, the worked example in pixel-perfect-replication §3.2.
-    expect(rectStyle(L.startButton.rect)).toEqual({
+    /**
+     * The worked example in pixel-perfect-replication §3.2, as a LITERAL.
+     *
+     * It used to read `L.startButton.rect`, which coupled a test of the Y-flip
+     * conversion to one screen's geometry — so enlarging START at the client's
+     * request (2026-07-31) broke a test that has nothing to do with START. The
+     * numbers below are that button's original scene values, kept because the doc
+     * quotes them; the rule under test is `top = (1 − anchorMax.y)`.
+     */
+    const example = {
+      kind: 'fractional',
+      anchorMin: { x: 0.233, y: 0.3202 },
+      anchorMax: { x: 0.4766, y: 0.3707 },
+    } as const;
+
+    expect(rectStyle(example)).toEqual({
       position: 'absolute',
       left: '23.3000%',
       width: '24.3600%',

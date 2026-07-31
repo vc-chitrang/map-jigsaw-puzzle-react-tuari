@@ -154,6 +154,16 @@ try {
     $withImages = @($items | Where-Object { $_.primary_image }).Count
     Write-Host ("  with primary_image : {0}" -f $withImages)
 
+    # How many records the puzzle can actually choose from. `loadCollectionArtwork`
+    # needs BOTH an image and a non-empty title (it prefers titled records so the
+    # name above the board is never blank), so this count -- not the page size -- is
+    # the real pool for a random pick. A pool of 1 makes "Play Again" hand back the
+    # same artwork every time.
+    $playableTitled = @($items | Where-Object {
+        $_.primary_image -and -not [string]::IsNullOrWhiteSpace($_.title)
+    }).Count
+    Write-Host ("  image AND title    : {0}   <- the random-pick pool" -f $playableTitled)
+
     if (@($items).Count -gt 0) {
         Write-Host ("  first title        : {0}" -f $items[0].title)
     }

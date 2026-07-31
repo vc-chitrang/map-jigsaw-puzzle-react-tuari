@@ -181,6 +181,122 @@ and comparing against Unity, not by a landscape-only difference.
 | F12 | 27-frame `/assets/common/loading.png` sprite sheet animation & blur effect | **DONE** | ADR-032, ADR-033. 500% scaled (400px) 27-frame CSS step animation with smooth 10px blur transition |
 | F13 | ImageSelect orientation-specific divider line | **DONE** | ADR-034. Horizontal divider line in portrait, vertical divider line in landscape |
 
+## Client feedback round, 2026-07-31
+
+Ten items raised after a landscape play test. Verified at 540×960 portrait with a
+stubbed collection unless noted.
+
+| # | Item | Status | Notes |
+|---|---|---|---|
+| C1 | Artwork name above the puzzle board | **BLOCKED** | Mechanism is already correct and matches Unity `ArtworkName` (62 px, `#FFA300`, 100 px band 10 px above the board) — verified rendering live. It is blank only for the **three bundled offline images**, which carry no title, exactly as Unity does. Needs either the three real artwork names from the client, or a decision to fetch a collection piece in the background at boot (ADR-028 made boot fallback-only for a 0 ms start) |
+| C2 | Round the QR code corners | **DONE** | `border-radius: 24px` on `.qrCode`, matching the panel and the two choice cards. Verified computed 24px |
+| C3 | High score is global, not per artwork | **DONE** | ADR-041. Diverges from Unity deliberately. Badge shows `--:--` once after the update, then rebuilds |
+| C4 | Tapping the search field closes an open dropdown | **DONE** | Handled on the search BAR, not the field, so the clear and submit buttons are covered by one rule. The field no longer `stopPropagation`s, or the bar's handler would never run |
+| C5 | Sort By option rows are huge | **DONE** | ADR-042. Was a native `<select>` whose popup the OS drew outside `<ScaledCanvas>` |
+| C6 | Bigger pagination numbers | **DONE** | Pills 28→38 px on a 46→66 px box, sized against the 42 px "Page N of M" beside them |
+| C7 | Any dropdown / option tap closes the keyboard | **DONE** | One `showOnly()` helper is the single route into a popup. The search field **retargets** the keyboard instead of closing it — closing it there would make the field untypable |
+| C8 | Clear Filters closes the keyboard and dropdowns | **DONE** | Verified: keyboard true→false, popups 1→0. Note the button is disabled while no filter is active |
+| C9 | Arrow pulse should scale, not move | **DONE** | Unity `ArrowController.cs:97-112` is `DOScale(1.06f, 0.25f)`, Linear, Yoyo, infinite. Verified live: `animation-name: arrow-pulse`, 0.25s, linear, alternate, infinite, live matrix 1.048 |
+| C10 | Date and Sort By popups overlap | **DONE** | Same root cause as C5; the sort control now shares `openDropdown`, so only one popup can exist |
+
+### Second round, same day
+
+| # | Item | Status | Notes |
+|---|---|---|---|
+| C11 | High-score badge + timer corners must match the buttons | **DONE** | ADR-044. Badge was a full pill (9-sliced `Circle_9Sliced` mask), timer was nearly square — the two extremes on that row. Both now use `--radius-control: 32px`, taken from the button art (`reset-button.svg` face corner 16 × the 2× portrait render). Verified computed `32px` on both |
+| C12 | Artwork title must show on the home screen, not just gameplay | **DONE** | ADR-043. Mechanism was already correct; the bundled offline images simply have no title. Attract mode now upgrades to a titled collection artwork in the background, keeping ADR-028's 0 ms boot. Verified with a stub: title visible with START still showing. **Offline still has no title — same as Unity** |
+| C13 | "Clear Filters" sized like "Filter By" | **DONE** | 24→42 portrait, 23→24.5 landscape. A deliberate divergence from the scene; `screens.test.ts` now asserts the two MATCH rather than asserting the scene numbers |
+| C14 | Dropdown option text overlaps the row below | **DONE** | `.dropdownItem` had a fixed `height: 60px`; real artist names ("Abanindranath Tagore (Guided by Shuvaprasana Bhattacharya)") wrapped and spilled onto the next row. Now `min-height` + a two-line clamp with ellipsis and a `title` tooltip. Verified with the client's own names: 0 overlapping rows, short rows keep the 60 px touch target |
+
+### Third round, same day
+
+| # | Item | Status | Notes |
+|---|---|---|---|
+| C15 | Artwork title still intermittent, missing in gameplay too | **DONE** | ADR-045. **Root cause was not the title element** — it measures correct. Two defects: (a) ADR-043 gave two effects ownership of the board artwork and they raced, and the bundled load always carries a title-less identity, so with the Rust caches warm (~1 ms) it settled second and wiped the title; (b) `RESET_TO_LAUNCH_MODE` returns `INITIAL_GAME_STATE`, clearing `identity` while `artwork` survives, so Home left the picture up with no name. Plus the picker could choose an untitled record. Now ONE sequential owner, collection-first, titled-record preference. **Verified 8 rebuilds alternating warm/cold: 0 blank titles**. Live API confirmed via `check-api.ps1` — HTTP 200, and `first title` is the exact artwork from the client's screenshots |
+| C16 | Show a full loading screen while the puzzle builds | **DONE** | ADR-045. New shared `ui/LoadingOverlay` reusing the ADR-032 sprite sheet. Up from the start of a build until artwork + board + title are all ready; lifts in a `finally` so a failure cannot leave it stuck. **Gives up ADR-028's 0 ms boot on purpose** — that is what the client asked for |
+| C17 | Search submit + clear buttons close the keyboard | **DONE** | Both are the end of typing. Verified: open → clear → closed; reopen → submit → closed |
+| C18 | Version badge shows only the version | **DONE** | Orientation moved to a `data-orientation` attribute rather than deleted — it was the only thing distinguishing the two installers' bundles (ADR-020), so it stays greppable with nothing on screen |
+| C19 | Dropdown CONTROL label runs under the chevron | **DONE** | The real bug behind "text overlapping". `.dropdownLabel` had `padding-right: 56px`, but the label's inline `textStyle(...)` emits `paddingRight: '0px'` from the TMP margin, and inline beats the class — clearance was silently zero. Now a `right: 56px` inset, which `textStyle` never sets. Verified: all 6 controls clear their arrow; the long value ellipsises |
+| C20 | Dropdown popup must sit above the loading overlay | **DONE** | Both were `z-index: 50`, and the card container comes after the filter bar in DOM order, so the scrim won. Popup is now 60. Verified with the scrim live: overlay 50, popup 60, hit-test lands on the popup |
+
+### Fourth round — two design tweaks, same day
+
+| # | Item | Status | Notes |
+|---|---|---|---|
+| C21 | High-score badge needs a thin white outline | **DONE** | The reference design frames both the timer plate and the badge; the badge was a bare grey slab beside a framed timer. Shared `--colour-control-frame` token now drives both (4 px portrait, 3 px landscape, matching each orientation's render scale). `box-sizing: border-box` is global, so the outer rect is unchanged. Verified computed `4px solid rgb(254,255,254)` |
+| C22 | START button a little larger | **DONE** | Grown ~10% about its own CENTRE so it cannot drift off the footer centre line: portrait 526.2x193.9 → 578.9x213.1 ref px (measured 575.5x211.9 at 540x960), landscape 290x121 → 319x133. Label scaled with it, 112→122 and 82→90, so the proportion holds. **The timer keeps its scene rect**, so START is now deliberately the larger of the two controls that swap |
+
+Two tests had to change, both because they hardcoded a value that is now client-tuned rather than scene-derived:
+
+* `rect.test.ts` "flips Y" read `L.startButton.rect` to verify the Y-flip conversion, so a START resize broke a test about coordinate maths. It now uses the §3.2 worked example as a **literal**.
+* `landscape.test.ts` "uses smaller type throughout" asserted START's literal font sizes. It now asserts the **relationship** (landscape < portrait), which is the property that actually matters; the untouched sizes keep their scene literals.
+
+**Note on the reference image:** `actual-refrence.png` was mentioned but not visible in the attachment set, so the outline was implemented from the written description and the START increase was a judgement call under the client's explicit "you take a call". Worth a look before it is signed off.
+
+### Fifth round — kiosk display requirements (both installers)
+
+| # | Item | Status | Notes |
+|---|---|---|---|
+| C23 | Always open fullscreen | **DONE (already held)** | ADR-012: `kiosk.rs` promotes the window in any release build. Verified the code path; `tauri.conf.json` stays windowed on purpose so `tauri dev` does not cover the developer's editor |
+| C24 | 4K — landscape 3840x2160, portrait 2160x3840 | **DONE (already held)** | `REFERENCE` is exactly those two sizes, so `computeScaleFactor` returns **1.0** on a native 4K panel — 1:1, no scaling. Already asserted `toBe(1)` for both in `reference.test.ts`, so no new test was added. **DPI scaling needs no code**: at 200% the webview reports half the pixels, the scale factor halves to 0.5, and WebView2 paints the result at 2x — correct and sharp |
+| C25 | Always in front of all apps | **DONE (was the real gap)** | ADR-046. `kiosk::apply` ran once in `setup`, but Windows surrenders `HWND_TOPMOST` whenever another process claims it (another app going fullscreen, UAC, Explorer restart), and fullscreen can be dropped by a resolution change. New `kiosk::reassert` runs on `Focused(false)` and `Resized(_)`. **Does not steal focus back** — that fights UAC and can make a machine unserviceable; topmost is enough for taps and the staff double-Esc. So: always on *top*, not always *focused* |
+
+`lock_down` now logs the display it landed on (physical size, DPI scale, name). That
+turns two look-alike faults into a one-line diagnosis: fullscreen on the wrong
+monitor (the window starts centred on the PRIMARY display), and a 4K panel actually
+running a scaled-down desktop resolution.
+
+**Not launched.** `cargo check` is clean, but starting a fullscreen always-on-top
+window would take over the developer's display, so on-hardware confirmation is still
+`MAP_KIOSK=1 npm run tauri:dev` plus the new log line — part of P6.10.
+
+### Sixth round — Play Again repeating the artwork just won
+
+| # | Item | Status | Notes |
+|---|---|---|---|
+| C26 | Play Again must not reload the artwork just played | **DONE** | ADR-047. Applies to both orientations (shared code). Could NOT reproduce as described — 6 Play Agains on the attract path gave 6 different artworks, 5 on the Browse→Crop path — and v0.1.18 already had ADR-045. The real defect was **odds plus no guarantee**: `loadCollectionArtwork` fetches page 1 only, and `check-api.ps1 -Limit 40` confirms that pool is 40 records (all imaged, all titled) out of 32,299, so a random pick had a **1-in-40 chance of an immediate repeat** with nothing preventing it. Now the caller remembers served ids (`LoadedArtwork.collectionId` + a capped `recentIds` ref) and `pickArtwork` excludes them. **Verified on a hostile 2-record pool: 7 rounds, 0 consecutive repeats** (was 2 before the ordering fix below) |
+
+**The bug inside the fix, worth remembering.** The first attempt used one flat `Set`
+and dropped it wholesale when it emptied the pool. On a small pool that made the
+artwork *just played* eligible again — a live 2-record run showed 2 consecutive
+repeats, reproducing the client's report from the fix itself. `pickArtwork` now
+relaxes the window **from the old end**, so the most recent id is the last thing it
+reconsiders. `pickArtwork.test.ts` pins that rule explicitly (15 tests).
+
+**Outstanding, by choice:** the kiosk still draws from **page 1 only — 40 of 32,299
+artworks**. Randomising the page across all 808 would cost an ~8 s uncached fetch per
+build instead of ~1 ms from the 24 h Rust cache (ADR-030), now paid in front of the
+visitor behind the build scrim. Worth revisiting if the client wants more variety and
+will accept the wait.
+
+### Seventh round — Play Again replays the SAME puzzle
+
+| # | Item | Status | Notes |
+|---|---|---|---|
+| C27 | Play Again must hide the win screen and re-shuffle the last played puzzle | **DONE** | ADR-048. **C26 was built on a misreading** — the client's "Play Again will always load same artwork" was a SPECIFICATION, not a defect report, and C26 answered it by guaranteeing a *different* artwork. Now `reshuffleSameArtwork` dispatches one `BUILD` with the existing `identity`, a fresh board and `mode: 'gameplay'`. The popup hides for free because `BUILD` resets `phase` to `playing` |
+| C28 | Play Again "redirects to the home screen" in landscape | **DONE** | Same fix. It did, in **both** orientations — landscape just made it obvious. Play Again dispatched `RESET_TO_LAUNCH_MODE`, which returns `INITIAL_GAME_STATE`, clearing the board into attract mode, then bumped `buildToken` to fetch a new artwork behind the build scrim. So the visitor saw an empty board, a spinner and a trip through home |
+
+`onPlayAgain` was **removed**, not just unused: it cleared `preparedArtwork` in `App`,
+which revokes the blob URL the board is still slicing. Re-using the artwork while
+still revoking it would have made Play Again a black board — the ADR-023 failure
+again. Play Again is now identical to the footer's RESET, so both call one function.
+
+**Play-tested in the browser at the client's request, both orientations**, against a
+stubbed two-record collection:
+
+| Check | Landscape 960×540 | Portrait 540×960 (×3 rounds) |
+|---|---|---|
+| Win popup up, then hidden | pass | pass |
+| Artwork unchanged | pass | pass |
+| Board re-shuffled | pass | pass |
+| No scrim flash (sampled 150 ms after tap) | pass | pass |
+| No attract/home flash | pass | pass |
+| Stays in gameplay, timer reset | pass | pass |
+
+RESET and NEW IMAGE re-checked afterwards: RESET re-shuffles in place, NEW IMAGE still
+routes to select (ADR-040), and returning serves a different artwork — so C26's
+recency rule still does its job on the paths that do load a new artwork.
+
 ### §12 parity checklist status
 
 | Item | Status |

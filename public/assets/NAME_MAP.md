@@ -6,27 +6,6 @@ Unity root: `D:/Chitrang_ViitorCloud/R&D/Sliding-Puzzle`
 
 | Unity source (relative to `Assets/Games/Sliding-Puzzle`, popup group relative to `Assets/Modules`) | Port target |
 |---|---|
-| `UI/GamePlayScreen/StartButton.png` | `assets/gameplay/start-button.png` |
-| `UI/GamePlayScreen/StartButton-pressed.png` | `assets/gameplay/start-button-pressed.png` |
-| `UI/GamePlayScreen/ResetButton.png` | `assets/gameplay/reset-button.png` |
-| `UI/GamePlayScreen/ResetButton-Pressed.png` | `assets/gameplay/reset-button-pressed.png` |
-| `UI/GamePlayScreen/PreviewButton.png` | `assets/gameplay/preview-button.png` |
-| `UI/GamePlayScreen/PreviewButton-pressed.png` | `assets/gameplay/preview-button-pressed.png` |
-| `UI/GamePlayScreen/NewImageButton.png` | `assets/gameplay/new-image-button.png` |
-| `UI/GamePlayScreen/NewImageButton-pressed.png` | `assets/gameplay/new-image-button-pressed.png` |
-| `UI/GamePlayScreen/PlayAgainButton.png` | `assets/gameplay/play-again-button.png` |
-| `UI/GamePlayScreen/PlayAgainButton-Pressed.png` | `assets/gameplay/play-again-button-pressed.png` |
-| `UI/GamePlayScreen/rotate-right.png` | `assets/gameplay/icon-reset.png` |
-| `UI/GamePlayScreen/Group.png` | `assets/gameplay/icon-preview.png` |
-| `UI/GamePlayScreen/new image icon.png` | `assets/gameplay/icon-new-image.png` |
-| `UI/GamePlayScreen/TimerBackground.png` | `assets/gameplay/timer-background.png` |
-| `UI/GamePlayScreen/HomeButton.png` | `assets/gameplay/home-button.png` |
-| `UI/GamePlayScreen/BackButton.png` | `assets/gameplay/back-button.png` |
-| `UI/GamePlayScreen/Map Logo.png` | `assets/gameplay/map-logo.png` |
-| `UI/GamePlayScreen/0_-1.png` | `assets/gameplay/arrow-up.png` |
-| `UI/GamePlayScreen/0_1.png` | `assets/gameplay/arrow-down.png` |
-| `UI/GamePlayScreen/-1_0.png` | `assets/gameplay/arrow-left.png` |
-| `UI/GamePlayScreen/1_0.png` | `assets/gameplay/arrow-right.png` |
 | `UI/Common/Background_Portrait.png` | `assets/common/background-portrait.png` |
 | `UI/Common/Background_Landscape.png` | `assets/common/background-landscape.png` |
 | `UI/Common/Circle_9Sliced.png` | `assets/common/circle-9sliced.png` |
@@ -34,17 +13,7 @@ Unity root: `D:/Chitrang_ViitorCloud/R&D/Sliding-Puzzle`
 | `UI/Common/rotating-arrow-to-the-right.png` | `assets/common/icon-rotate.png` |
 | `UI/Common/SideStrip.png` | `assets/common/side-strip.png` |
 | `UI/Common/VerticalLine.png` | `assets/common/vertical-line.png` |
-| `UI/ImageSelectOrUploadScreen/gallery-add.png` | `assets/select/gallery-add.png` |
-| `UI/ImageSelectOrUploadScreen/export-arrow-01.png` | `assets/select/export-arrow.png` |
-| `UI/CropImageScreen/CropRefrenceFrame.png` | `assets/crop/crop-reference-frame.png` |
-| `UI/MAPCollectionScreen/SearchButton.png` | `assets/browse/search-button.png` |
-| `UI/MAPCollectionScreen/Arrow.png` | `assets/browse/pagination-arrow.png` |
-| `UI/MAPCollectionScreen/GridView.png` | `assets/browse/grid-view.png` |
-| `UI/MAPCollectionScreen/PageSelectionBox.png` | `assets/browse/page-selection-box.png` |
 | `UI/QRScanScreen/QR_Code_1-1024.png` | `assets/qr/qr-code.png` |
-| `Textures/image_00.png` | `assets/fallback/fallback-00.png` |
-| `Textures/Image_01.png` | `assets/fallback/fallback-01.png` |
-| `Textures/Image_02.png` | `assets/fallback/fallback-02.png` |
 | `PopManager/Signs/cross.png` | `assets/popup/icon-error.png` |
 | `PopManager/Signs/exclamation-mark.png` | `assets/popup/icon-warning.png` |
 | `PopManager/Signs/information-button.png` | `assets/popup/icon-info.png` |

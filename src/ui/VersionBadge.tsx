@@ -18,23 +18,27 @@ import styles from './VersionBadge.module.css';
  * The version comes from `__APP_VERSION__`, injected by vite.config.ts from
  * package.json. `scripts/bump-version.ps1` is what changes it.
  *
- * The ORIENTATION is shown alongside it for two reasons:
+ * The orientation is NOT shown — the client asked for the version alone
+ * (2026-07-31). It moves to a `data-orientation` attribute instead of being
+ * dropped outright, because it was carrying two jobs:
  *
  *   * Support: portrait and landscape ship as two separate installers (ADR-020),
  *     and otherwise there is no way to tell from a running kiosk which one is
  *     installed — both artefacts have the same version and the same window.
  *   * Verification: both layout tables are bundled in either build and a single
  *     module-scope constant selects between them, which the minifier folds away.
- *     Without this string, nothing in the built output distinguishes the two
- *     bundles, so a mis-built installer would be invisible until someone launched
- *     it on the kiosk.
+ *     Without the string somewhere in the output, nothing distinguishes the two
+ *     bundles, so a mis-built installer would be invisible until it was launched.
+ *
+ * The attribute keeps both — greppable in the bundle, readable in the DOM — with
+ * nothing on screen.
  */
 export function VersionBadge() {
   if (import.meta.env.VITE_HIDE_VERSION === '1') return null;
 
   return (
-    <span className={styles.badge} aria-hidden="true">
-      v{__APP_VERSION__} · {ORIENTATION}
+    <span className={styles.badge} data-orientation={ORIENTATION} aria-hidden="true">
+      v{__APP_VERSION__}
     </span>
   );
 }

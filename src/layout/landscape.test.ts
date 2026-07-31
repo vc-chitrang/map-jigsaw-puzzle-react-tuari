@@ -18,8 +18,13 @@ describe('landscape differs from portrait in more than position', () => {
   });
 
   it('uses smaller type throughout', () => {
-    expect(L.startButton.label.fontSizePx).toBe(82);
-    expect(P.startButton.label.fontSizePx).toBe(112);
+    /**
+     * START is asserted as a RELATIONSHIP, not a literal: both sizes were scaled
+     * ~10% when the client asked for a bigger button (2026-07-31), and the
+     * property that matters here is that landscape stays smaller than portrait.
+     * The rest keep their scene literals, which nothing has touched.
+     */
+    expect(L.startButton.label.fontSizePx).toBeLessThan(P.startButton.label.fontSizePx);
 
     expect(L.footerButtons.reset.label.fontSizePx).toBe(44);
     expect(P.footerButtons.reset.label.fontSizePx).toBe(68);

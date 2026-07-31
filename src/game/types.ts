@@ -68,3 +68,16 @@ export type Rng = () => number;
 
 /** Who caused a move. Only `player` moves start the timer or count.  */
 export type MoveSource = 'player' | 'auto';
+
+/**
+ * What the board is currently showing.
+ *
+ * Display only, since ADR-041 made the high score global — the title above the
+ * board comes from here, and nothing is keyed on it any more.
+ */
+export interface ArtworkIdentity {
+  /** Collection artwork title. Empty for QR uploads and bundled artwork. */
+  readonly artworkTitle?: string | undefined;
+  /** Filename of a bundled local texture, when that is the source. */
+  readonly textureName?: string | undefined;
+}

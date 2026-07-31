@@ -2,6 +2,394 @@
 
 Architectural decisions, newest first. Each entry: context → decision → consequences.
 
+> **Numbering note.** ADR-026 was used TWICE (the Unity-EXE design pass, below, and
+> "Arrow Layer Ordering Behind Tiles", further down). ADR-027 … ADR-040 were also
+> appended at the BOTTOM of this file rather than the top, so "newest first" holds
+> only for ADR-041+ and ADR-026 … ADR-001. Numbers are not reused going forward.
+
+---
+
+## ADR-048 — Play Again re-shuffles the artwork just played; it does not load a new one
+
+**Date:** 2026-07-31 · **Status:** Accepted (client directive) · **Corrects the premise of ADR-047**
+
+**Context.** ADR-047 was built on a misreading. The client wrote that Play Again
+"will always load same artwork which is previously played by the user and won"; that
+was read as a **defect report** and answered by guaranteeing a *different* artwork.
+It was a **specification**. What they want is: hide the win screen and re-shuffle the
+puzzle just completed.
+
+They also reported that in landscape Play Again "will redirect to the home screen".
+It did, in both orientations — landscape merely made it obvious. `handlePlayAgain`
+dispatched `RESET_TO_LAUNCH_MODE`, which returns `INITIAL_GAME_STATE` and so cleared
+the board and dropped the screen into attract mode, then bumped `buildToken` to fetch
+a whole new artwork behind the build scrim (ADR-045). A visitor tapping Play Again got
+an empty board, a spinner, and a trip through the home screen.
+
+**Decision.** Play Again re-shuffles the artwork already on the board:
+`reshuffleSameArtwork` dispatches one `BUILD` with the **existing** `identity`, a
+fresh shuffled board and `mode: 'gameplay'`. No artwork load, no `buildToken` bump, no
+scrim, no navigation.
+
+The win popup hides for free — `BUILD` spreads `INITIAL_GAME_STATE`, so `phase`
+returns to `playing` and the popup renders only on `phase === 'won'`.
+
+This is now literally the same action as the footer's RESET, so both call one
+function rather than two that could drift apart.
+
+**`onPlayAgain` is gone.** It cleared `preparedArtwork` in `App`, which **revokes the
+blob URL** — the very image the board is still slicing. Keeping it while re-using the
+artwork would have turned Play Again into a black board, the ADR-023 failure again.
+
+**Consequences.**
+- **Diverges from Unity deliberately.** `ResetToLaunchMode(true)` (game-logic §6.2)
+  loads a new image straight into gameplay. The reducer keeps that capability and its
+  tests; this screen no longer uses it for Play Again.
+- Play-tested in the browser at the client's request, **both orientations**, with a
+  stubbed two-record collection. Landscape at 960×540 and portrait at 540×960 (three
+  consecutive rounds): win popup up then hidden, artwork unchanged, board re-shuffled,
+  **no scrim flash and no attract flash** sampled 150 ms after the tap, and the screen
+  stays in gameplay with the timer reset.
+- RESET and NEW IMAGE re-checked: RESET re-shuffles in place, NEW IMAGE still routes
+  to the select screen (ADR-040), and returning still serves a *different* artwork.
+- **ADR-047 is not wasted.** Its recency rule still governs the paths that genuinely
+  load a new artwork — boot, New Image, Play Again's old behaviour — so those cannot
+  serve the same piece twice in a row. Only its *rationale* was wrong.
+- `startGameplayImmediately` is now vestigial on this screen (nothing sets it true).
+  Left in place: the reducer field is tested and documents Unity's behaviour.
+
+---
+
+## ADR-047 — Play Again never repeats: recency relaxes from the OLD end
+
+> **Premise corrected by ADR-048.** The client's message was a specification, not a
+> bug report: Play Again is *meant* to replay the artwork just won. The recency rule
+> below still stands for boot and "New Image", which do load a new artwork — but it is
+> no longer what Play Again does.
+
+**Date:** 2026-07-31 · **Status:** Accepted
+
+**Context.** The client reported that Play Again reloads the artwork just won on.
+
+The first investigation could not reproduce it. Driving Play Again six times on the
+attract path gave six different artworks, and the Browse→Crop path gave five. The
+reported build (v0.1.18) already contained ADR-045, which had fixed the earlier
+title race. So the *mechanism* was sound.
+
+What was actually wrong was the odds and the absence of a guarantee.
+`loadCollectionArtwork` fetches **page 1 only** and picks at random. A live probe
+(`check-api.ps1 -Limit 40`) confirms the pool: 40 records, all with images, all
+titled, out of 32,299 across 808 pages. So a random pick had a **1-in-40 chance of
+an immediate repeat** and nothing prevented it — with the whole kiosk drawing from
+the same 40 pieces all day, a visitor doing several rounds would see repeats often
+enough to read as "always".
+
+**Decision.** The caller remembers what it has served — `LoadedArtwork.collectionId`
+plus a bounded `recentIds` ref on the Puzzle screen — and `pickArtwork` excludes
+them. Selection moved into `pickArtwork.ts`, free of Tauri and DOM imports so the
+rules are unit-testable with a rigged RNG rather than inferred from a live run.
+
+**The relaxation order is the whole decision.** `recent` is ordered most-recent
+first and the exclusion window shrinks **from the old end**, so the id given up last
+is the artwork just played.
+
+A first attempt used one flat `Set` and dropped it wholesale when it emptied the
+pool. That is subtly wrong, and a live 2-record run proved it: after both records
+were "recent" the exclusion vanished entirely, the artwork just finished became
+eligible again, and the run showed **2 consecutive repeats** — reproducing the
+client's report from my own fix. The progressive version alternates cleanly.
+
+**Consequences.**
+- Verified live on a deliberately hostile 2-record pool, where random selection
+  would repeat ~50 % of the time: **7 rounds, 0 consecutive repeats**, perfect
+  alternation (was 2 repeats before the ordering fix). Browse→Crop→win→Play Again
+  also confirmed to change artwork. 15 unit tests in `pickArtwork.test.ts`, one of
+  them pinning the give-up-oldest-first rule specifically.
+- The only case that still repeats immediately is a pool of exactly **one** playable
+  record — there is nothing else to serve, and a repeat beats a blank board.
+- `recentIds` is capped at 12 so a long kiosk day cannot exhaust a 40-record pool
+  and silently disable the rule.
+- Shared code, so this applies to **both orientations** unchanged — `loadArtwork`,
+  `pickArtwork` and the Puzzle screen are orientation-independent; only the footer
+  differs (ADR-019).
+- **Still page 1 only.** Widening to all 808 pages would mean randomising `page`,
+  which costs an ~8 s uncached fetch per build instead of ~1 ms from the 24 h Rust
+  cache (ADR-030) — now paid in front of the visitor behind the build scrim
+  (ADR-045). Left as a deliberate trade-off and recorded in `tasks.md`; the kiosk
+  currently shows 40 of 32,299 artworks.
+
+---
+
+## ADR-046 — Kiosk fullscreen and always-on-top are re-asserted, not set once
+
+**Date:** 2026-07-31 · **Status:** Accepted · **Extends:** ADR-012
+
+**Context.** The client's final requirement for both installers: always fullscreen,
+always in front of every other app, on 4K panels — 3840×2160 landscape and
+2160×3840 portrait.
+
+Two of the three already held. ADR-012's `kiosk.rs` promotes the window to
+fullscreen / undecorated / non-resizable / always-on-top in any release build, and
+the reference resolutions are exactly the two 4K sizes, so `computeScaleFactor`
+returns **1.0** on a native 4K panel — the UI is 1:1 with no scaling. Both are
+asserted in `reference.test.ts`.
+
+The gap was lifetime. `kiosk::apply` ran **once**, in `setup`. On Windows
+`HWND_TOPMOST` is surrendered whenever another process claims the top slot — another
+app going fullscreen, a UAC prompt, an Explorer restart, some installers and screen
+savers — and fullscreen itself can be dropped by a display or resolution change. So
+"always in front" held only until the first such event, after which the kiosk sat
+behind something with no staff present. Exactly the class of failure ADR-024's
+watchdog exists for, except a covered window is still a live process, so the
+watchdog cannot see it.
+
+**Decision.** Add `kiosk::reassert`, called from an `on_window_event` handler on
+`WindowEvent::Focused(false)` and `WindowEvent::Resized(_)` — the two events those
+losses arrive as. It re-applies always-on-top unconditionally and fullscreen only
+when `is_fullscreen()` reports it was lost, so the common case is a no-op and it
+cannot recurse through the `Resized` event that setting fullscreen emits. Gated on
+the same `kiosk_requested()` check, so `tauri dev` is untouched.
+
+`lock_down` also now logs the display it landed on — physical size, DPI scale and
+name.
+
+**Consequences.**
+- Applies to **both installers** identically: one binary, one code path, orientation
+  only changes `productName`/`identifier` and the dev window (ADR-020).
+- **It deliberately does NOT call `set_focus()` on focus loss.** Grabbing focus back
+  every time fights UAC and system dialogs and can leave a machine that is very hard
+  to service. Topmost is sufficient — a tap lands on the kiosk and brings focus with
+  it, so the staff double-Esc still works. This is the deliberate limit on "always in
+  front": the window is always *on top*, not always *focused*.
+- The monitor log makes two otherwise-identical-looking faults a one-line diagnosis:
+  fullscreen on the wrong display (the window starts centred on the PRIMARY monitor
+  and `set_fullscreen` fills whichever it is on), and a 4K panel actually running a
+  scaled-down desktop resolution.
+- **DPI scaling is self-correcting and needs no code.** At 200 % Windows scaling on a
+  3840×2160 panel the webview reports `innerWidth` 1920, so the scale factor is 0.5
+  and the 3840×2160 reference canvas renders to 1920×1080 CSS px — filling the
+  viewport — which WebView2 then paints at 2× into 3840×2160 physical pixels. Sharp
+  and correct. The aspect ratio is what matters, not the absolute number.
+- Verified by `cargo check`; **not launched.** Starting a fullscreen always-on-top
+  window would take over the developer's display, so on-hardware confirmation is
+  `MAP_KIOSK=1 npm run tauri:dev` plus the new log line (tracked with P6.10).
+
+---
+
+## ADR-045 — One owner for the board's artwork, behind a build scrim
+
+**Date:** 2026-07-31 · **Status:** Accepted · **Supersedes:** ADR-043
+
+**Context.** The artwork title appeared only *sometimes* — the client had two
+screenshots of the same piece, "Ram with Sita, Lakshman and Hanuman (Ram Darbar)",
+one titled and one not. `check-api.ps1` confirmed that is literally the first item
+of collection page 1, so it was a real collection artwork in both, not a bundled
+fallback.
+
+Two compounding defects, neither of them in the title element itself (which
+measures correct: 62 px, `#FFA300`, 100 px band 10 px above the board):
+
+1. **Two owners of one piece of state, racing.** ADR-043 loaded the bundled image
+   in one effect and swapped in a collection piece from a second. Both called
+   `setArtwork` and dispatched `BUILD`. The bundled load *always* carries a
+   title-less identity, so whenever it settled second it wiped the name off a good
+   collection artwork. It settled second often, because the warm Rust caches
+   (ADR-025, ADR-030) return a cached page in ~1 ms while cropping a bundled JPEG
+   on a canvas does not — so the "slow" path frequently won. Cold cache → title;
+   warm cache → no title. Hence the intermittency.
+2. **`RESET_TO_LAUNCH_MODE` returns `INITIAL_GAME_STATE`**, which clears
+   `identity`, while `artwork` is React state and survives. Home therefore left the
+   picture on screen with no name until a rebuild finished.
+
+A third, smaller one: the random pick could land on a record whose `title` is
+empty, which looks identical to the bug.
+
+**Decision.**
+- **One effect owns the artwork.** It awaits `loadRandomArtwork()`, which now tries
+  the collection FIRST and degrades to the bundled set on any failure. The second
+  effect is deleted, along with its `attractRef` guard.
+- **A build scrim** (`ui/LoadingOverlay`, the ADR-032 sprite sheet) covers the
+  screen from the moment a build starts until the artwork, board and title are all
+  in place. This is what buys back the wait that ADR-028 was avoiding: the visitor
+  sees honest progress instead of a board that changes under them.
+- **The picker prefers titled records**, falling back to any playable item if a
+  whole page is untitled.
+
+**Consequences.**
+- Verified: **8 consecutive rebuilds, 0 blank titles**, alternating a 1 ms (warm)
+  and 400 ms (cold) collection response — the exact condition that produced the
+  race. The untitled fixture was never chosen. The scrim always cleared.
+- **ADR-028's 0 ms boot is given up on purpose.** Boot now waits for the
+  collection (~8 s cold, ~1 ms from the 24 h disk cache) behind the scrim. That was
+  the client's explicit request: show a loading screen until the puzzle and its
+  name are ready.
+- The scrim lifts in a `finally`, so a failed load cannot leave a spinner up
+  forever — staff keep their exit gesture.
+- `LoadingOverlay` duplicates the sprite-sheet keyframes that `BrowseScreen` also
+  has. Left duplicated: Browse's overlay additionally blurs the grid and disables
+  the page arrows, a different job. Worth folding together on a third caller.
+
+---
+
+## ADR-044 — One radius token, and rounded control plates are drawn in CSS
+
+**Date:** 2026-07-31 · **Status:** Accepted
+
+**Context.** The client asked for the high-score badge and the timer to share the
+footer buttons' corner radius. They were the two extremes on that row: the badge
+was a **full pill** and the timer was **nearly square**, with the buttons between
+them. Both are drawn from Unity art the port cannot restyle — the badge through a
+9-sliced `Circle_9Sliced.png` mask, the timer as `timer-background.svg`.
+
+**Decision.**
+- **`--radius-control: 32px`** in `tokens.css` is the one radius for every control
+  the port draws itself. The number is taken from the button art rather than
+  invented: `reset-button.svg` is 215×89, its coloured face has a 16-unit corner,
+  and portrait renders it into a 430×178 rect — exactly 2× — so the face corner
+  lands at 32 reference px.
+- **The badge drops the mask.** The shape under it was a plain rectangle; the mask
+  only ever supplied the pill. It is now a solid tint plus the token. Landscape
+  already drew it flat (ADR-019), so the two orientations finally agree.
+- **The timer plate is CSS, not the sprite.** `timer-background.svg` is two layers
+  — a ~3-unit `#FEFFFE` frame around an `#88A35C` fill — reproduced as a
+  background plus a border, so the radius is ours to set. Clipping the sprite with
+  `overflow: hidden` was rejected: it cuts the white frame at the corners.
+
+**Consequences.**
+- Verified at 540×960: badge and timer both computed `border-radius: 32px`, timer
+  `rgb(136,163,92)` behind a `4px solid rgb(254,255,254)` border.
+- `timer-background.svg` and `circle-9sliced.png` are now unreferenced by the
+  Puzzle screen. Left in `public/assets` deliberately — they are the Unity record
+  of these two colours, and `copy-assets.ps1` still lists `circle-9sliced`.
+- Border width is 4 ref px portrait, 3 landscape, because the landscape timer is
+  rendered near 1:1 with the sprite while portrait renders it at ~1.6×.
+- **The footer button sprites are untouched.** Only the two CSS-drawn plates moved.
+
+---
+
+## ADR-043 — Attract mode upgrades to a titled collection artwork in the background
+
+**Date:** 2026-07-31 · **Status:** SUPERSEDED by ADR-045, same day
+
+> **Why it failed.** The background upgrade gave two effects ownership of one piece
+> of board state, and they raced. The bundled load always carries a title-less
+> identity, so whenever it settled second it wiped the title — which the warm Rust
+> caches made common. Read ADR-045; do not reinstate this shape.
+
+**Context.** The client asked to see the artwork name whenever a puzzle is built.
+It showed during gameplay reached through Browse but never on the home screen.
+
+The mechanism was never broken — the title element matches Unity exactly (62 px,
+`#FFA300`, a 100 px band 10 px above the board, verified live). The gap was the
+*source*: ADR-028 made boot load only the bundled offline images to kill a 12–15 s
+launch hang, and those three images carry **no title**. Unity has no such gap —
+`GameManager.OnAPIDataForLaunch` loads launch mode from the API and takes
+`chosen.title`, so its attract board is a titled collection piece.
+
+So the port had to choose between ADR-028's instant boot and Unity's titled attract
+board. Naming the three bundled images was rejected: their real titles are not in
+the repo and inventing them would put fabricated attributions on a museum kiosk.
+
+**Decision.** Do both, in order. The bundled image still loads first and is
+playable at 0 ms. A second effect then fetches a random collection artwork
+(`loadCollectionArtwork`) and swaps it in **only while still in attract mode**,
+guarded by a ref because the load resolves long after its effect closed over
+state. Any failure keeps the bundled image and logs one line.
+
+**Consequences.**
+- Verified with a stubbed collection: the home screen shows the artwork title with
+  START still visible, i.e. attract mode, not gameplay.
+- **Offline the home screen still has no title**, and that is the correct
+  behaviour — it is exactly what Unity shows for a local texture.
+- The swap rebuilds the board. Harmless in attract mode, which is auto-shuffling
+  anyway, and it cannot touch a game in progress.
+- Boot now issues a collection request it did not before. It is off the critical
+  path, and the 24 h Rust disk cache (ADR-030) makes it ~1 ms after the first run.
+- The catch **logs**. A silent catch here would hide a real fault behind nothing
+  but a missing title — which is precisely how this went unnoticed.
+
+---
+
+## ADR-042 — The Sort By control is an in-canvas dropdown, never a native `<select>`
+
+**Date:** 2026-07-31 · **Status:** Accepted
+
+**Context.** Sort By shipped as a native `<select>`. The reasoning recorded in the
+CSS was that its five options are short and fixed, so the OS could draw the popup
+and clipping would never be a concern. On a kiosk that reasoning is inverted: the
+OS popup is **not inside `<ScaledCanvas>`**, so it ignores the canvas transform
+entirely.
+
+Two defects followed, both visible in the client's landscape screenshot:
+
+1. **Option rows rendered at OS size.** Everything else on the screen is drawn at
+   reference scale and then scaled down (~0.28 at 1080p landscape); the popup was
+   not, so its rows were roughly 4x the height of the filter dropdowns beside it.
+2. **Two popups could be open at once.** The native popup is positioned by the OS
+   and has no knowledge of `openDropdown`, so it opened over the already-open Date
+   filter popup.
+
+**Decision.** `SortDropdown.tsx` — a panel built from the same CSS classes as
+`FilterDropdown`, rendered inside the scaled canvas, and joined to the **shared
+`openDropdown` state** so at most one popup exists at any time. No search row: five
+fixed options need no filtering, so the popup is sized to its content
+(`SORT_MODES.length × popupRowHeight`) instead of the filters' fixed 400 px.
+
+**Consequences.**
+- Sort rows are the same size as filter rows, because they are literally the same
+  classes and the same `filterDropdowns.label.fontSizePx`.
+- Opening Sort closes any filter popup and vice versa — verified at 540×960: after
+  tapping Date then Sort, `aria-expanded` is `false` on Date, `true` on Sort, and
+  exactly one `dropdownPopup` node exists.
+- **General rule: no native form control that renders its own popup may be used
+  inside `<ScaledCanvas>`.** `<select>`, `<datalist>` and the date/colour pickers
+  all draw chrome the canvas transform cannot reach. Plain `<input>` is fine — it
+  is the *popup* that escapes, not the field.
+
+---
+
+## ADR-041 — The high score is global, not per artwork (diverges from Unity)
+
+**Date:** 2026-07-31 · **Status:** Accepted (client directive)
+
+**Context.** Unity keys the record per image —
+`GameManager.GetHighScoreKey()` (`Scripts/GameManager.cs:1221-1227`) builds
+`{productName}_HighScoreKey_{artworkTitle | textureName | "Default"}`. The port
+reproduced that key shape byte for byte so existing kiosk records could migrate.
+
+The client reviewed the behaviour on 2026-07-31 and called the Unity logic wrong.
+It is also self-contradictory: the comment immediately above that method
+(`GameManager.cs:1217-1220`) states that "a single app-wide high score is
+intentional here", which the code does not do.
+
+Two further consequences of the per-artwork key argue the same way. A visitor could
+never beat a record set on a different picture, so the badge was effectively always
+`--:--` for anyone playing a new artwork. And because untitled sources fall back to
+a *fixed* texture name, every QR upload silently shared one bucket
+(`..._HighScoreKey_CroppedImage`) while every titled artwork got its own.
+
+**Decision.** One key for the whole game: `{productName}_HighScoreKey`.
+`highScoreKey`, `readHighScore` and `writeHighScoreIfFaster` no longer take an
+identity. The kiosk runs one fixed 3×3 difficulty, so every run is comparable and a
+single board to beat is the sensible reading.
+
+`ArtworkIdentity` survives but moved to `game/types.ts`: it is now display-only
+data, feeding the artwork title above the board. Nothing is keyed on it.
+`resolveIdentifier` is deleted.
+
+**Consequences.**
+- **No migration; the badge reads `--:--` once after this ships**, then rebuilds.
+  Old per-artwork keys are orphaned rather than deleted — `KeyValueStore` is
+  `getItem`/`setItem` only, so folding them into a single minimum would need a
+  wider storage interface for a one-off gain.
+- The write rule is unchanged: strictly faster wins, an equal time does not
+  overwrite, `-1` renders `--:--`.
+- Tests: 310 green. The per-artwork independence test is replaced by its opposite —
+  two runs on different artworks now share one record, and the slower one does not
+  overwrite the faster.
+- Divergence from Unity is deliberate and client-directed. Do not "fix" it back by
+  reading `GetHighScoreKey()`.
+
 ---
 
 ## ADR-026 — Design corrections from the Unity EXE screenshots

@@ -68,4 +68,68 @@ fn lock_down(window: &WebviewWindow) {
     }
 
     log::info!("kiosk mode applied: fullscreen, undecorated, always-on-top");
+    log_monitor(window);
+}
+
+/// Log the display the kiosk actually landed on.
+///
+/// `set_fullscreen` fills whichever monitor the window is currently on, and the
+/// window starts centred on the PRIMARY display. On a multi-monitor bench that is
+/// not necessarily the kiosk panel, and the symptom — a fullscreen app on the
+/// wrong screen — is indistinguishable from a config fault. Logging the size and
+/// DPI scale makes it a one-line diagnosis, and confirms a 4K panel really is
+/// reporting 3840x2160 rather than a scaled-down desktop resolution.
+fn log_monitor(window: &WebviewWindow) {
+    match window.current_monitor() {
+        Ok(Some(monitor)) => {
+            let size = monitor.size();
+            log::info!(
+                "kiosk display: {}x{} physical px, DPI scale {:.2}, name {:?}",
+                size.width,
+                size.height,
+                monitor.scale_factor(),
+                monitor.name()
+            );
+        }
+        Ok(None) => log::warn!("no monitor reported for the kiosk window"),
+        Err(error) => log::warn!("could not read the kiosk monitor: {error}"),
+    }
+}
+
+/// Re-apply fullscreen and always-on-top.
+///
+/// Setting them once at startup is not enough on Windows. `HWND_TOPMOST` is lost
+/// whenever another process takes the top slot — another app going fullscreen, a
+/// UAC prompt, an Explorer restart, some installers and screen savers — and
+/// fullscreen itself can be dropped by a display or resolution change. Without
+/// this, "always in front of all apps" holds only until the first such event, and
+/// the kiosk is then sitting behind something with no staff present.
+///
+/// Cheap and idempotent, so it is safe to call from a window event. Fullscreen is
+/// checked before being set so the call is a no-op in the common case and cannot
+/// recurse through the `Resized` event that setting it emits.
+///
+/// Deliberately does NOT call `set_focus()`. Grabbing focus back on every focus
+/// loss fights UAC and system dialogs, and can leave a machine that is very hard
+/// to service. Being topmost is enough: a tap lands on the kiosk and focus returns
+/// with it, so the staff double-Esc still works.
+pub fn reassert(app: &tauri::AppHandle) {
+    if !kiosk_requested() {
+        return;
+    }
+
+    let Some(window) = app.get_webview_window("main") else {
+        return;
+    };
+
+    if !matches!(window.is_fullscreen(), Ok(true)) {
+        log::info!("kiosk fullscreen was lost; restoring");
+        if let Err(error) = window.set_fullscreen(true) {
+            log::error!("re-assert set_fullscreen(true) failed: {error}");
+        }
+    }
+
+    if let Err(error) = window.set_always_on_top(true) {
+        log::error!("re-assert set_always_on_top(true) failed: {error}");
+    }
 }

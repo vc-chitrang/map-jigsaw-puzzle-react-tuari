@@ -1,17 +1,16 @@
 import { useMemo, useRef, useState } from 'react';
 import {
-  SORT_MODES,
   formatResultCount,
   hasImage,
   type FilterSelection,
   type ResultsData,
-  type SortModeIndex,
 } from '../../api/types';
 import { ORIENTATION } from '../../canvas/reference';
 import { BROWSE_LAYOUT } from '../../layout/screens';
 import { rectStyle, textStyle } from '../../layout/rect';
 import { ArtworkCard } from './ArtworkCard';
 import { FilterDropdown, type DropdownOption } from './FilterDropdown';
+import { SortDropdown } from './SortDropdown';
 import { useCollection } from './useCollection';
 import { OnScreenKeyboard } from '../../ui/keyboard/OnScreenKeyboard';
 import { isTap, keyboardHeight } from '../../ui/keyboard/layout';
@@ -50,7 +49,11 @@ export function BrowseScreen({ onBack, onSelectArtwork }: BrowseScreenProps) {
   const collection = useCollection();
   const { actions } = collection;
 
-  /** At most one popup open at a time, like a Unity `TMP_Dropdown`. */
+  /**
+   * At most one popup open at a time, like a Unity `TMP_Dropdown`. Holds a
+   * filter key or the literal `'sort'` — the sort control shares this state so
+   * it cannot be open alongside a filter popup.
+   */
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
 
   /**
@@ -76,6 +79,20 @@ export function BrowseScreen({ onBack, onSelectArtwork }: BrowseScreenProps) {
     if (keyboardTarget === null) return;
     if (keyboardTarget === 'search') actions.setSearchText(updater);
     else setOneFilterSearch(keyboardTarget.filter, updater);
+  };
+
+  /**
+   * Open exactly one popup (or none), dismissing the on-screen keyboard.
+   *
+   * Every route into a popup goes through here: touching a dropdown control, or
+   * choosing an option, or Clear Filters. The keyboard is 1/3 of the screen, so
+   * leaving it up over a list the visitor is now reading hides most of it —
+   * and if it was serving the popup that just closed, it would be typing into a
+   * field that no longer exists.
+   */
+  const showOnly = (next: string | null) => {
+    setOpenDropdown(next);
+    setKeyboardTarget(null);
   };
 
   /**
@@ -167,7 +184,16 @@ export function BrowseScreen({ onBack, onSelectArtwork }: BrowseScreenProps) {
       <div
         className={styles.searchBar}
         style={rectStyle(B.searchBar.rect)}
-        onPointerDown={(event) => event.stopPropagation()}
+        // Touching anywhere in the search bar — the field, its clear button or
+        // the submit button — closes an open filter/sort popup. Handled on the
+        // BAR rather than on each control so one rule covers all three, which
+        // means nothing inside may stopPropagation before it reaches here.
+        // stopPropagation then keeps the backdrop from dismissing the keyboard
+        // that the field is about to ask for.
+        onPointerDown={(event) => {
+          event.stopPropagation();
+          setOpenDropdown(null);
+        }}
       >
         <div className={styles.searchField} style={{ borderColor: B.searchBar.outlineColour }}>
           <input
@@ -187,10 +213,11 @@ export function BrowseScreen({ onBack, onSelectArtwork }: BrowseScreenProps) {
             // Focus opens the in-app keyboard (ADR-006). `readOnly` would block
             // a physical keyboard, which staff use for setup, so both work.
             onFocus={() => setKeyboardTarget('search')}
-            onPointerDown={(event) => {
-              event.stopPropagation();
-              setKeyboardTarget('search');
-            }}
+            // Deliberately does NOT stopPropagation: the event must reach the
+            // search bar's handler above, which is what closes an open popup.
+            // Retargets rather than closes — a keyboard serving a filter popup
+            // moves to this field, so the visitor can type straight away.
+            onPointerDown={() => setKeyboardTarget('search')}
             autoComplete="off"
             spellCheck={false}
             aria-label="Search the collection"
@@ -202,7 +229,11 @@ export function BrowseScreen({ onBack, onSelectArtwork }: BrowseScreenProps) {
               type="button"
               className={styles.searchClear}
               style={rectStyle(B.searchBar.clearButtonRect)}
-              onClick={actions.clearSearch}
+              onClick={() => {
+                // Clearing the field is the end of typing, so the keyboard goes.
+                actions.clearSearch();
+                setKeyboardTarget(null);
+              }}
               aria-label="Clear the search"
             >
               <img src={B.searchBar.clearSprite} alt="" draggable={false} />
@@ -214,7 +245,12 @@ export function BrowseScreen({ onBack, onSelectArtwork }: BrowseScreenProps) {
           type="button"
           className={styles.searchSubmit}
           style={rectStyle(B.searchBar.searchButtonRect)}
-          onClick={actions.submitSearch}
+          onClick={() => {
+            // Submitting is the end of typing, so the keyboard goes — matching
+            // the keyboard's own SEARCH key, which already closed itself.
+            actions.submitSearch();
+            setKeyboardTarget(null);
+          }}
           aria-label="Search"
         >
           <img src={B.searchBar.searchSprite} alt="" draggable={false} />
@@ -235,7 +271,12 @@ export function BrowseScreen({ onBack, onSelectArtwork }: BrowseScreenProps) {
           type="button"
           className={styles.clearFilters}
           style={{ ...rectStyle(B.filterBar.clearFiltersRect), ...textStyle(B.filterBar.clearFilters) }}
-          onClick={actions.clearFilters}
+          onClick={() => {
+            // Clearing the filters closes whatever popup and keyboard were being
+            // used to set them — the lists behind are all about to change.
+            showOnly(null);
+            actions.clearFilters();
+          }}
           disabled={!filtersActive}
         >
           {B.filterBar.clearFilters.text}
@@ -250,15 +291,10 @@ export function BrowseScreen({ onBack, onSelectArtwork }: BrowseScreenProps) {
             selected={collection.selection[item.key as keyof FilterSelection]}
             onSelect={(value) => {
               actions.setFilter(item.key as keyof FilterSelection, value);
-              setOpenDropdown(null);
+              showOnly(null);
             }}
             open={openDropdown === item.key}
-            onToggle={() => {
-              const next = openDropdown === item.key ? null : item.key;
-              setOpenDropdown(next);
-              // Closing the popup takes its keyboard with it.
-              if (next === null) setKeyboardTarget(null);
-            }}
+            onToggle={() => showOnly(openDropdown === item.key ? null : item.key)}
             disabled={collection.filters === null}
             search={filterSearch[item.key] ?? ''}
             onSearchChange={(next) => setOneFilterSearch(item.key, next)}
@@ -288,21 +324,15 @@ export function BrowseScreen({ onBack, onSelectArtwork }: BrowseScreenProps) {
             {B.resultInfoBar.sortLabel.text}
           </span>
 
-          <select
-            className={styles.sortSelect}
-            style={{ fontSize: `${B.filterDropdowns.label.fontSizePx}px` }}
+          <SortDropdown
             value={collection.sortIndex}
-            onChange={(event) =>
-              actions.setSortIndex(Number(event.target.value) as SortModeIndex)
-            }
-            aria-label="Sort by"
-          >
-            {SORT_MODES.map((mode, index) => (
-              <option key={mode.label} value={index}>
-                {mode.label}
-              </option>
-            ))}
-          </select>
+            open={openDropdown === 'sort'}
+            onToggle={() => showOnly(openDropdown === 'sort' ? null : 'sort')}
+            onChange={(next) => {
+              actions.setSortIndex(next);
+              showOnly(null);
+            }}
+          />
         </div>
 
         {/* GridViewButton — visual only (one grid view; nothing to switch). */}

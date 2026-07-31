@@ -23,6 +23,7 @@ import { highScoreStore } from '../../storage/localStore';
 import { Board } from './Board';
 import { useAutoShuffle, useGameTimer, useMoveSettler, useWinDelay } from './hooks';
 import { adoptPreparedArtwork, loadRandomArtwork, type LoadedArtwork } from './loadArtwork';
+import { LoadingOverlay } from '../../ui/LoadingOverlay';
 import { WinScreen } from '../WinScreen/WinScreen';
 import styles from './PuzzleScreen.module.css';
 
@@ -35,19 +36,15 @@ interface PuzzleScreenProps {
    * An already-square image from the Crop screen. `null` means "pick one" — a
    * random collection piece, falling back to the bundled offline set.
    *
-   * Ownership of the blob URL transfers here: this screen revokes it when the
-   * artwork is replaced or the screen unmounts.
+   * **Read only.** `App` created this blob URL and `App` revokes it (ADR-023);
+   * this screen must not, or a remount adopts an already-revoked URL and the board
+   * renders black.
    */
   readonly preparedArtwork?: { url: string; title: string } | null;
   /** START — the flow continues to image selection. */
   readonly onStart?: () => void;
   /** Home / back. */
   readonly onHome?: () => void;
-  /**
-   * "Play Again" on the win screen. The owner must clear `preparedArtwork` so a
-   * fresh random artwork is loaded — the cropped blob has been revoked by then.
-   */
-  readonly onPlayAgain?: () => void;
   readonly onNewImage?: () => void;
   /**
    * Reports whether a game is in progress, which the Back rule needs: Back on the
@@ -83,7 +80,6 @@ export function PuzzleScreen({
   preparedArtwork = null,
   onStart,
   onHome,
-  onPlayAgain,
   onNewImage,
   onMidGameChange,
   resetToken = 0,
@@ -96,19 +92,65 @@ export function PuzzleScreen({
   const [buildToken, setBuildToken] = useState(0);
   const startGameplayImmediately = useRef(false);
 
+  /**
+   * True from the moment a build starts until the board AND its title are up.
+   * Drives the loading scrim.
+   */
+  const [building, setBuilding] = useState(true);
+
+  /**
+   * Collection ids played this session, most recent first.
+   *
+   * Passed to the loader as an exclusion set so a new artwork cannot repeat one
+   * the visitor has just had — "Play Again" handing back the piece they only just
+   * solved is the complaint this exists for. A random pick over the 40 records on
+   * page 1 makes an immediate repeat a 1-in-40 roll; excluding is a guarantee.
+   *
+   * A ref, not state: it must not trigger a render, and the load effect reads it
+   * when it runs rather than closing over a snapshot.
+   */
+  const recentIds = useRef<number[]>([]);
+  const RECENT_LIMIT = 12;
+
   // ---- Load artwork, then build a shuffled board ----------------------------
+  /**
+   * ONE effect owns the board's artwork.
+   *
+   * It used to be two: this one loaded the bundled image immediately and a second
+   * swapped in a collection piece afterwards (ADR-043). Two owners for one piece
+   * of state raced, and because the bundled load always carries a TITLE-LESS
+   * identity, whenever it settled second it wiped the name off a perfectly good
+   * collection artwork. That is what made the title appear only sometimes: the
+   * warm Rust caches (ADR-025, ADR-030) return a cached page in ~1 ms, so the
+   * supposedly slow load frequently won the race. Superseded by ADR-045.
+   *
+   * `RESET_TO_LAUNCH_MODE` compounds it — it returns `INITIAL_GAME_STATE`, which
+   * clears `identity` while `artwork` (React state, not reducer state) keeps the
+   * image, so Home left the picture up with no name until a build finished. Hence
+   * the scrim: neither is shown until both are ready.
+   */
   useEffect(() => {
     let cancelled = false;
+    setBuilding(true);
 
     void (async () => {
       try {
+        // Collection FIRST, bundled set on any failure — `loadRandomArtwork`
+        // decides, and never surfaces an error state.
         const loaded = preparedArtwork
           ? adoptPreparedArtwork(preparedArtwork.url, preparedArtwork.title)
-          : await loadRandomArtwork();
+          : await loadRandomArtwork(Math.random, recentIds.current);
 
         if (cancelled) {
           loaded.release();
           return;
+        }
+
+        // Remember it so the next load cannot pick it again. Bounded, so a long
+        // kiosk day cannot exhaust the 40-record pool and force the loader to
+        // fall back to allowing repeats.
+        if (loaded.collectionId !== undefined) {
+          recentIds.current = [loaded.collectionId, ...recentIds.current].slice(0, RECENT_LIMIT);
         }
 
         setArtwork((previous) => {
@@ -120,7 +162,7 @@ export function PuzzleScreen({
           type: 'BUILD',
           board: createShuffledBoard().board,
           identity: loaded.identity,
-          highScoreSeconds: readHighScore(highScoreStore, loaded.identity),
+          highScoreSeconds: readHighScore(highScoreStore),
           // An image the visitor cropped goes straight into gameplay, as does
           // "Play Again"; a boot or "New Image" load starts in attract mode.
           ...(preparedArtwork || startGameplayImmediately.current
@@ -129,8 +171,12 @@ export function PuzzleScreen({
         });
         startGameplayImmediately.current = false;
       } catch (error) {
-        // Both sources failed, so a bundled asset is missing — a packaging fault.
+        // Even the bundled set failed, so an asset is missing — a packaging fault.
         console.error('[puzzle] artwork load failed', error);
+      } finally {
+        // Lifts the scrim even on failure. A spinner that never clears is worse
+        // than a board with no picture, and staff keep their exit gesture.
+        if (!cancelled) setBuilding(false);
       }
     })();
 
@@ -138,6 +184,7 @@ export function PuzzleScreen({
       cancelled = true;
     };
   }, [buildToken, preparedArtwork]);
+
 
   // ---- Effects that drive the state machine --------------------------------
   useGameTimer(state.timer.running, state.isSolved, dispatch);
@@ -149,15 +196,11 @@ export function PuzzleScreen({
   useEffect(() => {
     if (state.phase !== 'revealing') return;
 
-    const result = writeHighScoreIfFaster(
-      highScoreStore,
-      state.timer.elapsedSeconds,
-      state.identity,
-    );
+    const result = writeHighScoreIfFaster(highScoreStore, state.timer.elapsedSeconds);
     if (result.best !== state.highScoreSeconds) {
       dispatch({ type: 'HIGH_SCORE_LOADED', seconds: result.best });
     }
-  }, [state.phase, state.timer.elapsedSeconds, state.identity, state.highScoreSeconds]);
+  }, [state.phase, state.timer.elapsedSeconds, state.highScoreSeconds]);
 
   // Debug/QA cheat: Ctrl+Shift+Alt+S instantly solves the board and shows the
   // win popup. `e.code === 'KeyS'` is used so the modifier combination cannot
@@ -208,7 +251,28 @@ export function PuzzleScreen({
     [state],
   );
 
-  const handleReset = useCallback(() => {
+  /**
+   * Re-shuffle the artwork already on the board into a fresh game.
+   *
+   * Backs BOTH the footer's RESET and the win screen's "Play Again" — the client
+   * specified them as the same action (2026-07-31): keep the artwork the visitor
+   * just played, re-shuffle it, go straight into gameplay.
+   *
+   * It also hides the win popup for free, because `BUILD` spreads
+   * `INITIAL_GAME_STATE` and so resets `phase` to `playing`, and the popup renders
+   * on `phase === 'won'`.
+   *
+   * **No artwork load and no `buildToken` bump**, which is the point. "Play Again"
+   * used to dispatch `RESET_TO_LAUNCH_MODE` and bump the token, which cleared the
+   * board, put the screen back in attract mode and raised the build scrim while a
+   * NEW artwork was fetched — that is the "it goes to the home screen" the client
+   * saw in landscape. It happens in portrait too; landscape just made it obvious.
+   *
+   * **Diverges from Unity deliberately.** `ResetToLaunchMode(true)`
+   * (game-logic §6.2) loads a new image straight into gameplay. The reducer keeps
+   * that capability and its tests; this screen no longer uses it for Play Again.
+   */
+  const reshuffleSameArtwork = useCallback(() => {
     if (!state.board) return;
     dispatch({
       type: 'BUILD',
@@ -228,20 +292,6 @@ export function PuzzleScreen({
       setBuildToken((token) => token + 1);
     }
   }, [onNewImage]);
-
-  /**
-   * `ResetToLaunchMode(true)` — a new image that goes STRAIGHT into gameplay,
-   * skipping attract mode (docs/game-logic.md §6.2). The flag is consumed by the
-   * BUILD that follows the image load.
-   */
-  const handlePlayAgain = useCallback(() => {
-    startGameplayImmediately.current = true;
-    dispatch({ type: 'RESET_TO_LAUNCH_MODE', startGameplayImmediately: true });
-    // Bump the token as well as notifying the owner: if `preparedArtwork` was
-    // already null, clearing it changes no dependency and the load would not re-run.
-    setBuildToken((token) => token + 1);
-    onPlayAgain?.();
-  }, [onPlayAgain]);
 
   const handleStart = useCallback(() => {
     // Unity's START leaves attract mode AND navigates to image selection. With no
@@ -297,7 +347,7 @@ export function PuzzleScreen({
           timerText={formatTime(state.timer.elapsedSeconds)}
           highScoreText={formatHighScore(state.highScoreSeconds)}
           onStart={handleStart}
-          onReset={handleReset}
+          onReset={reshuffleSameArtwork}
           onNewImage={handleNewImage}
           onPreviewStart={() => setPreviewHeld(true)}
           onPreviewEnd={() => setPreviewHeld(false)}
@@ -321,7 +371,8 @@ export function PuzzleScreen({
         />
       ) : (
         <div className={styles.timer} style={rectStyle(L.timer.rect)}>
-          <img src={L.timer.sprite} alt="" className={styles.timerBackground} draggable={false} />
+          {/* Plate is CSS, not `L.timer.sprite` — see .timerBackground. */}
+          <div className={styles.timerBackground} />
           <span className={styles.timerValue} style={textStyle(L.timer.label)}>
             {formatTime(state.timer.elapsedSeconds)}
           </span>
@@ -332,13 +383,7 @@ export function PuzzleScreen({
           border AND tinted #67797F. `border-image` cannot be tinted, so the
           sprite is used as a 9-sliced MASK over a solid fill instead. */}
       <div className={styles.highScore} style={rectStyle(L.highScore.rect)}>
-        <div
-          className={styles.highScoreFill}
-          style={{
-            backgroundColor: L.highScore.tint,
-            WebkitMaskBoxImage: `url("${L.highScore.sprite}") ${L.highScore.sliceBorderPx} fill stretch`,
-          }}
-        />
+        <div className={styles.highScoreFill} style={{ backgroundColor: L.highScore.tint }} />
         <div
           className={styles.highScoreTitle}
           style={{ ...rectStyle(L.highScore.titleRect), ...textStyle(L.highScore.title) }}
@@ -360,7 +405,7 @@ export function PuzzleScreen({
         label={L.footerButtons.reset.label}
         icon={L.footerButtons.reset.icon}
         disabled={!footerEnabled}
-        onPress={handleReset}
+        onPress={reshuffleSameArtwork}
       />
 
       {/* Preview is HOLD-to-show, not a toggle: UIPressHandler fires
@@ -398,7 +443,7 @@ export function PuzzleScreen({
         <WinScreen
           elapsedSeconds={state.timer.elapsedSeconds}
           highScoreSeconds={state.highScoreSeconds}
-          onPlayAgain={handlePlayAgain}
+          onPlayAgain={reshuffleSameArtwork}
         />
       ) : null}
 
@@ -419,6 +464,12 @@ export function PuzzleScreen({
           <img className={styles.previewImage} src={artwork.url} alt="" draggable={false} />
         </div>
       ) : null}
+
+      {/* Build scrim. Rendered LAST and z-index 40, so it covers the board, the
+          preview panel (10) and the win popup (20) — the screen is not ready and
+          nothing behind it should be reachable. Lifts only once the artwork, the
+          board and the title are all in place. */}
+      {building ? <LoadingOverlay label="Building the puzzle..." /> : null}
     </div>
   );
 }

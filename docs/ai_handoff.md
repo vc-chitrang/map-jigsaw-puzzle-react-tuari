@@ -3,7 +3,116 @@
 State for the next agent. Read this first, then [architecture.md](architecture.md),
 [roadmap.md](roadmap.md).
 
-**Last updated:** 2026-07-30
+**Last updated:** 2026-07-31
+
+## 0. Most recent work — client feedback round (2026-07-31)
+
+Branch `feat/client-feedback-2026-07-31`. Ten items from a landscape play test;
+nine done and verified at 540×960, one blocked on the client. Full table in
+[tasks.md](tasks.md) "Client feedback round". Two new ADRs:
+
+* **ADR-041 — the high score is now GLOBAL**, one key for the whole game, a
+  deliberate divergence from Unity's per-artwork key. The badge reads `--:--` once
+  after this ships. Do not "fix" it back by reading `GetHighScoreKey()`.
+* **ADR-042 — no native form control that draws its own popup may live inside
+  `<ScaledCanvas>`.** Sort By was a `<select>`; the OS drew its popup outside the
+  canvas transform, so rows rendered ~4x too large and could sit over the Date
+  filter popup. It is now `SortDropdown.tsx`, sharing `openDropdown` with the
+  filters.
+
+**Play Again re-shuffles the artwork just played (ADR-048) — do not "fix" it back.**
+It deliberately diverges from Unity's `ResetToLaunchMode(true)`. The seventh round
+(C27–C28) also fixed the reason it appeared to "go to the home screen": it dispatched
+`RESET_TO_LAUNCH_MODE`, which returns `INITIAL_GAME_STATE` and cleared the board into
+attract mode, then bumped `buildToken` to fetch a new artwork behind the scrim. It is
+now one `BUILD` with the existing identity, so RESET and Play Again are the same
+function. `onPlayAgain` was removed because it revoked the blob URL the board was still
+slicing.
+
+**And a process lesson worth more than the fix:** C26 (ADR-047) was built on a
+misreading — the client's "Play Again will always load same artwork" was a
+*specification*, and it was answered as if it were a *defect report*. A whole round of
+work went the wrong direction. When a client sentence could be either, ask.
+
+A sixth round (C26) stopped Play Again repeating the artwork just won — ADR-047. Two
+lessons in it. First, **the reported symptom was not reproducible**; the real defect
+was odds, not mechanism: only page 1 is fetched, that pool is 40 records, so a random
+pick had a 1-in-40 chance of an immediate repeat and nothing forbade it. Second, **my
+first fix reproduced the bug it was meant to remove** — a flat exclusion `Set` dropped
+wholesale when it emptied the pool made the just-played artwork eligible again, and a
+live 2-record run showed consecutive repeats. `pickArtwork` now relaxes the recency
+window **from the old end**, so the most recent id is the last one reconsidered.
+Verified 7 rounds / 0 repeats on a 2-record pool; 15 unit tests. Selection lives in
+`pickArtwork.ts`, kept free of Tauri and DOM imports precisely so it is testable with
+a rigged RNG. **Still page 1 only — 40 of 32,299 artworks**, a deliberate trade-off
+against an ~8 s uncached page fetch per build.
+
+A fifth round (C23–C25) covered the kiosk display requirements for **both**
+installers. Fullscreen and the 4K reference sizes already held — `REFERENCE` is
+exactly 3840×2160 / 2160×3840, so the scale factor is **1.0** on a native 4K panel
+and `reference.test.ts` already asserted it. The real gap was **lifetime**:
+`kiosk::apply` ran once in `setup`, and Windows surrenders `HWND_TOPMOST` whenever
+another process claims it. `kiosk::reassert` now runs on `Focused(false)` and
+`Resized(_)` (ADR-046). It deliberately does **not** steal focus back — the window is
+always on *top*, not always *focused*, because re-focusing fights UAC and can leave a
+machine unserviceable. `lock_down` also logs the display it landed on, which
+distinguishes "fullscreen on the wrong monitor" from "4K panel running a scaled
+desktop resolution". **Not launched** — `cargo check` only, since a fullscreen
+always-on-top window would take over the dev display.
+
+A fourth round (C21–C22) closed it out with two design tweaks: the high-score badge
+gained the thin white frame the timer plate already had (shared
+`--colour-control-frame`), and START grew ~10% about its centre with its label
+scaled to match. The timer keeps its scene rect, so **START is now deliberately
+larger than the timer it swaps with** — that is intended, not drift.
+
+That round also had to loosen two tests that hardcoded scene numbers on START: the
+Y-flip test in `rect.test.ts` now uses the §3.2 worked example as a literal instead
+of reading `startButton.rect`, and `landscape.test.ts` asserts landscape type is
+*smaller than* portrait rather than asserting exact sizes. **When a value stops
+being scene-derived and becomes client-tuned, assert the rule, not the number.**
+
+**A third round (C15–C20) found the real artwork-title bug — read ADR-045.** The
+title element was never at fault. ADR-043 (one day old) gave *two effects* ownership
+of the board's artwork; they raced, and because the bundled load always carries a
+title-less identity, the warm Rust caches (~1 ms) made it settle second and wipe the
+title. `RESET_TO_LAUNCH_MODE` compounded it by clearing `identity` while `artwork`
+survived. Now **one sequential owner**, collection-first, behind a build scrim
+(`ui/LoadingOverlay`). This **gives up ADR-028's 0 ms boot deliberately** — the
+client asked for a loading screen instead. Verified 8 rebuilds alternating warm/cold
+caches: 0 blank titles.
+
+Two traps worth keeping:
+
+* **Inline `textStyle(...)` beats your CSS class.** It emits `paddingRight` as a
+  longhand from the TMP margin, so `.dropdownLabel`'s `padding-right: 56px` was
+  silently zero and long values ran under the chevron. Use an inset (`right`) for
+  anything `textStyle` might also set.
+* **Equal `z-index` is decided by DOM order.** The dropdown popup and the Browse
+  loading overlay were both 50, and the card container comes later, so the scrim
+  covered a popup the visitor had just opened.
+
+A second round the same day added four more (C11–C14), all done:
+
+* **ADR-043 — attract mode now upgrades to a titled collection artwork** in the
+  background. This resolves C1: the title mechanism was never broken, the bundled
+  offline images just have no title. The bundled image still loads first at 0 ms
+  (ADR-028 intact) and the titled piece replaces it only while still in attract
+  mode. **Offline the home screen still shows no title — that is correct, and is
+  what Unity does for a local texture.**
+* **ADR-044 — one radius token, `--radius-control: 32px`**, for every control the
+  port draws itself. The high-score badge was a full pill and the timer nearly
+  square; both now match the footer button art. The timer plate and the badge are
+  CSS boxes now, so `timer-background.svg` and `circle-9sliced.png` are no longer
+  referenced by the Puzzle screen (kept on disk as the colour record).
+
+Two smaller ones: Clear Filters is sized to match its filter title (a deliberate
+divergence from the scene, asserted as a *match* in `screens.test.ts` rather than
+as a number), and dropdown rows grow instead of clipping — the fixed 60 px row
+height made long artist names overlap the row beneath.
+
+**Test count is 310**, not 308: five `resolveIdentifier` tests went away with
+ADR-041 and three global-key tests replaced them.
 
 ---
 

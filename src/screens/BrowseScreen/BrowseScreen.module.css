@@ -142,17 +142,31 @@
   cursor: default;
 }
 
+/*
+ * Chevron clearance comes from the RIGHT INSET, not from padding.
+ *
+ * It was `padding-right: 56px`, which never applied: the label's inline style is
+ * `textStyle({ ...D.label, marginPx: D.labelMarginPx })`, and that emits
+ * `paddingRight: '0px'` as a longhand from the TMP margin. Inline beats the class,
+ * so the clearance was silently zero and long values — "Modern & Contemporary
+ * Art", "The Gramophone Company of India" — ran straight under the chevron.
+ *
+ * `right` is not something `textStyle` ever sets, so the box simply ends before
+ * the arrow and no inline padding can reach it. 56 clears the arrow, which sits
+ * `arrowInset` 15 from the edge at `arrowSize` 30 (= 45).
+ */
 .dropdownLabel {
   position: absolute;
-  inset: 0;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  right: 56px;
   display: flex;
   align-items: center;
   justify-content: flex-start;
   font-family: var(--font-display);
   font-weight: 400;
   line-height: 1;
-  /* Never let a long artist name run under the chevron. */
-  padding-right: 56px;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
@@ -181,8 +195,14 @@
   background: var(--map-white);
   border: 2px solid var(--chrome-border);
   border-radius: 8px;
-  /* Above the result bar and the grid below it. */
-  z-index: 50;
+  /*
+   * Above the result bar, the grid, AND the card area's loading overlay, which is
+   * z-index 50. At an equal 50 the overlay won on DOM order (the card container
+   * comes after the filter bar), so opening a dropdown during a page load put the
+   * popup BEHIND the scrim. A popup the visitor just asked for must always be on
+   * top; still below the keyboard dock (100), which they asked for more recently.
+   */
+  z-index: 60;
   overflow: hidden;
   box-shadow: 0 8px 32px rgb(0 0 0 / 0.35);
 }
@@ -235,14 +255,26 @@
   touch-action: pan-y;
 }
 
+/*
+ * Rows GROW; they do not clip.
+ *
+ * This was `height: var(--row-height)`. Real MAP artist names run long —
+ * "Abanindranath Tagore (Guided by Shuvaprasana Bhattacharya)" — so the label
+ * wrapped to two or three lines inside a box fixed at 60 px and spilled over the
+ * row beneath it. Every long name in the list overlapped its neighbour.
+ *
+ * `min-height` keeps short rows on the kiosk's touch-target size while letting a
+ * long one take the room it needs, and the label below caps it at two lines so a
+ * single pathological name cannot swallow the popup.
+ */
 .dropdownItem {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
   width: 100%;
-  height: var(--row-height, 60px);
-  padding: 0 18px;
+  min-height: var(--row-height, 60px);
+  padding: 10px 18px;
   appearance: none;
   border: 0;
   background: transparent;
@@ -252,6 +284,21 @@
   text-align: left;
   cursor: pointer;
   touch-action: manipulation;
+}
+
+/*
+ * Two lines, then ellipsis. `min-width: 0` is load-bearing: a flex item defaults
+ * to `min-width: auto`, which refuses to shrink below its content and would push
+ * the tick out of the row instead of wrapping.
+ */
+.dropdownItemLabel {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  min-width: 0;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
 }
 
 .dropdownItem:active {
@@ -304,24 +351,15 @@
 }
 
 /*
- * A native <select> for sort. Unlike the five filter dropdowns it has five short,
- * fixed options and needs no search, so the native control is the right tool —
- * and its popup is drawn by the OS, which sidesteps clipping entirely.
+ * Sort control. Fills `.sortWrapper` and hosts its own popup, which must escape
+ * the box. Was a native <select>: the OS drew that popup OUTSIDE the scaled
+ * canvas, so its rows rendered at OS size and it could overlap the Date filter
+ * popup. See SortDropdown.tsx.
  */
-.sortSelect {
+.sortRoot {
   position: absolute;
   inset: 0;
-  width: 100%;
-  height: 100%;
-  padding: 0 48px 0 18px;
-  appearance: none;
-  background: var(--map-white);
-  border: 2px solid var(--chrome-border);
-  border-radius: 8px;
-  color: var(--map-kohl);
-  font-family: var(--font-display);
-  font-weight: 400;
-  cursor: pointer;
+  overflow: visible;
 }
 
 /* ---- Card grid ------------------------------------------------------------- */
@@ -664,20 +702,25 @@
   flex-direction: row;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: 14px;
 }
 
+/*
+ * Sized against its neighbour: `.pageInfo` ("Page 3 of 31") is 42 ref px, and
+ * the pills were 28 on a 46 px box — noticeably smaller than the label beside
+ * them, and a small touch target on a kiosk.
+ */
 .pagePill {
   appearance: none;
   border: 2px solid rgb(255 255 255 / 0.4);
-  border-radius: 6px;
-  min-width: 46px;
-  height: 46px;
-  padding: 0 10px;
+  border-radius: 8px;
+  min-width: 66px;
+  height: 66px;
+  padding: 0 16px;
   background: transparent;
   color: var(--map-white);
   font-family: var(--font-display);
-  font-size: 28px;
+  font-size: 38px;
   font-weight: 500;
   display: flex;
   align-items: center;
@@ -702,8 +745,8 @@
 .pageEllipsis {
   color: var(--map-white);
   font-family: var(--font-display);
-  font-size: 28px;
-  padding: 0 4px;
+  font-size: 38px;
+  padding: 0 6px;
   user-select: none;
 }
 

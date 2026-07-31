@@ -174,10 +174,20 @@ describe('Browse — landscape', () => {
     );
   });
 
-  it('uses the 24.5 px filter title and a 23 px Clear Filters with a right margin', () => {
+  /**
+   * Clear Filters is sized to MATCH its filter title, not to the scene.
+   *
+   * The scenes serialize 23 (landscape) and 24 (portrait) against titles of 24.5
+   * and 42, so the two ends of one header row rendered at different weights —
+   * glaring in portrait. The client asked for them to match on 2026-07-31, so
+   * these two are a deliberate divergence from the scene, unlike every other
+   * number in these tables.
+   */
+  it('sizes Clear Filters to match the filter title in both orientations', () => {
     expect(BL.filterBar.title.fontSizePx).toBe(24.5);
     expect(BP.filterBar.title.fontSizePx).toBe(42);
-    expect(BL.filterBar.clearFilters.fontSizePx).toBe(23);
+    expect(BL.filterBar.clearFilters.fontSizePx).toBe(BL.filterBar.title.fontSizePx);
+    expect(BP.filterBar.clearFilters.fontSizePx).toBe(BP.filterBar.title.fontSizePx);
     expect(BL.filterBar.clearFilters.marginPx).toEqual({
       left: 0,
       top: 0,

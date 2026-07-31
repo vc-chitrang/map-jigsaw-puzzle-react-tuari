@@ -117,6 +117,9 @@
  * Fills the panel exactly; width/height are explicit because `width: auto` on a
  * replaced element takes the intrinsic size (the sprite is 1024²) and ignores
  * the insets.
+ *
+ * Corners are rounded to match the panel and the two choice cards (24 px), so
+ * the white square does not read as a hard-edged sticker on the dark panel.
  */
 .qrCode {
   position: absolute;
@@ -125,5 +128,6 @@
   height: 100%;
   object-fit: contain;
   background-color: var(--map-white);
+  border-radius: 24px;
   pointer-events: none;
 }

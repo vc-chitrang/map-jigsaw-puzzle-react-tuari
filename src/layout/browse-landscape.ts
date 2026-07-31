@@ -151,7 +151,8 @@ export const BROWSE_LANDSCAPE = {
       pivot: { x: 1, y: 0 },
     } satisfies LayoutRect,
     clearFilters: {
-      fontSizePx: 23,
+      /** Matched to `title` (24.5) at the client's request; the scene has 23. */
+      fontSizePx: 24.5,
       colour: 'var(--map-white)',
       /** TMP margin (0, 0, 10, 0) — a right margin, unlike portrait's none. */
       marginPx: { left: 0, top: 0, right: 10, bottom: 0 },

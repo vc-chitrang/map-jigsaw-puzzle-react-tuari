@@ -1,5 +1,6 @@
-import { fetchImageAsBlobUrl } from '../../api/client';
+import { fetchCollection, fetchImageAsBlobUrl } from '../../api/client';
 import type { ResultsData } from '../../api/types';
+import { pickArtwork } from './pickArtwork';
 import { cropToSquare, pickFallbackArtwork, releaseArtwork } from '../../image/cropToSquare';
 import type { ArtworkIdentity } from '../../game';
 
@@ -20,8 +21,16 @@ import type { ArtworkIdentity } from '../../game';
 export interface LoadedArtwork {
   /** Blob URL of the square crop. */
   readonly url: string;
-  /** Drives the per-artwork high-score key. */
+  /** Display data — the name above the board. */
   readonly identity: ArtworkIdentity;
+  /**
+   * Collection record id, when it came from the collection.
+   *
+   * Fed back as `exclude` on the next load so "Play Again" cannot serve the piece
+   * just finished. Kept off `identity` on purpose: that is display data, and the
+   * high score has been global since ADR-041.
+   */
+  readonly collectionId?: number;
   /** Where it came from, for logging and for the offline notice. */
   readonly source: 'collection' | 'fallback';
   /** Releases every blob URL this load created. */
@@ -77,8 +86,8 @@ export async function loadArtworkFromCollection(item: ResultsData): Promise<Load
 
   return {
     url: cropped,
-    // Title drives the high-score key; a blank title falls through to "Default".
     identity: { artworkTitle: item.title ?? '' },
+    collectionId: item.id,
     source: 'collection',
     release,
   };
@@ -100,12 +109,69 @@ export async function loadFallbackArtwork(rng: () => number = Math.random): Prom
 }
 
 /**
- * Boot / "New Image" artwork: a random collection piece, falling back to the
- * bundled set on any failure.
+ * Boot / "New Image" / "Play Again" artwork: a collection piece, falling back to
+ * the bundled set.
  *
- * Every failure path ends in the fallback rather than an error state — a kiosk
- * showing an error message is worse than a kiosk showing a different picture.
+ * **Collection FIRST, and awaited.** An earlier version returned the bundled
+ * image immediately and let a second effect swap in the collection piece
+ * afterwards (ADR-043). That gave two owners for one piece of board state and
+ * they raced: the bundled load always carries a title-less identity, so whenever
+ * it settled second — which the warm Rust caches make common, since a cached
+ * collection page resolves in ~1 ms while cropping a bundled JPEG does not — it
+ * overwrote the titled identity and the artwork name vanished. Superseded by
+ * ADR-045: one sequential load, one owner, and a loading screen over it.
+ *
+ * Every failure path ends in the bundled set rather than an error state — a kiosk
+ * showing a different picture beats a kiosk showing an error
+ * (project-overview.md non-negotiable 4).
  */
-export async function loadRandomArtwork(rng: () => number = Math.random): Promise<LoadedArtwork> {
-  return loadFallbackArtwork(rng);
+export async function loadRandomArtwork(
+  rng: () => number = Math.random,
+  recent: readonly number[] = [],
+): Promise<LoadedArtwork> {
+  try {
+    return await loadCollectionArtwork(rng, recent);
+  } catch (error) {
+    console.info('[puzzle] collection unavailable; using the bundled artwork', error);
+    return loadFallbackArtwork(rng);
+  }
+}
+
+/**
+ * A random collection artwork.
+ *
+ * Mirrors Unity's launch mode — `GameManager.OnAPIDataForLaunch` picks a random
+ * API result and takes `chosen.title`, which is why its attract board carries an
+ * artwork name and the bundled images do not.
+ *
+ * **Prefers an item that actually has a title.** Not every collection record has
+ * one, and picking blind meant the name above the board was sometimes empty on a
+ * perfectly good image — indistinguishable from the bug above. Falls back to any
+ * playable item if the whole page is untitled, since a picture with no name still
+ * beats no picture.
+ *
+ * **`recent` is a guarantee, not a nudge.** Random selection alone gave "Play
+ * Again" a 1-in-40 chance of handing back the artwork just finished. The caller
+ * passes the recently-played ids, most recent first, and `pickArtwork` relaxes
+ * that window from the OLD end — so the artwork just played is the very last thing
+ * it will reconsider.
+ *
+ * **Known limitation:** only page 1 is fetched, so the kiosk draws from 40 records
+ * out of ~32,300. That keeps every load on the 24 h Rust cache (~1 ms) instead of
+ * an ~8 s uncached page fetch per build, which matters now that the visitor waits
+ * behind the build scrim. Widening it means randomising `page` across
+ * `pagination.last_page` and accepting that cost.
+ *
+ * Throws on any failure; `loadRandomArtwork` is what degrades to the bundled set.
+ */
+export async function loadCollectionArtwork(
+  rng: () => number = Math.random,
+  recent: readonly number[] = [],
+): Promise<LoadedArtwork> {
+  const data = await fetchCollection({ page: 1 });
+
+  const item = pickArtwork(data.results.data, rng, recent);
+  if (!item) throw new Error('the collection returned no artwork with an image');
+
+  return loadArtworkFromCollection(item);
 }
