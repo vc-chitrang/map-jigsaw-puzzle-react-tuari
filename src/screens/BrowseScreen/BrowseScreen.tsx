@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState } from 'react';
+import { invoke } from '@tauri-apps/api/core';
 import {
   formatResultCount,
   hasImage,
@@ -74,6 +75,7 @@ export function BrowseScreen({ onBack, onSelectArtwork }: BrowseScreenProps) {
   const dismissKeyboard = () => {
     const active = document.activeElement;
     if (active instanceof HTMLElement) active.blur();
+    invoke('close_tabtip').catch((e) => console.warn('Failed to close keyboard', e));
   };
 
   /**
@@ -213,6 +215,8 @@ export function BrowseScreen({ onBack, onSelectArtwork }: BrowseScreenProps) {
             autoComplete="off"
             spellCheck={false}
             aria-label="Search the collection"
+            inputMode="none"
+            onFocus={() => invoke('open_tabtip').catch((e) => console.warn('Failed to open keyboard', e))}
           />
 
           {/* Visible only when the field has text (UpdateSearchControls). */}

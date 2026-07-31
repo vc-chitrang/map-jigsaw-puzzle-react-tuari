@@ -1,4 +1,5 @@
 import { useMemo, type CSSProperties } from 'react';
+import { invoke } from '@tauri-apps/api/core';
 import { ORIENTATION } from '../../canvas/reference';
 import { BROWSE_LAYOUT } from '../../layout/screens';
 import { rectStyle, textStyle } from '../../layout/rect';
@@ -131,6 +132,8 @@ export function FilterDropdown({
               onPointerDown={(event) => event.stopPropagation()}
               autoComplete="off"
               spellCheck={false}
+              inputMode="none"
+              onFocus={() => invoke('open_tabtip').catch((e) => console.warn('Failed to open keyboard', e))}
             />
             {search ? (
               <button

@@ -1,6 +1,6 @@
 [package]
 name = "map-jigsaw-puzzle"
-version = "0.1.23"
+version = "0.1.27"
 description = "MAP Sliding Puzzle kiosk"
 authors = ["ViitorCloud"]
 edition = "2021"
@@ -42,3 +42,11 @@ lto = true
 opt-level = "s"
 panic = "abort"
 strip = true
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.52", features = [
+    "Win32_Foundation",
+    "Win32_Graphics_Dwm",
+    "Win32_System_Com",
+    "Win32_UI_WindowsAndMessaging",
+] }
