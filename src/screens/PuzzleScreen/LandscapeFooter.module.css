@@ -44,7 +44,7 @@
   position: absolute;
   inset: 0;
   background: var(--colour-timer-fill);
-  border: 3px solid var(--colour-timer-frame);
+  border: 3px solid var(--colour-control-frame);
   border-radius: var(--radius-control);
 }
 
@@ -68,6 +68,8 @@
 .highScore {
   /* Shared with the timer plate and the footer button art. Was a one-off 12px. */
   border-radius: var(--radius-control);
+  /* Thin white frame, as on the timer plate. */
+  border: 3px solid var(--colour-control-frame);
   overflow: visible;
 }
 

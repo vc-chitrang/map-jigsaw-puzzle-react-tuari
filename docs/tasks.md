@@ -219,6 +219,20 @@ stubbed collection unless noted.
 | C19 | Dropdown CONTROL label runs under the chevron | **DONE** | The real bug behind "text overlapping". `.dropdownLabel` had `padding-right: 56px`, but the label's inline `textStyle(...)` emits `paddingRight: '0px'` from the TMP margin, and inline beats the class — clearance was silently zero. Now a `right: 56px` inset, which `textStyle` never sets. Verified: all 6 controls clear their arrow; the long value ellipsises |
 | C20 | Dropdown popup must sit above the loading overlay | **DONE** | Both were `z-index: 50`, and the card container comes after the filter bar in DOM order, so the scrim won. Popup is now 60. Verified with the scrim live: overlay 50, popup 60, hit-test lands on the popup |
 
+### Fourth round — two design tweaks, same day
+
+| # | Item | Status | Notes |
+|---|---|---|---|
+| C21 | High-score badge needs a thin white outline | **DONE** | The reference design frames both the timer plate and the badge; the badge was a bare grey slab beside a framed timer. Shared `--colour-control-frame` token now drives both (4 px portrait, 3 px landscape, matching each orientation's render scale). `box-sizing: border-box` is global, so the outer rect is unchanged. Verified computed `4px solid rgb(254,255,254)` |
+| C22 | START button a little larger | **DONE** | Grown ~10% about its own CENTRE so it cannot drift off the footer centre line: portrait 526.2x193.9 → 578.9x213.1 ref px (measured 575.5x211.9 at 540x960), landscape 290x121 → 319x133. Label scaled with it, 112→122 and 82→90, so the proportion holds. **The timer keeps its scene rect**, so START is now deliberately the larger of the two controls that swap |
+
+Two tests had to change, both because they hardcoded a value that is now client-tuned rather than scene-derived:
+
+* `rect.test.ts` "flips Y" read `L.startButton.rect` to verify the Y-flip conversion, so a START resize broke a test about coordinate maths. It now uses the §3.2 worked example as a **literal**.
+* `landscape.test.ts` "uses smaller type throughout" asserted START's literal font sizes. It now asserts the **relationship** (landscape < portrait), which is the property that actually matters; the untouched sizes keep their scene literals.
+
+**Note on the reference image:** `actual-refrence.png` was mentioned but not visible in the attachment set, so the outline was implemented from the written description and the START increase was a judgement call under the client's explicit "you take a call". Worth a look before it is signed off.
+
 ### §12 parity checklist status
 
 | Item | Status |

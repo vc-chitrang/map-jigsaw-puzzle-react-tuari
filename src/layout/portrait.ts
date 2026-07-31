@@ -86,15 +86,25 @@ export const PUZZLE_PORTRAIT = {
 
   /** Shown in attract mode; mutually exclusive with the timer. */
   startButton: {
+    /**
+     * Enlarged ~10% at the client's request (2026-07-31), grown about its own
+     * CENTRE so it does not drift off the footer's centre line or the timer it
+     * swaps with. Scene values were `anchorMin (0.233, 0.3202)` /
+     * `anchorMax (0.4766, 0.3707)` = 526.2 x 193.9 ref px; now 578.9 x 213.1.
+     *
+     * The timer keeps the scene rect, so the two are no longer identical — START
+     * is deliberately the larger of the pair.
+     */
     rect: {
       kind: 'fractional',
-      anchorMin: { x: 0.233, y: 0.3202 },
-      anchorMax: { x: 0.4766, y: 0.3707 },
+      anchorMin: { x: 0.2208, y: 0.3177 },
+      anchorMax: { x: 0.4888, y: 0.3732 },
     } satisfies LayoutRect,
     sprite: '/assets/gameplay/start-button.svg',
     pressedSprite: '/assets/gameplay/start-button-pressed.svg',
     label: {
-      fontSizePx: 112,
+      /** Scaled with the button (112) so the label keeps its proportion. */
+      fontSizePx: 122,
       colour: 'var(--map-white)',
       text: 'START',
       uppercase: true,

@@ -20,6 +20,18 @@ nine done and verified at 540×960, one blocked on the client. Full table in
   filter popup. It is now `SortDropdown.tsx`, sharing `openDropdown` with the
   filters.
 
+A fourth round (C21–C22) closed it out with two design tweaks: the high-score badge
+gained the thin white frame the timer plate already had (shared
+`--colour-control-frame`), and START grew ~10% about its centre with its label
+scaled to match. The timer keeps its scene rect, so **START is now deliberately
+larger than the timer it swaps with** — that is intended, not drift.
+
+That round also had to loosen two tests that hardcoded scene numbers on START: the
+Y-flip test in `rect.test.ts` now uses the §3.2 worked example as a literal instead
+of reading `startButton.rect`, and `landscape.test.ts` asserts landscape type is
+*smaller than* portrait rather than asserting exact sizes. **When a value stops
+being scene-derived and becomes client-tuned, assert the rule, not the number.**
+
 **A third round (C15–C20) found the real artwork-title bug — read ADR-045.** The
 title element was never at fault. ADR-043 (one day old) gave *two effects* ownership
 of the board's artwork; they raced, and because the bundled load always carries a

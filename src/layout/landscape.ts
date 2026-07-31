@@ -117,12 +117,14 @@ export const PUZZLE_LANDSCAPE = {
   },
 
   startButton: {
-    size: { x: 290, y: 121 },
+    /** Enlarged ~10% with portrait (client, 2026-07-31); scene size was 290x121. */
+    size: { x: 319, y: 133 },
     sprite: '/assets/gameplay/start-button.svg',
     pressedSprite: '/assets/gameplay/start-button-pressed.svg',
     // Authored lowercase and uppercased by CSS, as in portrait.
     label: {
-      fontSizePx: 82,
+      /** Scaled with the button (82). */
+      fontSizePx: 90,
       colour: 'var(--map-white)',
       text: 'start',
       uppercase: true,

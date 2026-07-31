@@ -79,7 +79,13 @@
   /* Timer plate — sampled from `timer-background.svg`: a ~3-unit white frame
      (#FEFFFE) around a green fill (#88A35C), matching the START button. */
   --colour-timer-fill: #88a35c;
-  --colour-timer-frame: #fefffe;
+
+  /*
+   * Thin white frame shared by the timer plate and the high-score badge. Both
+   * carry it in the reference design; the badge was missing it and read as a bare
+   * grey slab next to the framed timer.
+   */
+  --colour-control-frame: #fefffe;
 
   /* ---- Animation: DOTween easing → cubic-bezier (pixel-perfect §6) ---- */
   --ease-out-cubic: cubic-bezier(0.215, 0.61, 0.355, 1);
