@@ -9,6 +9,71 @@ Architectural decisions, newest first. Each entry: context → decision → cons
 
 ---
 
+## ADR-049 — The in-app on-screen keyboard is removed; TabTip is the only keyboard
+
+**Date:** 2026-07-31 · **Status:** Accepted (client directive) · **Reverses:** ADR-006
+
+**Context.** A kiosk photo showed **two keyboards open at once**: the Windows TabTip
+touch keyboard behind, and the app's own `OnScreenKeyboard` (ADR-006) in front,
+overlapping it.
+
+ADR-006 chose an in-app keyboard specifically to get away from TabTip — `osk.exe`
+ignored the light theme, and TabTip had no reliable open/close signal, so
+`ITipInvocation.Toggle` double-fired and blinked. None of that reasoning is wrong.
+What changed is the client's decision: they want **only** TabTip, and accept the
+double-fire risk that motivated the switch away from it in the first place.
+
+The double keyboard was not two features fighting for the same job by design — it
+was WebView2 doing what Chromium always does (raising TabTip for an editable
+element on touch focus) while the app, unaware that Windows had already opened one,
+opened another purely because a search `<input>` inside `<ScaledCanvas>` received
+focus. Nothing coordinated the two.
+
+**Decision.** Delete `src/ui/keyboard/` entirely — `OnScreenKeyboard.tsx`,
+`layout.ts` (`KEY_ROWS`, `applyKey`, `KEYBOARD_METRICS`), and their tests. `isTap`
+moves to `src/ui/pointer.ts`, since the tap-vs-drag rule is not keyboard-specific —
+it is what keeps a scroll of the card grid from being misread as a dismiss.
+
+TabTip is driven **entirely by focus**, which Windows already does for free:
+appears when an editable element gains focus, disappears when it loses it. So:
+
+- The search field and every popup search field stay plain, real `<input>`
+  elements. Nothing calls `.focus()` anywhere in the app — a grep confirms zero
+  hits — because focus-on-tap is the native browser default and adding code to it
+  would only risk fighting it.
+- "Close the keyboard" becomes `dismissKeyboard()`: blur `document.activeElement`
+  if it is focusable. Every dismissal rule from the C4/C7/C8 round keeps working
+  through this one function instead of a `keyboardTarget` state machine — opening a
+  dropdown, picking an option, Clear Filters, Search, and Clear Search all call it;
+  tapping a backdrop still uses the 15 px tap-vs-drag test before calling it.
+- `keyboardTarget` state, `applyKeyboardEdit`, the `<OnScreenKeyboard>` render, and
+  `FilterDropdown`'s `onSearchFocus` prop are gone — nothing needs to route text
+  edits to a shared component any more, because there is no shared component.
+
+**Consequences.**
+- Verified live in both orientations (960×540, 540×960) against a stubbed
+  collection: after the fix, `document.querySelectorAll('[class*="Keyboard"]')` is
+  **empty** in the DOM regardless of screen or focus state, and tapping the search
+  field leaves it genuinely focused rather than routed through app state — the
+  precondition for real TabTip to appear on hardware.
+- All five dismissal rules re-verified against the real mechanism (blur), not
+  inferred from a synthetic click's side effects: opening a dropdown, picking an
+  option, Clear Filters (with a filter actually active — the button is disabled
+  otherwise), Search, and Clear Search all blur the field. One test-script mistake
+  along the way is worth recording: `[class*="dropdownItem"]` also matches
+  `dropdownItemLabel` (substring collision), which silently doubled a probe's
+  element count and made a real defect briefly look plausible.
+- **osk.exe / `set_focus()` risk is unaffected.** `kiosk::reassert` (ADR-046)
+  already avoids stealing focus back on `Focused(false)`, precisely because that
+  would fight whatever the visitor just focused — TabTip's own toggle included.
+- Tests: -27 (deleted keyboard suite) +6 (carried-over `isTap` suite in
+  `pointer.test.ts`) = net -21.
+- **If TabTip's double-fire returns**, the fix is on the Windows/registry side
+  (`TabletTip\1.7\SelectedThemeName`, per ADR-006's investigation), not a return to
+  an in-app keyboard — that trade was made once and reversed by client decision.
+
+---
+
 ## ADR-048 — Play Again re-shuffles the artwork just played; it does not load a new one
 
 **Date:** 2026-07-31 · **Status:** Accepted (client directive) · **Corrects the premise of ADR-047**
@@ -1085,7 +1150,11 @@ geometric mean).
 
 ## ADR-006 — Ship an in-app on-screen keyboard, not the Windows one
 
-**Date:** 2026-07-29 · **Status:** Accepted (recommendation for the port)
+**Date:** 2026-07-29 · **Status:** REVERSED by ADR-049 (2026-07-31, client directive)
+
+> The client wants TabTip only, having seen it and the in-app keyboard open
+> simultaneously. The investigation below is still accurate — it explains the risk
+> being accepted, not a mistake being undone.
 
 **Context.** The Unity app launches the Windows keyboard. Extended investigation found:
 - `osk.exe` has **no per-app skin control** and did **not** follow the Windows light theme even

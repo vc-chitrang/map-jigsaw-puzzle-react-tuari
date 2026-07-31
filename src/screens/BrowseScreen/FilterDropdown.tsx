@@ -48,14 +48,12 @@ interface FilterDropdownProps {
   readonly onToggle: () => void;
   readonly disabled?: boolean;
   /**
-   * The popup's search text is CONTROLLED by the parent so the shared on-screen
-   * keyboard can drive it. Keeping it local would mean either a keyboard per
-   * popup (there is no room — the popup is 400 px tall) or two sources of truth.
+   * The popup's search text is CONTROLLED by the parent, so clearing a filter or
+   * closing a popup can reset it from one place rather than leaving stale text
+   * behind in a component the parent cannot reach.
    */
   readonly search: string;
   readonly onSearchChange: (next: string) => void;
-  /** The visitor tapped the popup's search field; aim the keyboard at it. */
-  readonly onSearchFocus: () => void;
 }
 
 const D = BROWSE_LAYOUT[ORIENTATION].filterDropdowns;
@@ -71,7 +69,6 @@ export function FilterDropdown({
   disabled = false,
   search,
   onSearchChange,
-  onSearchFocus,
 }: FilterDropdownProps) {
   const controlStyle: CSSProperties = rectStyle({
     kind: 'point',
@@ -129,12 +126,9 @@ export function FilterDropdown({
               onChange={(event) => onSearchChange(event.target.value)}
               placeholder={`Search ${label.toLowerCase()}...`}
               style={{ fontSize: `${D.label.fontSizePx}px` }}
-              onFocus={onSearchFocus}
-              onPointerDown={(event) => {
-                // Must not reach the backdrop, which would dismiss the keyboard.
-                event.stopPropagation();
-                onSearchFocus();
-              }}
+              // Must not reach the backdrop, which blurs the field and so would
+              // dismiss the TabTip keyboard the visitor is about to type on.
+              onPointerDown={(event) => event.stopPropagation()}
               autoComplete="off"
               spellCheck={false}
             />

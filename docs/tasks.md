@@ -297,6 +297,26 @@ RESET and NEW IMAGE re-checked afterwards: RESET re-shuffles in place, NEW IMAGE
 routes to select (ADR-040), and returning serves a different artwork — so C26's
 recency rule still does its job on the paths that do load a new artwork.
 
+### Eighth round — two keyboards open at once
+
+| # | Item | Status | Notes |
+|---|---|---|---|
+| C29 | Only the Windows TabTip keyboard may ever appear — remove the in-app one | **DONE** | ADR-049, reverses ADR-006. A kiosk photo showed TabTip and the app's own keyboard open simultaneously and overlapping. `src/ui/keyboard/` deleted entirely (`OnScreenKeyboard.tsx`, `layout.ts`, its tests). TabTip is driven by Windows purely from focus, so the fix is "stop competing with it": no code calls `.focus()` anywhere (grep confirms 0 hits), and "close the keyboard" is one `dismissKeyboard()` that blurs `document.activeElement`. Every existing dismissal rule (open a dropdown, pick an option, Clear Filters, Search, Clear Search, tap-vs-drag on the backdrop) now routes through that one function |
+
+**Verified both orientations (960×540, 540×960) against a stubbed collection**, live
+in the browser, before committing: after the fix, zero `[class*="Keyboard"]` elements
+exist in the DOM under any state, and the search field is genuinely focused (not
+routed through app state) — the precondition TabTip needs on real hardware. All five
+dismissal rules re-checked against the real blur mechanism, not inferred from a
+synthetic click.
+
+**Worth remembering:** a test probe using `[class*="dropdownItem"]` also matched
+`dropdownItemLabel` (substring collision) and silently doubled the element count,
+which briefly looked like a real defect. Not one.
+
+`isTap`/`TAP_SLOP_PX` moved to `src/ui/pointer.ts` — not keyboard-specific, it also
+protects a card-grid scroll from being read as a dismiss tap.
+
 ### §12 parity checklist status
 
 | Item | Status |

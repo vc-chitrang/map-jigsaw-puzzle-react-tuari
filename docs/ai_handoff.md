@@ -20,6 +20,17 @@ nine done and verified at 540×960, one blocked on the client. Full table in
   filter popup. It is now `SortDropdown.tsx`, sharing `openDropdown` with the
   filters.
 
+**The in-app keyboard is GONE (ADR-049, reverses ADR-006).** The kiosk uses Windows
+TabTip only — a photo showed both keyboards open and overlapping, because WebView2
+raises TabTip on its own for any focused editable element, and the app was also
+opening its own keyboard on that same focus. `src/ui/keyboard/` no longer exists.
+"Close the keyboard" is now `dismissKeyboard()` — blur `document.activeElement` —
+called from every place that used to update `keyboardTarget`. **Do not add
+`.focus()` anywhere** (a grep for it should stay at zero hits): focus-on-tap is the
+native browser default that raises TabTip, and any code-driven focus risks fighting
+it. If TabTip's known flakiness (ADR-006's double-fire) becomes a problem again, the
+fix is on the Windows/registry side, not a return to an in-app keyboard.
+
 **Play Again re-shuffles the artwork just played (ADR-048) — do not "fix" it back.**
 It deliberately diverges from Unity's `ResetToLaunchMode(true)`. The seventh round
 (C27–C28) also fixed the reason it appeared to "go to the home screen": it dispatched
