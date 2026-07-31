@@ -62,7 +62,8 @@ export function LandscapeFooter({
             className={styles.timer}
             style={{ ...inFlow, width: `${L.timer.size.x}px`, height: `${L.timer.size.y}px` }}
           >
-            <img src={L.timer.sprite} alt="" className={styles.timerBackground} draggable={false} />
+            {/* Plate is CSS, not `L.timer.sprite` — see .timerBackground. */}
+            <div className={styles.timerBackground} />
             <span className={styles.timerValue} style={textStyle(L.timer.label)}>
               {timerText}
             </span>

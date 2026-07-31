@@ -162,7 +162,7 @@ export function FilterDropdown({
                   onSearchChange('');
                 }}
               >
-                Any {label.toLowerCase()}
+                <span className={styles.dropdownItemLabel}>Any {label.toLowerCase()}</span>
                 {!hasSelection ? <span className={styles.dropdownTick}>✓</span> : null}
               </button>
             </li>
@@ -177,8 +177,10 @@ export function FilterDropdown({
                     onSelect(option.value);
                     onSearchChange('');
                   }}
+                  // The full name when it is clamped to two lines.
+                  title={option.label}
                 >
-                  {option.label}
+                  <span className={styles.dropdownItemLabel}>{option.label}</span>
                   {option.value === selected ? <span className={styles.dropdownTick}>✓</span> : null}
                 </button>
               </li>

@@ -199,6 +199,15 @@ stubbed collection unless noted.
 | C9 | Arrow pulse should scale, not move | **DONE** | Unity `ArrowController.cs:97-112` is `DOScale(1.06f, 0.25f)`, Linear, Yoyo, infinite. Verified live: `animation-name: arrow-pulse`, 0.25s, linear, alternate, infinite, live matrix 1.048 |
 | C10 | Date and Sort By popups overlap | **DONE** | Same root cause as C5; the sort control now shares `openDropdown`, so only one popup can exist |
 
+### Second round, same day
+
+| # | Item | Status | Notes |
+|---|---|---|---|
+| C11 | High-score badge + timer corners must match the buttons | **DONE** | ADR-044. Badge was a full pill (9-sliced `Circle_9Sliced` mask), timer was nearly square — the two extremes on that row. Both now use `--radius-control: 32px`, taken from the button art (`reset-button.svg` face corner 16 × the 2× portrait render). Verified computed `32px` on both |
+| C12 | Artwork title must show on the home screen, not just gameplay | **DONE** | ADR-043. Mechanism was already correct; the bundled offline images simply have no title. Attract mode now upgrades to a titled collection artwork in the background, keeping ADR-028's 0 ms boot. Verified with a stub: title visible with START still showing. **Offline still has no title — same as Unity** |
+| C13 | "Clear Filters" sized like "Filter By" | **DONE** | 24→42 portrait, 23→24.5 landscape. A deliberate divergence from the scene; `screens.test.ts` now asserts the two MATCH rather than asserting the scene numbers |
+| C14 | Dropdown option text overlaps the row below | **DONE** | `.dropdownItem` had a fixed `height: 60px`; real artist names ("Abanindranath Tagore (Guided by Shuvaprasana Bhattacharya)") wrapped and spilled onto the next row. Now `min-height` + a two-line clamp with ellipsis and a `title` tooltip. Verified with the client's own names: 0 overlapping rows, short rows keep the 60 px touch target |
+
 ### §12 parity checklist status
 
 | Item | Status |

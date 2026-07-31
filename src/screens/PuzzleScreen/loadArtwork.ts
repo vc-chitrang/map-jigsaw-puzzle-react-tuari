@@ -1,5 +1,5 @@
-import { fetchImageAsBlobUrl } from '../../api/client';
-import type { ResultsData } from '../../api/types';
+import { fetchCollection, fetchImageAsBlobUrl } from '../../api/client';
+import { hasImage, type ResultsData } from '../../api/types';
 import { cropToSquare, pickFallbackArtwork, releaseArtwork } from '../../image/cropToSquare';
 import type { ArtworkIdentity } from '../../game';
 
@@ -100,12 +100,39 @@ export async function loadFallbackArtwork(rng: () => number = Math.random): Prom
 }
 
 /**
- * Boot / "New Image" artwork: a random collection piece, falling back to the
- * bundled set on any failure.
+ * Boot / "New Image" artwork: the bundled set, loaded instantly.
  *
- * Every failure path ends in the fallback rather than an error state — a kiosk
- * showing an error message is worse than a kiosk showing a different picture.
+ * Deliberately does NOT touch the network (ADR-028): a blocking collection query
+ * plus a 4-7 MB master made the app hang for 12-15 s on launch. The collection
+ * piece arrives afterwards, in the background — see `loadCollectionArtwork`.
  */
 export async function loadRandomArtwork(rng: () => number = Math.random): Promise<LoadedArtwork> {
   return loadFallbackArtwork(rng);
+}
+
+/**
+ * A random collection artwork, for attract mode.
+ *
+ * Unity's launch mode does the same thing — `GameManager.OnAPIDataForLaunch`
+ * picks a random API result and takes `chosen.title` — which is why the attract
+ * board has an artwork name above it there and the bundled images have none.
+ *
+ * The port calls this AFTER the bundled image is already on screen, so the 0 ms
+ * boot from ADR-028 is kept and the titled artwork replaces it a moment later.
+ * Throws on any failure; the caller keeps the bundled image and stays silent.
+ */
+export async function loadCollectionArtwork(
+  rng: () => number = Math.random,
+): Promise<LoadedArtwork> {
+  const data = await fetchCollection({ page: 1 });
+
+  // Only artworks with an image can become a puzzle (game-logic §8.6).
+  const playable = data.results.data.filter(hasImage);
+  if (playable.length === 0) throw new Error('the collection returned no artwork with an image');
+
+  const index = Math.min(Math.floor(rng() * playable.length), playable.length - 1);
+  const item = playable[index] ?? playable[0];
+  if (!item) throw new Error('the collection returned no artwork with an image');
+
+  return loadArtworkFromCollection(item);
 }

@@ -39,12 +39,13 @@
   flex: 0 0 auto;
 }
 
+/* CSS plate, not the sprite — same reasoning as portrait. */
 .timerBackground {
   position: absolute;
   inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
+  background: var(--colour-timer-fill);
+  border: 3px solid var(--colour-timer-frame);
+  border-radius: var(--radius-control);
 }
 
 .timerValue {
@@ -65,7 +66,8 @@
  * 9-sliced Circle sprite portrait masks. The title band hangs above the badge.
  */
 .highScore {
-  border-radius: 12px;
+  /* Shared with the timer plate and the footer button art. Was a one-off 12px. */
+  border-radius: var(--radius-control);
   overflow: visible;
 }
 

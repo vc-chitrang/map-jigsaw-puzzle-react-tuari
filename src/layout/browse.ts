@@ -151,7 +151,12 @@ export const BROWSE_PORTRAIT = {
       pivot: { x: 1, y: 0 },
     } satisfies LayoutRect,
     clearFilters: {
-      fontSizePx: 24,
+      /**
+       * Matched to `title` (42) at the client's request, 2026-07-31. The scene
+       * serializes 24, which left the two ends of the same header row at
+       * noticeably different weights.
+       */
+      fontSizePx: 42,
       colour: 'var(--map-white)',
       text: 'Clear Filters',
     } satisfies TextSpec,

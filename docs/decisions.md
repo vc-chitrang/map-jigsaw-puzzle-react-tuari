@@ -9,6 +9,80 @@ Architectural decisions, newest first. Each entry: context → decision → cons
 
 ---
 
+## ADR-044 — One radius token, and rounded control plates are drawn in CSS
+
+**Date:** 2026-07-31 · **Status:** Accepted
+
+**Context.** The client asked for the high-score badge and the timer to share the
+footer buttons' corner radius. They were the two extremes on that row: the badge
+was a **full pill** and the timer was **nearly square**, with the buttons between
+them. Both are drawn from Unity art the port cannot restyle — the badge through a
+9-sliced `Circle_9Sliced.png` mask, the timer as `timer-background.svg`.
+
+**Decision.**
+- **`--radius-control: 32px`** in `tokens.css` is the one radius for every control
+  the port draws itself. The number is taken from the button art rather than
+  invented: `reset-button.svg` is 215×89, its coloured face has a 16-unit corner,
+  and portrait renders it into a 430×178 rect — exactly 2× — so the face corner
+  lands at 32 reference px.
+- **The badge drops the mask.** The shape under it was a plain rectangle; the mask
+  only ever supplied the pill. It is now a solid tint plus the token. Landscape
+  already drew it flat (ADR-019), so the two orientations finally agree.
+- **The timer plate is CSS, not the sprite.** `timer-background.svg` is two layers
+  — a ~3-unit `#FEFFFE` frame around an `#88A35C` fill — reproduced as a
+  background plus a border, so the radius is ours to set. Clipping the sprite with
+  `overflow: hidden` was rejected: it cuts the white frame at the corners.
+
+**Consequences.**
+- Verified at 540×960: badge and timer both computed `border-radius: 32px`, timer
+  `rgb(136,163,92)` behind a `4px solid rgb(254,255,254)` border.
+- `timer-background.svg` and `circle-9sliced.png` are now unreferenced by the
+  Puzzle screen. Left in `public/assets` deliberately — they are the Unity record
+  of these two colours, and `copy-assets.ps1` still lists `circle-9sliced`.
+- Border width is 4 ref px portrait, 3 landscape, because the landscape timer is
+  rendered near 1:1 with the sprite while portrait renders it at ~1.6×.
+- **The footer button sprites are untouched.** Only the two CSS-drawn plates moved.
+
+---
+
+## ADR-043 — Attract mode upgrades to a titled collection artwork in the background
+
+**Date:** 2026-07-31 · **Status:** Accepted (client directive)
+
+**Context.** The client asked to see the artwork name whenever a puzzle is built.
+It showed during gameplay reached through Browse but never on the home screen.
+
+The mechanism was never broken — the title element matches Unity exactly (62 px,
+`#FFA300`, a 100 px band 10 px above the board, verified live). The gap was the
+*source*: ADR-028 made boot load only the bundled offline images to kill a 12–15 s
+launch hang, and those three images carry **no title**. Unity has no such gap —
+`GameManager.OnAPIDataForLaunch` loads launch mode from the API and takes
+`chosen.title`, so its attract board is a titled collection piece.
+
+So the port had to choose between ADR-028's instant boot and Unity's titled attract
+board. Naming the three bundled images was rejected: their real titles are not in
+the repo and inventing them would put fabricated attributions on a museum kiosk.
+
+**Decision.** Do both, in order. The bundled image still loads first and is
+playable at 0 ms. A second effect then fetches a random collection artwork
+(`loadCollectionArtwork`) and swaps it in **only while still in attract mode**,
+guarded by a ref because the load resolves long after its effect closed over
+state. Any failure keeps the bundled image and logs one line.
+
+**Consequences.**
+- Verified with a stubbed collection: the home screen shows the artwork title with
+  START still visible, i.e. attract mode, not gameplay.
+- **Offline the home screen still has no title**, and that is the correct
+  behaviour — it is exactly what Unity shows for a local texture.
+- The swap rebuilds the board. Harmless in attract mode, which is auto-shuffling
+  anyway, and it cannot touch a game in progress.
+- Boot now issues a collection request it did not before. It is off the critical
+  path, and the 24 h Rust disk cache (ADR-030) makes it ~1 ms after the first run.
+- The catch **logs**. A silent catch here would hide a real fault behind nothing
+  but a missing title — which is precisely how this went unnoticed.
+
+---
+
 ## ADR-042 — The Sort By control is an in-canvas dropdown, never a native `<select>`
 
 **Date:** 2026-07-31 · **Status:** Accepted

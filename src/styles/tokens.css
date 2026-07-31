@@ -60,6 +60,27 @@
   --disabled-alpha: 0.3;
   --press-offset: 10px;
 
+  /*
+   * ---- Control corner radius ----
+   *
+   * One radius for every rounded control that the port draws in CSS, so they
+   * match the footer button ART, which is a sprite and cannot be restyled.
+   *
+   * 32 comes from that art: `reset-button.svg` is 215x89 and its coloured FACE
+   * has a 16-unit corner. Portrait renders it into a 430x178 rect — exactly 2x —
+   * so the face corner lands at 32 reference px.
+   *
+   * The two CSS-drawn controls were the odd ones out: the high-score badge was a
+   * 9-sliced `Circle_9Sliced` mask, i.e. a full pill, and the timer sprite's
+   * corners were nearly square. Both now use this token.
+   */
+  --radius-control: 32px;
+
+  /* Timer plate — sampled from `timer-background.svg`: a ~3-unit white frame
+     (#FEFFFE) around a green fill (#88A35C), matching the START button. */
+  --colour-timer-fill: #88a35c;
+  --colour-timer-frame: #fefffe;
+
   /* ---- Animation: DOTween easing → cubic-bezier (pixel-perfect §6) ---- */
   --ease-out-cubic: cubic-bezier(0.215, 0.61, 0.355, 1);
   --ease-out-quad: cubic-bezier(0.25, 0.46, 0.45, 0.94);

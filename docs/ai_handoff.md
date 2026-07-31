@@ -20,14 +20,24 @@ nine done and verified at 540×960, one blocked on the client. Full table in
   filter popup. It is now `SortDropdown.tsx`, sharing `openDropdown` with the
   filters.
 
-**The one blocked item (C1).** The client asked for the artwork name above the
-board. That already works and already matches Unity — measured live at 62 px,
-`#FFA300`, in a 100 px band 10 px above the board, and confirmed visible with a
-screenshot. It is blank only for the **three bundled offline images**, because they
-carry no title (Unity is blank there too). Resolving it needs either the three real
-artwork names, or a decision to fetch a collection piece in the background at boot
-— ADR-028 deliberately made boot fallback-only to get a 0 ms start, so restoring a
-blocking collection fetch would undo that.
+A second round the same day added four more (C11–C14), all done:
+
+* **ADR-043 — attract mode now upgrades to a titled collection artwork** in the
+  background. This resolves C1: the title mechanism was never broken, the bundled
+  offline images just have no title. The bundled image still loads first at 0 ms
+  (ADR-028 intact) and the titled piece replaces it only while still in attract
+  mode. **Offline the home screen still shows no title — that is correct, and is
+  what Unity does for a local texture.**
+* **ADR-044 — one radius token, `--radius-control: 32px`**, for every control the
+  port draws itself. The high-score badge was a full pill and the timer nearly
+  square; both now match the footer button art. The timer plate and the badge are
+  CSS boxes now, so `timer-background.svg` and `circle-9sliced.png` are no longer
+  referenced by the Puzzle screen (kept on disk as the colour record).
+
+Two smaller ones: Clear Filters is sized to match its filter title (a deliberate
+divergence from the scene, asserted as a *match* in `screens.test.ts` rather than
+as a number), and dropdown rows grow instead of clipping — the fixed 60 px row
+height made long artist names overlap the row beneath.
 
 **Test count is 310**, not 308: five `resolveIdentifier` tests went away with
 ADR-041 and three global-key tests replaced them.

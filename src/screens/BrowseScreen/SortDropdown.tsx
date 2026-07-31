@@ -82,7 +82,7 @@ export function SortDropdown({ value, onChange, open, onToggle }: SortDropdownPr
                   style={{ fontSize: `${D.label.fontSizePx}px` }}
                   onClick={() => onChange(index as SortModeIndex)}
                 >
-                  {mode.label}
+                  <span className={styles.dropdownItemLabel}>{mode.label}</span>
                   {index === value ? <span className={styles.dropdownTick}>✓</span> : null}
                 </button>
               </li>

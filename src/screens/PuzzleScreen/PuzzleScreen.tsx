@@ -22,7 +22,12 @@ import { SpriteButton } from '../../ui/SpriteButton';
 import { highScoreStore } from '../../storage/localStore';
 import { Board } from './Board';
 import { useAutoShuffle, useGameTimer, useMoveSettler, useWinDelay } from './hooks';
-import { adoptPreparedArtwork, loadRandomArtwork, type LoadedArtwork } from './loadArtwork';
+import {
+  adoptPreparedArtwork,
+  loadCollectionArtwork,
+  loadRandomArtwork,
+  type LoadedArtwork,
+} from './loadArtwork';
 import { WinScreen } from '../WinScreen/WinScreen';
 import styles from './PuzzleScreen.module.css';
 
@@ -131,6 +136,67 @@ export function PuzzleScreen({
       } catch (error) {
         // Both sources failed, so a bundled asset is missing — a packaging fault.
         console.error('[puzzle] artwork load failed', error);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [buildToken, preparedArtwork]);
+
+  /**
+   * Whether swapping the board's artwork underneath the visitor is still safe:
+   * attract mode, nothing solved. Read from the background load below, which
+   * resolves long after its effect closed over `state`, so it must be a ref.
+   */
+  const attractRef = useRef(true);
+  attractRef.current = state.mode === 'launch' && !state.isSolved;
+
+  /**
+   * Upgrade attract mode from the bundled image to a titled collection piece.
+   *
+   * The bundled artwork has no title, so the name above the board was blank on
+   * the home screen while gameplay (reached through Browse) showed one. Unity
+   * has no such gap: its launch mode loads from the API and takes `chosen.title`.
+   *
+   * Runs AFTER the instant fallback, so ADR-028's 0 ms boot is untouched — the
+   * board is playable immediately and the titled artwork replaces it when it
+   * arrives. Offline, or once the visitor has started playing, nothing happens.
+   */
+  useEffect(() => {
+    // A cropped image owns the board; never override the visitor's own picture.
+    if (preparedArtwork) return;
+
+    let cancelled = false;
+
+    void (async () => {
+      try {
+        const loaded = await loadCollectionArtwork();
+
+        // The visitor may have started playing while this was in flight.
+        if (cancelled || !attractRef.current) {
+          loaded.release();
+          return;
+        }
+
+        setArtwork((previous) => {
+          previous?.release();
+          return loaded;
+        });
+
+        dispatch({
+          type: 'BUILD',
+          board: createShuffledBoard().board,
+          identity: loaded.identity,
+          highScoreSeconds: readHighScore(highScoreStore),
+        });
+      } catch (error) {
+        // Offline, or the collection is unreachable. The bundled image is
+        // already on screen and stays — a kiosk showing a different picture
+        // beats a kiosk showing an error (project-overview non-negotiable 4).
+        // Logged, not swallowed: silent means a real fault here is invisible,
+        // and the only symptom is a missing title.
+        console.info('[puzzle] attract artwork stayed on the bundled set', error);
       }
     })();
 
@@ -317,7 +383,8 @@ export function PuzzleScreen({
         />
       ) : (
         <div className={styles.timer} style={rectStyle(L.timer.rect)}>
-          <img src={L.timer.sprite} alt="" className={styles.timerBackground} draggable={false} />
+          {/* Plate is CSS, not `L.timer.sprite` — see .timerBackground. */}
+          <div className={styles.timerBackground} />
           <span className={styles.timerValue} style={textStyle(L.timer.label)}>
             {formatTime(state.timer.elapsedSeconds)}
           </span>
@@ -328,13 +395,7 @@ export function PuzzleScreen({
           border AND tinted #67797F. `border-image` cannot be tinted, so the
           sprite is used as a 9-sliced MASK over a solid fill instead. */}
       <div className={styles.highScore} style={rectStyle(L.highScore.rect)}>
-        <div
-          className={styles.highScoreFill}
-          style={{
-            backgroundColor: L.highScore.tint,
-            WebkitMaskBoxImage: `url("${L.highScore.sprite}") ${L.highScore.sliceBorderPx} fill stretch`,
-          }}
-        />
+        <div className={styles.highScoreFill} style={{ backgroundColor: L.highScore.tint }} />
         <div
           className={styles.highScoreTitle}
           style={{ ...rectStyle(L.highScore.titleRect), ...textStyle(L.highScore.title) }}

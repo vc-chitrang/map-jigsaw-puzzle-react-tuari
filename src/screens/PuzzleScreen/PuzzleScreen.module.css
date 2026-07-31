@@ -40,12 +40,18 @@
   pointer-events: none;
 }
 
+/*
+ * Drawn in CSS rather than as `timer-background.svg`, so its corners can match
+ * the footer buttons (`--radius-control`). The sprite's own corners were nearly
+ * square next to buttons with a 32 px face radius. Same two layers as the
+ * sprite: a thin white frame around a green plate.
+ */
 .timerBackground {
   position: absolute;
   inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
+  background: var(--colour-timer-fill);
+  border: 4px solid var(--colour-timer-frame);
+  border-radius: var(--radius-control);
 }
 
 .timerValue {
@@ -67,14 +73,19 @@
 }
 
 /*
- * Circle_9Sliced.png is both 9-sliced (uniform 255 px border) and tinted
- * #67797F. `border-image` cannot be tinted, so the sprite becomes a 9-sliced
- * MASK over a solid fill. `-webkit-mask-box-image` is the Chromium spelling of
- * `mask-border`, and WebView2 is Chromium.
+ * A flat tinted plate, rounded to `--radius-control` like every other control.
+ *
+ * Was a 9-sliced `Circle_9Sliced.png` MASK over this fill (the sprite is tinted
+ * #67797F and `border-image` cannot be tinted). That sprite's slice makes a full
+ * PILL, which read as obviously rounder than the footer buttons beside it. The
+ * mask bought nothing else — the shape underneath is a plain rectangle — so it
+ * is gone and the radius is now the shared token. Landscape already drew this
+ * flat (ADR-019); the two orientations now agree.
  */
 .highScoreFill {
   position: absolute;
   inset: 0;
+  border-radius: var(--radius-control);
 }
 
 .highScoreTitle,
