@@ -103,6 +103,20 @@ export function PuzzleScreen({
    */
   const [building, setBuilding] = useState(true);
 
+  /**
+   * Collection ids played this session, most recent first.
+   *
+   * Passed to the loader as an exclusion set so a new artwork cannot repeat one
+   * the visitor has just had — "Play Again" handing back the piece they only just
+   * solved is the complaint this exists for. A random pick over the 40 records on
+   * page 1 makes an immediate repeat a 1-in-40 roll; excluding is a guarantee.
+   *
+   * A ref, not state: it must not trigger a render, and the load effect reads it
+   * when it runs rather than closing over a snapshot.
+   */
+  const recentIds = useRef<number[]>([]);
+  const RECENT_LIMIT = 12;
+
   // ---- Load artwork, then build a shuffled board ----------------------------
   /**
    * ONE effect owns the board's artwork.
@@ -130,11 +144,18 @@ export function PuzzleScreen({
         // decides, and never surfaces an error state.
         const loaded = preparedArtwork
           ? adoptPreparedArtwork(preparedArtwork.url, preparedArtwork.title)
-          : await loadRandomArtwork();
+          : await loadRandomArtwork(Math.random, recentIds.current);
 
         if (cancelled) {
           loaded.release();
           return;
+        }
+
+        // Remember it so the next load cannot pick it again. Bounded, so a long
+        // kiosk day cannot exhaust the 40-record pool and force the loader to
+        // fall back to allowing repeats.
+        if (loaded.collectionId !== undefined) {
+          recentIds.current = [loaded.collectionId, ...recentIds.current].slice(0, RECENT_LIMIT);
         }
 
         setArtwork((previous) => {

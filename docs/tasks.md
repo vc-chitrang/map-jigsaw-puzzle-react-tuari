@@ -250,6 +250,25 @@ running a scaled-down desktop resolution.
 window would take over the developer's display, so on-hardware confirmation is still
 `MAP_KIOSK=1 npm run tauri:dev` plus the new log line — part of P6.10.
 
+### Sixth round — Play Again repeating the artwork just won
+
+| # | Item | Status | Notes |
+|---|---|---|---|
+| C26 | Play Again must not reload the artwork just played | **DONE** | ADR-047. Applies to both orientations (shared code). Could NOT reproduce as described — 6 Play Agains on the attract path gave 6 different artworks, 5 on the Browse→Crop path — and v0.1.18 already had ADR-045. The real defect was **odds plus no guarantee**: `loadCollectionArtwork` fetches page 1 only, and `check-api.ps1 -Limit 40` confirms that pool is 40 records (all imaged, all titled) out of 32,299, so a random pick had a **1-in-40 chance of an immediate repeat** with nothing preventing it. Now the caller remembers served ids (`LoadedArtwork.collectionId` + a capped `recentIds` ref) and `pickArtwork` excludes them. **Verified on a hostile 2-record pool: 7 rounds, 0 consecutive repeats** (was 2 before the ordering fix below) |
+
+**The bug inside the fix, worth remembering.** The first attempt used one flat `Set`
+and dropped it wholesale when it emptied the pool. On a small pool that made the
+artwork *just played* eligible again — a live 2-record run showed 2 consecutive
+repeats, reproducing the client's report from the fix itself. `pickArtwork` now
+relaxes the window **from the old end**, so the most recent id is the last thing it
+reconsiders. `pickArtwork.test.ts` pins that rule explicitly (15 tests).
+
+**Outstanding, by choice:** the kiosk still draws from **page 1 only — 40 of 32,299
+artworks**. Randomising the page across all 808 would cost an ~8 s uncached fetch per
+build instead of ~1 ms from the 24 h Rust cache (ADR-030), now paid in front of the
+visitor behind the build scrim. Worth revisiting if the client wants more variety and
+will accept the wait.
+
 ### §12 parity checklist status
 
 | Item | Status |

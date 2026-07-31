@@ -1,5 +1,6 @@
 import { fetchCollection, fetchImageAsBlobUrl } from '../../api/client';
-import { hasImage, type ResultsData } from '../../api/types';
+import type { ResultsData } from '../../api/types';
+import { pickArtwork } from './pickArtwork';
 import { cropToSquare, pickFallbackArtwork, releaseArtwork } from '../../image/cropToSquare';
 import type { ArtworkIdentity } from '../../game';
 
@@ -20,8 +21,16 @@ import type { ArtworkIdentity } from '../../game';
 export interface LoadedArtwork {
   /** Blob URL of the square crop. */
   readonly url: string;
-  /** Drives the per-artwork high-score key. */
+  /** Display data — the name above the board. */
   readonly identity: ArtworkIdentity;
+  /**
+   * Collection record id, when it came from the collection.
+   *
+   * Fed back as `exclude` on the next load so "Play Again" cannot serve the piece
+   * just finished. Kept off `identity` on purpose: that is display data, and the
+   * high score has been global since ADR-041.
+   */
+  readonly collectionId?: number;
   /** Where it came from, for logging and for the offline notice. */
   readonly source: 'collection' | 'fallback';
   /** Releases every blob URL this load created. */
@@ -77,8 +86,8 @@ export async function loadArtworkFromCollection(item: ResultsData): Promise<Load
 
   return {
     url: cropped,
-    // Title drives the high-score key; a blank title falls through to "Default".
     identity: { artworkTitle: item.title ?? '' },
+    collectionId: item.id,
     source: 'collection',
     release,
   };
@@ -116,9 +125,12 @@ export async function loadFallbackArtwork(rng: () => number = Math.random): Prom
  * showing a different picture beats a kiosk showing an error
  * (project-overview.md non-negotiable 4).
  */
-export async function loadRandomArtwork(rng: () => number = Math.random): Promise<LoadedArtwork> {
+export async function loadRandomArtwork(
+  rng: () => number = Math.random,
+  recent: readonly number[] = [],
+): Promise<LoadedArtwork> {
   try {
-    return await loadCollectionArtwork(rng);
+    return await loadCollectionArtwork(rng, recent);
   } catch (error) {
     console.info('[puzzle] collection unavailable; using the bundled artwork', error);
     return loadFallbackArtwork(rng);
@@ -138,22 +150,27 @@ export async function loadRandomArtwork(rng: () => number = Math.random): Promis
  * playable item if the whole page is untitled, since a picture with no name still
  * beats no picture.
  *
+ * **`recent` is a guarantee, not a nudge.** Random selection alone gave "Play
+ * Again" a 1-in-40 chance of handing back the artwork just finished. The caller
+ * passes the recently-played ids, most recent first, and `pickArtwork` relaxes
+ * that window from the OLD end — so the artwork just played is the very last thing
+ * it will reconsider.
+ *
+ * **Known limitation:** only page 1 is fetched, so the kiosk draws from 40 records
+ * out of ~32,300. That keeps every load on the 24 h Rust cache (~1 ms) instead of
+ * an ~8 s uncached page fetch per build, which matters now that the visitor waits
+ * behind the build scrim. Widening it means randomising `page` across
+ * `pagination.last_page` and accepting that cost.
+ *
  * Throws on any failure; `loadRandomArtwork` is what degrades to the bundled set.
  */
 export async function loadCollectionArtwork(
   rng: () => number = Math.random,
+  recent: readonly number[] = [],
 ): Promise<LoadedArtwork> {
   const data = await fetchCollection({ page: 1 });
 
-  // Only artworks with an image can become a puzzle (game-logic §8.6).
-  const playable = data.results.data.filter(hasImage);
-  if (playable.length === 0) throw new Error('the collection returned no artwork with an image');
-
-  const titled = playable.filter((item) => (item.title ?? '').trim().length > 0);
-  const pool = titled.length > 0 ? titled : playable;
-
-  const index = Math.min(Math.floor(rng() * pool.length), pool.length - 1);
-  const item = pool[index] ?? pool[0];
+  const item = pickArtwork(data.results.data, rng, recent);
   if (!item) throw new Error('the collection returned no artwork with an image');
 
   return loadArtworkFromCollection(item);

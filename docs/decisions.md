@@ -9,6 +9,61 @@ Architectural decisions, newest first. Each entry: context → decision → cons
 
 ---
 
+## ADR-047 — Play Again never repeats: recency relaxes from the OLD end
+
+**Date:** 2026-07-31 · **Status:** Accepted
+
+**Context.** The client reported that Play Again reloads the artwork just won on.
+
+The first investigation could not reproduce it. Driving Play Again six times on the
+attract path gave six different artworks, and the Browse→Crop path gave five. The
+reported build (v0.1.18) already contained ADR-045, which had fixed the earlier
+title race. So the *mechanism* was sound.
+
+What was actually wrong was the odds and the absence of a guarantee.
+`loadCollectionArtwork` fetches **page 1 only** and picks at random. A live probe
+(`check-api.ps1 -Limit 40`) confirms the pool: 40 records, all with images, all
+titled, out of 32,299 across 808 pages. So a random pick had a **1-in-40 chance of
+an immediate repeat** and nothing prevented it — with the whole kiosk drawing from
+the same 40 pieces all day, a visitor doing several rounds would see repeats often
+enough to read as "always".
+
+**Decision.** The caller remembers what it has served — `LoadedArtwork.collectionId`
+plus a bounded `recentIds` ref on the Puzzle screen — and `pickArtwork` excludes
+them. Selection moved into `pickArtwork.ts`, free of Tauri and DOM imports so the
+rules are unit-testable with a rigged RNG rather than inferred from a live run.
+
+**The relaxation order is the whole decision.** `recent` is ordered most-recent
+first and the exclusion window shrinks **from the old end**, so the id given up last
+is the artwork just played.
+
+A first attempt used one flat `Set` and dropped it wholesale when it emptied the
+pool. That is subtly wrong, and a live 2-record run proved it: after both records
+were "recent" the exclusion vanished entirely, the artwork just finished became
+eligible again, and the run showed **2 consecutive repeats** — reproducing the
+client's report from my own fix. The progressive version alternates cleanly.
+
+**Consequences.**
+- Verified live on a deliberately hostile 2-record pool, where random selection
+  would repeat ~50 % of the time: **7 rounds, 0 consecutive repeats**, perfect
+  alternation (was 2 repeats before the ordering fix). Browse→Crop→win→Play Again
+  also confirmed to change artwork. 15 unit tests in `pickArtwork.test.ts`, one of
+  them pinning the give-up-oldest-first rule specifically.
+- The only case that still repeats immediately is a pool of exactly **one** playable
+  record — there is nothing else to serve, and a repeat beats a blank board.
+- `recentIds` is capped at 12 so a long kiosk day cannot exhaust a 40-record pool
+  and silently disable the rule.
+- Shared code, so this applies to **both orientations** unchanged — `loadArtwork`,
+  `pickArtwork` and the Puzzle screen are orientation-independent; only the footer
+  differs (ADR-019).
+- **Still page 1 only.** Widening to all 808 pages would mean randomising `page`,
+  which costs an ~8 s uncached fetch per build instead of ~1 ms from the 24 h Rust
+  cache (ADR-030) — now paid in front of the visitor behind the build scrim
+  (ADR-045). Left as a deliberate trade-off and recorded in `tasks.md`; the kiosk
+  currently shows 40 of 32,299 artworks.
+
+---
+
 ## ADR-046 — Kiosk fullscreen and always-on-top are re-asserted, not set once
 
 **Date:** 2026-07-31 · **Status:** Accepted · **Extends:** ADR-012

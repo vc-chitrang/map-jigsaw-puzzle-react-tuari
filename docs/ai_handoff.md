@@ -20,6 +20,19 @@ nine done and verified at 540×960, one blocked on the client. Full table in
   filter popup. It is now `SortDropdown.tsx`, sharing `openDropdown` with the
   filters.
 
+A sixth round (C26) stopped Play Again repeating the artwork just won — ADR-047. Two
+lessons in it. First, **the reported symptom was not reproducible**; the real defect
+was odds, not mechanism: only page 1 is fetched, that pool is 40 records, so a random
+pick had a 1-in-40 chance of an immediate repeat and nothing forbade it. Second, **my
+first fix reproduced the bug it was meant to remove** — a flat exclusion `Set` dropped
+wholesale when it emptied the pool made the just-played artwork eligible again, and a
+live 2-record run showed consecutive repeats. `pickArtwork` now relaxes the recency
+window **from the old end**, so the most recent id is the last one reconsidered.
+Verified 7 rounds / 0 repeats on a 2-record pool; 15 unit tests. Selection lives in
+`pickArtwork.ts`, kept free of Tauri and DOM imports precisely so it is testable with
+a rigged RNG. **Still page 1 only — 40 of 32,299 artworks**, a deliberate trade-off
+against an ~8 s uncached page fetch per build.
+
 A fifth round (C23–C25) covered the kiosk display requirements for **both**
 installers. Fullscreen and the 4K reference sizes already held — `REFERENCE` is
 exactly 3840×2160 / 2160×3840, so the scale factor is **1.0** on a native 4K panel
