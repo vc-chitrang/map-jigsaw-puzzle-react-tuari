@@ -73,40 +73,9 @@ if (-not $gameOk) {
 # ---------------------------------------------------------------------------
 # Mapping: group -> @( @{ From = <path relative to $gameRoot>; To = <filename> } )
 # ---------------------------------------------------------------------------
+# Only the Unity bitmaps the running app still loads. See $superseded below for
+# the 31 that used to be copied here and no longer are.
 $plan = [ordered]@{
-
-    'gameplay' = @(
-        # Buttons -- note the inconsistent -Pressed/-pressed casing upstream.
-        @{ From = 'UI/GamePlayScreen/StartButton.png';            To = 'start-button.png' }
-        @{ From = 'UI/GamePlayScreen/StartButton-pressed.png';    To = 'start-button-pressed.png' }
-        @{ From = 'UI/GamePlayScreen/ResetButton.png';            To = 'reset-button.png' }
-        @{ From = 'UI/GamePlayScreen/ResetButton-Pressed.png';    To = 'reset-button-pressed.png' }
-        @{ From = 'UI/GamePlayScreen/PreviewButton.png';          To = 'preview-button.png' }
-        @{ From = 'UI/GamePlayScreen/PreviewButton-pressed.png';  To = 'preview-button-pressed.png' }
-        @{ From = 'UI/GamePlayScreen/NewImageButton.png';         To = 'new-image-button.png' }
-        @{ From = 'UI/GamePlayScreen/NewImageButton-pressed.png'; To = 'new-image-button-pressed.png' }
-        @{ From = 'UI/GamePlayScreen/PlayAgainButton.png';        To = 'play-again-button.png' }
-        @{ From = 'UI/GamePlayScreen/PlayAgainButton-Pressed.png';To = 'play-again-button-pressed.png' }
-
-        # Footer icons -- 'new image icon.png' has spaces.
-        @{ From = 'UI/GamePlayScreen/rotate-right.png';           To = 'icon-reset.png' }
-        @{ From = 'UI/GamePlayScreen/Group.png';                  To = 'icon-preview.png' }
-        @{ From = 'UI/GamePlayScreen/new image icon.png';          To = 'icon-new-image.png' }
-
-        # Chrome
-        @{ From = 'UI/GamePlayScreen/TimerBackground.png';        To = 'timer-background.png' }
-        @{ From = 'UI/GamePlayScreen/HomeButton.png';             To = 'home-button.png' }
-        @{ From = 'UI/GamePlayScreen/BackButton.png';             To = 'back-button.png' }
-        @{ From = 'UI/GamePlayScreen/Map Logo.png';                To = 'map-logo.png' }
-
-        # Board arrows. Upstream names are the GRID DIRECTION OFFSETS from
-        # GameManager.ArrowGridDirections, in order (0,-1) (0,1) (-1,0) (1,0).
-        # Grid Y is top-down, so (0,-1) is the arrow ABOVE the empty cell.
-        @{ From = 'UI/GamePlayScreen/0_-1.png';                   To = 'arrow-up.png' }
-        @{ From = 'UI/GamePlayScreen/0_1.png';                    To = 'arrow-down.png' }
-        @{ From = 'UI/GamePlayScreen/-1_0.png';                   To = 'arrow-left.png' }
-        @{ From = 'UI/GamePlayScreen/1_0.png';                    To = 'arrow-right.png' }
-    )
 
     'common' = @(
         @{ From = 'UI/Common/Background_Portrait.png';            To = 'background-portrait.png' }
@@ -114,37 +83,81 @@ $plan = [ordered]@{
         @{ From = 'UI/Common/Circle_9Sliced.png';                 To = 'circle-9sliced.png' }
         @{ From = 'UI/Common/DropDownArrow.png';                  To = 'dropdown-arrow.png' }
         @{ From = 'UI/Common/rotating-arrow-to-the-right.png';    To = 'icon-rotate.png' }
+        # side-strip is unused (SideStrip is inactive in both scenes) but is
+        # committed and harmless; kept so the group matches the manifest.
         @{ From = 'UI/Common/SideStrip.png';                      To = 'side-strip.png' }
         @{ From = 'UI/Common/VerticalLine.png';                   To = 'vertical-line.png' }
-    )
-
-    'select' = @(
-        @{ From = 'UI/ImageSelectOrUploadScreen/gallery-add.png';     To = 'gallery-add.png' }
-        @{ From = 'UI/ImageSelectOrUploadScreen/export-arrow-01.png'; To = 'export-arrow.png' }
-    )
-
-    # "Refrence" typo is upstream; normalised here.
-    'crop' = @(
-        @{ From = 'UI/CropImageScreen/CropRefrenceFrame.png';     To = 'crop-reference-frame.png' }
-    )
-
-    'browse' = @(
-        @{ From = 'UI/MAPCollectionScreen/SearchButton.png';      To = 'search-button.png' }
-        @{ From = 'UI/MAPCollectionScreen/Arrow.png';             To = 'pagination-arrow.png' }
-        @{ From = 'UI/MAPCollectionScreen/GridView.png';          To = 'grid-view.png' }
-        @{ From = 'UI/MAPCollectionScreen/PageSelectionBox.png';  To = 'page-selection-box.png' }
     )
 
     'qr' = @(
         @{ From = 'UI/QRScanScreen/QR_Code_1-1024.png';           To = 'qr-code.png' }
     )
+}
 
-    # Offline fallback artwork: loaded by folder in Unity, so keep at least one
-    # or the kiosk has nothing to show when the collection API is down.
+# ---------------------------------------------------------------------------
+# SUPERSEDED -- deliberately NOT copied.
+#
+# These 31 Unity bitmaps were replaced by hand-authored vector/JPEG assets that
+# are COMMITTED to the repo (ADR-035, ADR-038, ADR-039 for the SVGs; the
+# "fallback art to jpg" change for the offline artwork). Nothing in `src/`
+# references any of them any more.
+#
+# They stayed in the copy plan after the migration, so `copy:assets` -- which
+# runs on every `predev` and `prebuild` -- rewrote all 31 on every build. They
+# then showed up as untracked or, once someone ran `git add -A`, as staged
+# additions, and re-appeared however often they were deleted.
+#
+# The mapping is preserved here as documentation: it records which Unity file
+# each committed asset replaced, so a future diff against the Unity project
+# stays traceable. Do NOT move these back into $plan without first checking that
+# `src/` actually loads the .png -- if it loads the .svg, copying the .png only
+# recreates the litter.
+# ---------------------------------------------------------------------------
+$superseded = [ordered]@{
+    'gameplay' = @(
+        'UI/GamePlayScreen/StartButton.png            -> start-button.svg'
+        'UI/GamePlayScreen/StartButton-pressed.png    -> start-button-pressed.svg'
+        'UI/GamePlayScreen/ResetButton.png            -> reset-button.svg'
+        'UI/GamePlayScreen/ResetButton-Pressed.png    -> reset-button-pressed.svg'
+        'UI/GamePlayScreen/PreviewButton.png          -> preview-button.svg'
+        'UI/GamePlayScreen/PreviewButton-pressed.png  -> preview-button-pressed.svg'
+        'UI/GamePlayScreen/NewImageButton.png         -> new-image-button.svg'
+        'UI/GamePlayScreen/NewImageButton-pressed.png -> new-image-button-pressed.svg'
+        'UI/GamePlayScreen/PlayAgainButton.png        -> play-again-button.svg'
+        'UI/GamePlayScreen/PlayAgainButton-Pressed.png-> play-again-button-pressed.svg'
+        'UI/GamePlayScreen/rotate-right.png           -> icon-reset.svg'
+        'UI/GamePlayScreen/Group.png                  -> icon-preview.svg'
+        'UI/GamePlayScreen/new image icon.png         -> icon-new-image.svg'
+        'UI/GamePlayScreen/TimerBackground.png        -> timer-background.svg'
+        'UI/GamePlayScreen/HomeButton.png             -> home-button.svg'
+        'UI/GamePlayScreen/BackButton.png             -> back-button.svg'
+        'UI/GamePlayScreen/Map Logo.png               -> map-logo.svg'
+        # Arrow names upstream are the GRID DIRECTION OFFSETS from
+        # GameManager.ArrowGridDirections: (0,-1) (0,1) (-1,0) (1,0). Grid Y is
+        # top-down, so (0,-1) is the arrow ABOVE the empty cell.
+        'UI/GamePlayScreen/0_-1.png                   -> arrow-up.svg'
+        'UI/GamePlayScreen/0_1.png                    -> arrow-down.svg'
+        'UI/GamePlayScreen/-1_0.png                   -> arrow-left.svg'
+        'UI/GamePlayScreen/1_0.png                    -> arrow-right.svg'
+    )
+    'select' = @(
+        'UI/ImageSelectOrUploadScreen/gallery-add.png     -> gallery-add.svg'
+        'UI/ImageSelectOrUploadScreen/export-arrow-01.png -> export-arrow.svg'
+    )
+    'crop' = @(
+        # "Refrence" typo is upstream.
+        'UI/CropImageScreen/CropRefrenceFrame.png -> crop-reference-frame.svg'
+    )
+    'browse' = @(
+        'UI/MAPCollectionScreen/SearchButton.png     -> search-button.svg'
+        'UI/MAPCollectionScreen/Arrow.png            -> pagination-arrow.svg'
+        'UI/MAPCollectionScreen/GridView.png         -> grid-view.svg'
+        'UI/MAPCollectionScreen/PageSelectionBox.png -> page-selection-box.svg'
+    )
     'fallback' = @(
-        @{ From = 'Textures/image_00.png';                        To = 'fallback-00.png' }
-        @{ From = 'Textures/Image_01.png';                        To = 'fallback-01.png' }
-        @{ From = 'Textures/Image_02.png';                        To = 'fallback-02.png' }
+        'Textures/image_00.png -> fallback-00.jpg'
+        'Textures/Image_01.png -> fallback-01.jpg'
+        'Textures/Image_02.png -> fallback-02.jpg'
     )
 }
 
@@ -216,6 +229,8 @@ New-Item -ItemType Directory -Force -Path $Dest | Out-Null
 
 Write-Host ''
 Write-Host "Copied $copied asset(s) to $Dest"
+$supersededCount = ($superseded.Values | ForEach-Object { $_.Count } | Measure-Object -Sum).Sum
+Write-Host "Skipped $supersededCount superseded bitmap(s) - replaced by committed SVG/JPEG assets."
 if ($missing.Count -gt 0) {
     Write-Host "Missing $($missing.Count) file(s):" -ForegroundColor Yellow
     foreach ($m in $missing) { Write-Host "  - $m" -ForegroundColor Yellow }
