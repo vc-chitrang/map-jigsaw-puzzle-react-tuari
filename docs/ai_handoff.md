@@ -3,7 +3,34 @@
 State for the next agent. Read this first, then [architecture.md](architecture.md),
 [roadmap.md](roadmap.md).
 
-**Last updated:** 2026-07-30
+**Last updated:** 2026-07-31
+
+## 0. Most recent work — client feedback round (2026-07-31)
+
+Branch `feat/client-feedback-2026-07-31`. Ten items from a landscape play test;
+nine done and verified at 540×960, one blocked on the client. Full table in
+[tasks.md](tasks.md) "Client feedback round". Two new ADRs:
+
+* **ADR-041 — the high score is now GLOBAL**, one key for the whole game, a
+  deliberate divergence from Unity's per-artwork key. The badge reads `--:--` once
+  after this ships. Do not "fix" it back by reading `GetHighScoreKey()`.
+* **ADR-042 — no native form control that draws its own popup may live inside
+  `<ScaledCanvas>`.** Sort By was a `<select>`; the OS drew its popup outside the
+  canvas transform, so rows rendered ~4x too large and could sit over the Date
+  filter popup. It is now `SortDropdown.tsx`, sharing `openDropdown` with the
+  filters.
+
+**The one blocked item (C1).** The client asked for the artwork name above the
+board. That already works and already matches Unity — measured live at 62 px,
+`#FFA300`, in a 100 px band 10 px above the board, and confirmed visible with a
+screenshot. It is blank only for the **three bundled offline images**, because they
+carry no title (Unity is blank there too). Resolving it needs either the three real
+artwork names, or a decision to fetch a collection piece in the background at boot
+— ADR-028 deliberately made boot fallback-only to get a 0 ms start, so restoring a
+blocking collection fetch would undo that.
+
+**Test count is 310**, not 308: five `resolveIdentifier` tests went away with
+ADR-041 and three global-key tests replaced them.
 
 ---
 

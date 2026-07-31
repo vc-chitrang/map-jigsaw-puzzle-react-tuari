@@ -1,12 +1,25 @@
 /**
- * Per-artwork high score — docs/game-logic.md §7.
+ * GLOBAL high score — one best time for the whole game.
  *
- * The key shape is preserved EXACTLY so existing kiosk records can be migrated
- * out of Unity `PlayerPrefs`:
+ *   {productName}_HighScoreKey
  *
- *   {productName}_HighScoreKey_{artworkTitle | textureName | "Default"}
+ * **This deliberately diverges from Unity** (client decision, 2026-07-31).
+ * `GameManager.GetHighScoreKey()` builds
+ * `{productName}_HighScoreKey_{artworkTitle | textureName | "Default"}`, making
+ * the record per artwork. The client considers that wrong: the kiosk runs one
+ * fixed 3x3 difficulty, so every run is comparable and there should be a single
+ * board to beat. Unity's own comment above that method already claims the score
+ * is app-wide — the code contradicts it.
  *
- * The score is therefore per artwork, not global and not per grid size.
+ * Two consequences of the per-artwork key that the global key removes: a visitor
+ * could never beat a record set on a different picture, and because untitled
+ * sources fall back to a fixed texture name, every QR upload silently shared one
+ * bucket while every titled artwork got its own.
+ *
+ * **No migration.** Existing per-artwork records are left where they are, so the
+ * badge reads `--:--` on the first run after this change and then rebuilds. The
+ * old keys are unreachable, not deleted; `KeyValueStore` cannot enumerate keys,
+ * so folding them into a single minimum would need a wider storage interface.
  */
 
 import { NO_HIGH_SCORE, PRODUCT_NAME } from './constants';
@@ -24,26 +37,8 @@ export interface KeyValueStore {
   setItem(key: string, value: string): void;
 }
 
-export interface ArtworkIdentity {
-  /** Collection artwork title. Empty for QR uploads. */
-  readonly artworkTitle?: string | undefined;
-  /** Fallback name of a bundled local texture. */
-  readonly textureName?: string | undefined;
-}
-
-/** `artworkTitle` if non-empty, else `textureName`, else `"Default"`. */
-export function resolveIdentifier(identity: ArtworkIdentity = {}): string {
-  const title = identity.artworkTitle?.trim();
-  if (title) return title;
-
-  const texture = identity.textureName?.trim();
-  if (texture) return texture;
-
-  return 'Default';
-}
-
-export function highScoreKey(identity: ArtworkIdentity = {}, productName = PRODUCT_NAME): string {
-  return `${productName}_HighScoreKey_${resolveIdentifier(identity)}`;
+export function highScoreKey(productName = PRODUCT_NAME): string {
+  return `${productName}_HighScoreKey`;
 }
 
 /**
@@ -53,12 +48,8 @@ export function highScoreKey(identity: ArtworkIdentity = {}, productName = PRODU
  * value is treated as "no record" rather than throwing — a kiosk must not fail to
  * start because one localStorage entry got mangled.
  */
-export function readHighScore(
-  store: KeyValueStore,
-  identity: ArtworkIdentity = {},
-  productName = PRODUCT_NAME,
-): number {
-  const raw = store.getItem(highScoreKey(identity, productName));
+export function readHighScore(store: KeyValueStore, productName = PRODUCT_NAME): number {
+  const raw = store.getItem(highScoreKey(productName));
   if (raw === null) return NO_HIGH_SCORE;
 
   const parsed = Number(raw);
@@ -85,10 +76,9 @@ export interface HighScoreWrite {
 export function writeHighScoreIfFaster(
   store: KeyValueStore,
   elapsedSeconds: number,
-  identity: ArtworkIdentity = {},
   productName = PRODUCT_NAME,
 ): HighScoreWrite {
-  const previousBest = readHighScore(store, identity, productName);
+  const previousBest = readHighScore(store, productName);
 
   if (!Number.isFinite(elapsedSeconds) || elapsedSeconds < 0) {
     return { written: false, best: previousBest, previousBest };
@@ -99,7 +89,7 @@ export function writeHighScoreIfFaster(
     return { written: false, best: previousBest, previousBest };
   }
 
-  store.setItem(highScoreKey(identity, productName), String(elapsedSeconds));
+  store.setItem(highScoreKey(productName), String(elapsedSeconds));
   return { written: true, best: elapsedSeconds, previousBest };
 }
 

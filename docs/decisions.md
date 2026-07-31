@@ -2,6 +2,93 @@
 
 Architectural decisions, newest first. Each entry: context → decision → consequences.
 
+> **Numbering note.** ADR-026 was used TWICE (the Unity-EXE design pass, below, and
+> "Arrow Layer Ordering Behind Tiles", further down). ADR-027 … ADR-040 were also
+> appended at the BOTTOM of this file rather than the top, so "newest first" holds
+> only for ADR-041+ and ADR-026 … ADR-001. Numbers are not reused going forward.
+
+---
+
+## ADR-042 — The Sort By control is an in-canvas dropdown, never a native `<select>`
+
+**Date:** 2026-07-31 · **Status:** Accepted
+
+**Context.** Sort By shipped as a native `<select>`. The reasoning recorded in the
+CSS was that its five options are short and fixed, so the OS could draw the popup
+and clipping would never be a concern. On a kiosk that reasoning is inverted: the
+OS popup is **not inside `<ScaledCanvas>`**, so it ignores the canvas transform
+entirely.
+
+Two defects followed, both visible in the client's landscape screenshot:
+
+1. **Option rows rendered at OS size.** Everything else on the screen is drawn at
+   reference scale and then scaled down (~0.28 at 1080p landscape); the popup was
+   not, so its rows were roughly 4x the height of the filter dropdowns beside it.
+2. **Two popups could be open at once.** The native popup is positioned by the OS
+   and has no knowledge of `openDropdown`, so it opened over the already-open Date
+   filter popup.
+
+**Decision.** `SortDropdown.tsx` — a panel built from the same CSS classes as
+`FilterDropdown`, rendered inside the scaled canvas, and joined to the **shared
+`openDropdown` state** so at most one popup exists at any time. No search row: five
+fixed options need no filtering, so the popup is sized to its content
+(`SORT_MODES.length × popupRowHeight`) instead of the filters' fixed 400 px.
+
+**Consequences.**
+- Sort rows are the same size as filter rows, because they are literally the same
+  classes and the same `filterDropdowns.label.fontSizePx`.
+- Opening Sort closes any filter popup and vice versa — verified at 540×960: after
+  tapping Date then Sort, `aria-expanded` is `false` on Date, `true` on Sort, and
+  exactly one `dropdownPopup` node exists.
+- **General rule: no native form control that renders its own popup may be used
+  inside `<ScaledCanvas>`.** `<select>`, `<datalist>` and the date/colour pickers
+  all draw chrome the canvas transform cannot reach. Plain `<input>` is fine — it
+  is the *popup* that escapes, not the field.
+
+---
+
+## ADR-041 — The high score is global, not per artwork (diverges from Unity)
+
+**Date:** 2026-07-31 · **Status:** Accepted (client directive)
+
+**Context.** Unity keys the record per image —
+`GameManager.GetHighScoreKey()` (`Scripts/GameManager.cs:1221-1227`) builds
+`{productName}_HighScoreKey_{artworkTitle | textureName | "Default"}`. The port
+reproduced that key shape byte for byte so existing kiosk records could migrate.
+
+The client reviewed the behaviour on 2026-07-31 and called the Unity logic wrong.
+It is also self-contradictory: the comment immediately above that method
+(`GameManager.cs:1217-1220`) states that "a single app-wide high score is
+intentional here", which the code does not do.
+
+Two further consequences of the per-artwork key argue the same way. A visitor could
+never beat a record set on a different picture, so the badge was effectively always
+`--:--` for anyone playing a new artwork. And because untitled sources fall back to
+a *fixed* texture name, every QR upload silently shared one bucket
+(`..._HighScoreKey_CroppedImage`) while every titled artwork got its own.
+
+**Decision.** One key for the whole game: `{productName}_HighScoreKey`.
+`highScoreKey`, `readHighScore` and `writeHighScoreIfFaster` no longer take an
+identity. The kiosk runs one fixed 3×3 difficulty, so every run is comparable and a
+single board to beat is the sensible reading.
+
+`ArtworkIdentity` survives but moved to `game/types.ts`: it is now display-only
+data, feeding the artwork title above the board. Nothing is keyed on it.
+`resolveIdentifier` is deleted.
+
+**Consequences.**
+- **No migration; the badge reads `--:--` once after this ships**, then rebuilds.
+  Old per-artwork keys are orphaned rather than deleted — `KeyValueStore` is
+  `getItem`/`setItem` only, so folding them into a single minimum would need a
+  wider storage interface for a one-off gain.
+- The write rule is unchanged: strictly faster wins, an equal time does not
+  overwrite, `-1` renders `--:--`.
+- Tests: 310 green. The per-artwork independence test is replaced by its opposite —
+  two runs on different artworks now share one record, and the slower one does not
+  overwrite the faster.
+- Divergence from Unity is deliberate and client-directed. Do not "fix" it back by
+  reading `GetHighScoreKey()`.
+
 ---
 
 ## ADR-026 — Design corrections from the Unity EXE screenshots

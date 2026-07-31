@@ -122,13 +122,14 @@ export function Board({
 
         {arrowsVisible
           ? arrows.map((arrow) => {
-              // up | down | left | right — drives the directional pulse class.
+              // up | down | left | right — for the accessible name only. The
+              // pulse is a uniform scale, so it is the same for every direction.
               const dir = arrow.asset.replace('arrow-', '').replace(/\.(png|svg)$/, '');
               return (
                 <button
                   key={arrow.index}
                   type="button"
-                  className={`${styles.arrow} ${styles[`arrow-${dir}`]}`}
+                  className={styles.arrow}
                   style={
                     {
                       width: `${arrow.size}px`,
@@ -138,9 +139,6 @@ export function Board({
                       // transform scales the position (drift to bottom-right).
                       left: `${arrow.position.x}px`,
                       top: `${arrow.position.y}px`,
-                      // Pulse travel, proportional to the arrow so every size
-                      // reads the same. Consumed by the @keyframes below.
-                      '--arrow-pulse-shift': `${arrow.size * 0.14}px`,
                       backgroundImage: `url("/assets/gameplay/${arrow.asset}")`,
                     } as CSSProperties
                   }

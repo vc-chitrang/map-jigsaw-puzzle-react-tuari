@@ -16,7 +16,7 @@ import { applyMove, isInitialEmptyCell } from './moves';
 import { createSolvedBoard, isSolved } from './board';
 import { INITIAL_TIMER, tickTimer, type TimerState } from './timer';
 import { NO_HIGH_SCORE } from './constants';
-import type { ArtworkIdentity } from './highScore';
+import type { ArtworkIdentity } from './types';
 import type { BoardState, Cell, MoveSource } from './types';
 
 /** Attract mode until the first interaction, then gameplay. */

@@ -181,6 +181,24 @@ and comparing against Unity, not by a landscape-only difference.
 | F12 | 27-frame `/assets/common/loading.png` sprite sheet animation & blur effect | **DONE** | ADR-032, ADR-033. 500% scaled (400px) 27-frame CSS step animation with smooth 10px blur transition |
 | F13 | ImageSelect orientation-specific divider line | **DONE** | ADR-034. Horizontal divider line in portrait, vertical divider line in landscape |
 
+## Client feedback round, 2026-07-31
+
+Ten items raised after a landscape play test. Verified at 540×960 portrait with a
+stubbed collection unless noted.
+
+| # | Item | Status | Notes |
+|---|---|---|---|
+| C1 | Artwork name above the puzzle board | **BLOCKED** | Mechanism is already correct and matches Unity `ArtworkName` (62 px, `#FFA300`, 100 px band 10 px above the board) — verified rendering live. It is blank only for the **three bundled offline images**, which carry no title, exactly as Unity does. Needs either the three real artwork names from the client, or a decision to fetch a collection piece in the background at boot (ADR-028 made boot fallback-only for a 0 ms start) |
+| C2 | Round the QR code corners | **DONE** | `border-radius: 24px` on `.qrCode`, matching the panel and the two choice cards. Verified computed 24px |
+| C3 | High score is global, not per artwork | **DONE** | ADR-041. Diverges from Unity deliberately. Badge shows `--:--` once after the update, then rebuilds |
+| C4 | Tapping the search field closes an open dropdown | **DONE** | Handled on the search BAR, not the field, so the clear and submit buttons are covered by one rule. The field no longer `stopPropagation`s, or the bar's handler would never run |
+| C5 | Sort By option rows are huge | **DONE** | ADR-042. Was a native `<select>` whose popup the OS drew outside `<ScaledCanvas>` |
+| C6 | Bigger pagination numbers | **DONE** | Pills 28→38 px on a 46→66 px box, sized against the 42 px "Page N of M" beside them |
+| C7 | Any dropdown / option tap closes the keyboard | **DONE** | One `showOnly()` helper is the single route into a popup. The search field **retargets** the keyboard instead of closing it — closing it there would make the field untypable |
+| C8 | Clear Filters closes the keyboard and dropdowns | **DONE** | Verified: keyboard true→false, popups 1→0. Note the button is disabled while no filter is active |
+| C9 | Arrow pulse should scale, not move | **DONE** | Unity `ArrowController.cs:97-112` is `DOScale(1.06f, 0.25f)`, Linear, Yoyo, infinite. Verified live: `animation-name: arrow-pulse`, 0.25s, linear, alternate, infinite, live matrix 1.048 |
+| C10 | Date and Sort By popups overlap | **DONE** | Same root cause as C5; the sort control now shares `openDropdown`, so only one popup can exist |
+
 ### §12 parity checklist status
 
 | Item | Status |

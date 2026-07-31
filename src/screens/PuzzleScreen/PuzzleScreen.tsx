@@ -120,7 +120,7 @@ export function PuzzleScreen({
           type: 'BUILD',
           board: createShuffledBoard().board,
           identity: loaded.identity,
-          highScoreSeconds: readHighScore(highScoreStore, loaded.identity),
+          highScoreSeconds: readHighScore(highScoreStore),
           // An image the visitor cropped goes straight into gameplay, as does
           // "Play Again"; a boot or "New Image" load starts in attract mode.
           ...(preparedArtwork || startGameplayImmediately.current
@@ -149,15 +149,11 @@ export function PuzzleScreen({
   useEffect(() => {
     if (state.phase !== 'revealing') return;
 
-    const result = writeHighScoreIfFaster(
-      highScoreStore,
-      state.timer.elapsedSeconds,
-      state.identity,
-    );
+    const result = writeHighScoreIfFaster(highScoreStore, state.timer.elapsedSeconds);
     if (result.best !== state.highScoreSeconds) {
       dispatch({ type: 'HIGH_SCORE_LOADED', seconds: result.best });
     }
-  }, [state.phase, state.timer.elapsedSeconds, state.identity, state.highScoreSeconds]);
+  }, [state.phase, state.timer.elapsedSeconds, state.highScoreSeconds]);
 
   // Debug/QA cheat: Ctrl+Shift+Alt+S instantly solves the board and shows the
   // win popup. `e.code === 'KeyS'` is used so the modifier combination cannot
