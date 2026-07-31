@@ -9,7 +9,63 @@ Architectural decisions, newest first. Each entry: context → decision → cons
 
 ---
 
+## ADR-048 — Play Again re-shuffles the artwork just played; it does not load a new one
+
+**Date:** 2026-07-31 · **Status:** Accepted (client directive) · **Corrects the premise of ADR-047**
+
+**Context.** ADR-047 was built on a misreading. The client wrote that Play Again
+"will always load same artwork which is previously played by the user and won"; that
+was read as a **defect report** and answered by guaranteeing a *different* artwork.
+It was a **specification**. What they want is: hide the win screen and re-shuffle the
+puzzle just completed.
+
+They also reported that in landscape Play Again "will redirect to the home screen".
+It did, in both orientations — landscape merely made it obvious. `handlePlayAgain`
+dispatched `RESET_TO_LAUNCH_MODE`, which returns `INITIAL_GAME_STATE` and so cleared
+the board and dropped the screen into attract mode, then bumped `buildToken` to fetch
+a whole new artwork behind the build scrim (ADR-045). A visitor tapping Play Again got
+an empty board, a spinner, and a trip through the home screen.
+
+**Decision.** Play Again re-shuffles the artwork already on the board:
+`reshuffleSameArtwork` dispatches one `BUILD` with the **existing** `identity`, a
+fresh shuffled board and `mode: 'gameplay'`. No artwork load, no `buildToken` bump, no
+scrim, no navigation.
+
+The win popup hides for free — `BUILD` spreads `INITIAL_GAME_STATE`, so `phase`
+returns to `playing` and the popup renders only on `phase === 'won'`.
+
+This is now literally the same action as the footer's RESET, so both call one
+function rather than two that could drift apart.
+
+**`onPlayAgain` is gone.** It cleared `preparedArtwork` in `App`, which **revokes the
+blob URL** — the very image the board is still slicing. Keeping it while re-using the
+artwork would have turned Play Again into a black board, the ADR-023 failure again.
+
+**Consequences.**
+- **Diverges from Unity deliberately.** `ResetToLaunchMode(true)` (game-logic §6.2)
+  loads a new image straight into gameplay. The reducer keeps that capability and its
+  tests; this screen no longer uses it for Play Again.
+- Play-tested in the browser at the client's request, **both orientations**, with a
+  stubbed two-record collection. Landscape at 960×540 and portrait at 540×960 (three
+  consecutive rounds): win popup up then hidden, artwork unchanged, board re-shuffled,
+  **no scrim flash and no attract flash** sampled 150 ms after the tap, and the screen
+  stays in gameplay with the timer reset.
+- RESET and NEW IMAGE re-checked: RESET re-shuffles in place, NEW IMAGE still routes
+  to the select screen (ADR-040), and returning still serves a *different* artwork.
+- **ADR-047 is not wasted.** Its recency rule still governs the paths that genuinely
+  load a new artwork — boot, New Image, Play Again's old behaviour — so those cannot
+  serve the same piece twice in a row. Only its *rationale* was wrong.
+- `startGameplayImmediately` is now vestigial on this screen (nothing sets it true).
+  Left in place: the reducer field is tested and documents Unity's behaviour.
+
+---
+
 ## ADR-047 — Play Again never repeats: recency relaxes from the OLD end
+
+> **Premise corrected by ADR-048.** The client's message was a specification, not a
+> bug report: Play Again is *meant* to replay the artwork just won. The recency rule
+> below still stands for boot and "New Image", which do load a new artwork — but it is
+> no longer what Play Again does.
 
 **Date:** 2026-07-31 · **Status:** Accepted
 

@@ -20,6 +20,20 @@ nine done and verified at 540×960, one blocked on the client. Full table in
   filter popup. It is now `SortDropdown.tsx`, sharing `openDropdown` with the
   filters.
 
+**Play Again re-shuffles the artwork just played (ADR-048) — do not "fix" it back.**
+It deliberately diverges from Unity's `ResetToLaunchMode(true)`. The seventh round
+(C27–C28) also fixed the reason it appeared to "go to the home screen": it dispatched
+`RESET_TO_LAUNCH_MODE`, which returns `INITIAL_GAME_STATE` and cleared the board into
+attract mode, then bumped `buildToken` to fetch a new artwork behind the scrim. It is
+now one `BUILD` with the existing identity, so RESET and Play Again are the same
+function. `onPlayAgain` was removed because it revoked the blob URL the board was still
+slicing.
+
+**And a process lesson worth more than the fix:** C26 (ADR-047) was built on a
+misreading — the client's "Play Again will always load same artwork" was a
+*specification*, and it was answered as if it were a *defect report*. A whole round of
+work went the wrong direction. When a client sentence could be either, ask.
+
 A sixth round (C26) stopped Play Again repeating the artwork just won — ADR-047. Two
 lessons in it. First, **the reported symptom was not reproducible**; the real defect
 was odds, not mechanism: only page 1 is fetched, that pool is 40 records, so a random

@@ -36,19 +36,15 @@ interface PuzzleScreenProps {
    * An already-square image from the Crop screen. `null` means "pick one" — a
    * random collection piece, falling back to the bundled offline set.
    *
-   * Ownership of the blob URL transfers here: this screen revokes it when the
-   * artwork is replaced or the screen unmounts.
+   * **Read only.** `App` created this blob URL and `App` revokes it (ADR-023);
+   * this screen must not, or a remount adopts an already-revoked URL and the board
+   * renders black.
    */
   readonly preparedArtwork?: { url: string; title: string } | null;
   /** START — the flow continues to image selection. */
   readonly onStart?: () => void;
   /** Home / back. */
   readonly onHome?: () => void;
-  /**
-   * "Play Again" on the win screen. The owner must clear `preparedArtwork` so a
-   * fresh random artwork is loaded — the cropped blob has been revoked by then.
-   */
-  readonly onPlayAgain?: () => void;
   readonly onNewImage?: () => void;
   /**
    * Reports whether a game is in progress, which the Back rule needs: Back on the
@@ -84,7 +80,6 @@ export function PuzzleScreen({
   preparedArtwork = null,
   onStart,
   onHome,
-  onPlayAgain,
   onNewImage,
   onMidGameChange,
   resetToken = 0,
@@ -256,7 +251,28 @@ export function PuzzleScreen({
     [state],
   );
 
-  const handleReset = useCallback(() => {
+  /**
+   * Re-shuffle the artwork already on the board into a fresh game.
+   *
+   * Backs BOTH the footer's RESET and the win screen's "Play Again" — the client
+   * specified them as the same action (2026-07-31): keep the artwork the visitor
+   * just played, re-shuffle it, go straight into gameplay.
+   *
+   * It also hides the win popup for free, because `BUILD` spreads
+   * `INITIAL_GAME_STATE` and so resets `phase` to `playing`, and the popup renders
+   * on `phase === 'won'`.
+   *
+   * **No artwork load and no `buildToken` bump**, which is the point. "Play Again"
+   * used to dispatch `RESET_TO_LAUNCH_MODE` and bump the token, which cleared the
+   * board, put the screen back in attract mode and raised the build scrim while a
+   * NEW artwork was fetched — that is the "it goes to the home screen" the client
+   * saw in landscape. It happens in portrait too; landscape just made it obvious.
+   *
+   * **Diverges from Unity deliberately.** `ResetToLaunchMode(true)`
+   * (game-logic §6.2) loads a new image straight into gameplay. The reducer keeps
+   * that capability and its tests; this screen no longer uses it for Play Again.
+   */
+  const reshuffleSameArtwork = useCallback(() => {
     if (!state.board) return;
     dispatch({
       type: 'BUILD',
@@ -276,20 +292,6 @@ export function PuzzleScreen({
       setBuildToken((token) => token + 1);
     }
   }, [onNewImage]);
-
-  /**
-   * `ResetToLaunchMode(true)` — a new image that goes STRAIGHT into gameplay,
-   * skipping attract mode (docs/game-logic.md §6.2). The flag is consumed by the
-   * BUILD that follows the image load.
-   */
-  const handlePlayAgain = useCallback(() => {
-    startGameplayImmediately.current = true;
-    dispatch({ type: 'RESET_TO_LAUNCH_MODE', startGameplayImmediately: true });
-    // Bump the token as well as notifying the owner: if `preparedArtwork` was
-    // already null, clearing it changes no dependency and the load would not re-run.
-    setBuildToken((token) => token + 1);
-    onPlayAgain?.();
-  }, [onPlayAgain]);
 
   const handleStart = useCallback(() => {
     // Unity's START leaves attract mode AND navigates to image selection. With no
@@ -345,7 +347,7 @@ export function PuzzleScreen({
           timerText={formatTime(state.timer.elapsedSeconds)}
           highScoreText={formatHighScore(state.highScoreSeconds)}
           onStart={handleStart}
-          onReset={handleReset}
+          onReset={reshuffleSameArtwork}
           onNewImage={handleNewImage}
           onPreviewStart={() => setPreviewHeld(true)}
           onPreviewEnd={() => setPreviewHeld(false)}
@@ -403,7 +405,7 @@ export function PuzzleScreen({
         label={L.footerButtons.reset.label}
         icon={L.footerButtons.reset.icon}
         disabled={!footerEnabled}
-        onPress={handleReset}
+        onPress={reshuffleSameArtwork}
       />
 
       {/* Preview is HOLD-to-show, not a toggle: UIPressHandler fires
@@ -441,7 +443,7 @@ export function PuzzleScreen({
         <WinScreen
           elapsedSeconds={state.timer.elapsedSeconds}
           highScoreSeconds={state.highScoreSeconds}
-          onPlayAgain={handlePlayAgain}
+          onPlayAgain={reshuffleSameArtwork}
         />
       ) : null}
 

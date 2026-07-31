@@ -173,8 +173,15 @@ export function App() {
     [replaceCropSource, replacePreparedArtwork],
   );
 
-  /** Play Again needs a fresh random artwork, so the cropped one must be dropped. */
-  const handlePlayAgain = useCallback(() => replacePreparedArtwork(null), [replacePreparedArtwork]);
+  /*
+   * There is no `onPlayAgain` any more.
+   *
+   * It used to clear `preparedArtwork` so Play Again would load a fresh artwork.
+   * The client specified the opposite (2026-07-31): Play Again re-shuffles the
+   * artwork just played. Clearing it here would REVOKE the very blob URL the board
+   * is still slicing, so the puzzle would go black — the Puzzle screen now handles
+   * Play Again entirely on its own and `App` is not involved.
+   */
 
   /**
    * Back / Home, following the custom rules in `resolveBack`.
@@ -258,7 +265,6 @@ export function App() {
         onStart={() => go('select')}
         onNewImage={() => go('select')}
         onHome={handleBack}
-        onPlayAgain={handlePlayAgain}
         resetToken={resetToken}
         onMidGameChange={(midGame) => {
           puzzleMidGame.current = midGame;

@@ -269,6 +269,34 @@ build instead of ~1 ms from the 24 h Rust cache (ADR-030), now paid in front of 
 visitor behind the build scrim. Worth revisiting if the client wants more variety and
 will accept the wait.
 
+### Seventh round — Play Again replays the SAME puzzle
+
+| # | Item | Status | Notes |
+|---|---|---|---|
+| C27 | Play Again must hide the win screen and re-shuffle the last played puzzle | **DONE** | ADR-048. **C26 was built on a misreading** — the client's "Play Again will always load same artwork" was a SPECIFICATION, not a defect report, and C26 answered it by guaranteeing a *different* artwork. Now `reshuffleSameArtwork` dispatches one `BUILD` with the existing `identity`, a fresh board and `mode: 'gameplay'`. The popup hides for free because `BUILD` resets `phase` to `playing` |
+| C28 | Play Again "redirects to the home screen" in landscape | **DONE** | Same fix. It did, in **both** orientations — landscape just made it obvious. Play Again dispatched `RESET_TO_LAUNCH_MODE`, which returns `INITIAL_GAME_STATE`, clearing the board into attract mode, then bumped `buildToken` to fetch a new artwork behind the build scrim. So the visitor saw an empty board, a spinner and a trip through home |
+
+`onPlayAgain` was **removed**, not just unused: it cleared `preparedArtwork` in `App`,
+which revokes the blob URL the board is still slicing. Re-using the artwork while
+still revoking it would have made Play Again a black board — the ADR-023 failure
+again. Play Again is now identical to the footer's RESET, so both call one function.
+
+**Play-tested in the browser at the client's request, both orientations**, against a
+stubbed two-record collection:
+
+| Check | Landscape 960×540 | Portrait 540×960 (×3 rounds) |
+|---|---|---|
+| Win popup up, then hidden | pass | pass |
+| Artwork unchanged | pass | pass |
+| Board re-shuffled | pass | pass |
+| No scrim flash (sampled 150 ms after tap) | pass | pass |
+| No attract/home flash | pass | pass |
+| Stays in gameplay, timer reset | pass | pass |
+
+RESET and NEW IMAGE re-checked afterwards: RESET re-shuffles in place, NEW IMAGE still
+routes to select (ADR-040), and returning serves a different artwork — so C26's
+recency rule still does its job on the paths that do load a new artwork.
+
 ### §12 parity checklist status
 
 | Item | Status |
