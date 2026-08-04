@@ -269,6 +269,21 @@ build instead of ~1 ms from the 24 h Rust cache (ADR-030), now paid in front of 
 visitor behind the build scrim. Worth revisiting if the client wants more variety and
 will accept the wait.
 
+### Suggestions round (2026-08-04)
+
+| # | Item | Status | Notes |
+|---|---|---|---|
+| C37 | Loading screen while a tapped artwork downloads | **DONE** | `primary_image` is a 4-7 MB master, so `openCropWith` could sit for seconds with NO feedback — the visitor taps a card and nothing happens, so they tap again. `App` now shows the shared `LoadingOverlay` for the whole fetch, `elevated` (z-index 120) so it also covers Browse's dropdown popups (60) and keyboard dock (100), and it swallows the repeat taps. Cleared in a `finally`, so a dead network cannot leave a permanent scrim. Verified with a 4 s stubbed delay: scrim shown at z-index 120, swallowing taps, gone on arrival at Crop |
+| C38 | Long artwork titles ellipsise instead of wrapping | **DONE** | `.artworkTitleText` — `nowrap` + `overflow: hidden` + `text-overflow: ellipsis`. The text needed wrapping in a span: `text-overflow` is ignored on a bare text node inside a flex box, which becomes an anonymous flex item. `min-width: 0` is also load-bearing — a flex item defaults to `min-width: auto` and refuses to shrink below its content, so the text would overflow instead of clipping. Verified with a 108-char title: one line, clipped, stays inside the band |
+
+**On the ellipsis glyph.** It does paint — confirmed by an A/B against `text-overflow:
+clip` (clip cuts mid-word with no mark; ellipsis replaces ~2 characters with one).
+Conduit ITC has a real U+2026, but its advance is **1.02 em** versus 0.57 em for three
+periods, and the dots are widely spaced, so at the title's 62 px it reads as a faint
+mark rather than three obvious dots. If the client wants a more emphatic "...", the
+option is JS truncation appending three literal full stops — noted, not done, because
+it trades a browser-native behaviour for per-title measurement on every resize.
+
 ### New screen — "Select The Collection" (2026-08-04)
 
 | # | Item | Status | Notes |

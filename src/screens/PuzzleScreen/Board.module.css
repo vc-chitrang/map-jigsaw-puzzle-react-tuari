@@ -103,7 +103,24 @@
   font-weight: 700;
   line-height: 1;
   overflow: hidden;
-  overflow-wrap: break-word;
   pointer-events: none;
   -webkit-font-smoothing: antialiased;
+}
+
+/*
+ * ONE line, truncated with an ellipsis — never wrapped.
+ *
+ * Real collection titles run long ("Ram with Sita, Lakshman and Hanuman (Ram
+ * Darbar)"), and a second line pushed the title band into the board's top edge.
+ * TMP truncates rather than ellipsising, but the client asked for the ellipsis.
+ *
+ * `min-width: 0` is load-bearing: a flex item defaults to `min-width: auto`, which
+ * refuses to shrink below its content, so the text would overflow the band instead
+ * of being clipped and no ellipsis would ever appear.
+ */
+.artworkTitleText {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }

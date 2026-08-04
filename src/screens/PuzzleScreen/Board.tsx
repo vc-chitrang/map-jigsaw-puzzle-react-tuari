@@ -200,7 +200,10 @@ export function Board({
             ...textStyle(CHROME.artworkTitleText),
           }}
         >
-          {state.identity.artworkTitle ?? ''}
+          {/* Wrapped so the ellipsis has something to clip: `text-overflow` needs
+              an overflowing BLOCK, and a bare text node inside a flex box becomes
+              an anonymous flex item that ignores it. */}
+          <span className={styles.artworkTitleText}>{state.identity.artworkTitle ?? ''}</span>
         </div>
       </div>
     </>

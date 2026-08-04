@@ -17,11 +17,23 @@ interface LoadingOverlayProps {
   readonly label?: string;
   /** Spinner edge in reference px. */
   readonly sizePx?: number;
+  /**
+   * Raise above a screen's own layered UI.
+   *
+   * The default z-index clears the board, the preview panel and the win popup, but
+   * not the Browse screen's dropdown popups (60) or keyboard dock (100). An
+   * app-level overlay covering a whole screen needs to beat those too.
+   */
+  readonly elevated?: boolean;
 }
 
-export function LoadingOverlay({ label, sizePx = 400 }: LoadingOverlayProps = {}) {
+export function LoadingOverlay({ label, sizePx = 400, elevated = false }: LoadingOverlayProps = {}) {
   return (
-    <div className={styles.overlay} role="status" aria-live="polite">
+    <div
+      className={`${styles.overlay} ${elevated ? styles.elevated : ''}`}
+      role="status"
+      aria-live="polite"
+    >
       <div
         className={styles.spinner}
         style={{ width: `${sizePx}px`, height: `${sizePx}px` }}

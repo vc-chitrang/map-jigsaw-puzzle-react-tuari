@@ -16,6 +16,7 @@ import {
   type ScreenId,
 } from './navigation/router';
 import { VersionBadge } from './ui/VersionBadge';
+import { LoadingOverlay } from './ui/LoadingOverlay';
 import { fetchImageAsBlobUrl } from './api/client';
 import { connectUploadSocket, type UploadSocket } from './api/socket';
 import type { ResultsData } from './api/types';
@@ -53,6 +54,8 @@ export function App() {
    * to push the change into a live Browse screen.
    */
   const [selectedDepartment, setSelectedDepartment] = useState<number | undefined>(undefined);
+  /** True while a full-resolution master is downloading, before Crop can open. */
+  const [preparingCrop, setPreparingCrop] = useState(false);
   /** Bumped to force the Puzzle screen back to attract mode with a new artwork. */
   const [resetToken, setResetToken] = useState(0);
   /** Set by the Puzzle screen so the Back rule can tell attract from mid-game. */
@@ -107,6 +110,11 @@ export function App() {
    */
   const openCropWith = useCallback(
     async (imageUrl: string, title: string) => {
+      // `primary_image` is a 4-7 MB master, so this can take seconds on a cold
+      // cache. Without the scrim the visitor taps a card and NOTHING happens, so
+      // they tap again — the overlay is the feedback and it also swallows those
+      // repeat taps.
+      setPreparingCrop(true);
       try {
         const blobUrl = await fetchImageAsBlobUrl(imageUrl);
         replaceCropSource({ url: blobUrl, title });
@@ -115,6 +123,10 @@ export function App() {
         // Staying put is the right failure mode: the visitor keeps the screen they
         // were on rather than landing on an empty crop stage.
         console.error('[app] could not load the image for cropping', error);
+      } finally {
+        // Cleared even on failure, or a dead network would leave a permanent scrim
+        // with no way back.
+        setPreparingCrop(false);
       }
     },
     [replaceCropSource],
@@ -298,7 +310,12 @@ export function App() {
   return (
     <>
       <ScreenRouter state={nav} dispatch={dispatchNav}>
-        <ScaledCanvas>{screen}</ScaledCanvas>
+        <ScaledCanvas>
+          {screen}
+          {/* Inside the canvas so it scales with everything else, and `elevated`
+              so it also covers the Browse screen's dropdown popups and keyboard. */}
+          {preparingCrop ? <LoadingOverlay label="Loading the artwork..." elevated /> : null}
+        </ScaledCanvas>
       </ScreenRouter>
       <VersionBadge />
       {/* Debug aid: the phase is on the overlay's data-phase attribute, and this
