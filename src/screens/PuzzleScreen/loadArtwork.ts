@@ -1,5 +1,5 @@
 import { fetchCollection, fetchImageAsBlobUrl } from '../../api/client';
-import type { ResultsData } from '../../api/types';
+import { hasImage, type ResultsData } from '../../api/types';
 import { pickArtwork } from './pickArtwork';
 import { cropToSquare, pickFallbackArtwork, releaseArtwork } from '../../image/cropToSquare';
 import type { ArtworkIdentity } from '../../game';
@@ -109,8 +109,68 @@ export async function loadFallbackArtwork(rng: () => number = Math.random): Prom
 }
 
 /**
- * Boot / "New Image" / "Play Again" artwork: a collection piece, falling back to
- * the bundled set.
+ * The artwork the HOME screen always shows.
+ *
+ * Client directive, 2026-08-04: the home screen must present this one piece every
+ * time rather than a random collection artwork.
+ *
+ *   https://map-india.org/collections/cumulus/modern-contemporary-art/MAC.00468/?id=2824
+ *
+ * All three fields were read back from the live API (`npm run check:api --
+ * -Query MAC.00468`), which returns exactly one record: `id` 2824, accession
+ * MAC.00468, department "Modern & Contemporary Art", title "Universe", image
+ * present. `id` matches the `?id=` in that URL.
+ *
+ * The lookup goes through `q=<accession>` because the collection API has no
+ * fetch-by-id route; `id` is then used to pick the exact record out of the result,
+ * with the accession as a second check. `title` is here only so a mismatch is
+ * obvious in a diff if MAC.00468 is ever re-catalogued — nothing reads it.
+ */
+export const FEATURED_HOME_ARTWORK = {
+  id: 2824,
+  accession: 'MAC.00468',
+  title: 'Universe',
+} as const;
+
+/**
+ * Fetch the one artwork the home screen is pinned to.
+ *
+ * Throws if it cannot be found or has no image, so `loadHomeArtwork` can fall
+ * through rather than leaving the board empty.
+ */
+export async function loadFeaturedArtwork(): Promise<LoadedArtwork> {
+  const data = await fetchCollection({ q: FEATURED_HOME_ARTWORK.accession });
+  const playable = data.results.data.filter(hasImage);
+
+  // Prefer the id, since a `q` search could in principle match more than one
+  // record; fall back to the accession in case ids are ever renumbered.
+  const item =
+    playable.find((candidate) => candidate.id === FEATURED_HOME_ARTWORK.id) ??
+    playable.find(
+      (candidate) => candidate.accession_number === FEATURED_HOME_ARTWORK.accession,
+    );
+
+  if (!item) {
+    throw new Error(
+      `featured artwork ${FEATURED_HOME_ARTWORK.accession} (id ${FEATURED_HOME_ARTWORK.id}) not found or has no image`,
+    );
+  }
+
+  return loadArtworkFromCollection(item);
+}
+
+/**
+ * Artwork for the HOME screen — boot, Home, and "New Image" when nothing else
+ * supplies one.
+ *
+ * Three tiers, in order:
+ *
+ *   1. **The featured artwork** (`FEATURED_HOME_ARTWORK`) — what the client asked
+ *      for, and what the home screen shows in normal operation.
+ *   2. **A random collection piece** if that record cannot be fetched. Better than
+ *      dropping straight to the offline set: the visitor still sees real MAP
+ *      artwork with a real title.
+ *   3. **The bundled offline set** if the collection is unreachable at all.
  *
  * **Collection FIRST, and awaited.** An earlier version returned the bundled
  * image immediately and let a second effect swap in the collection piece
@@ -121,14 +181,20 @@ export async function loadFallbackArtwork(rng: () => number = Math.random): Prom
  * overwrote the titled identity and the artwork name vanished. Superseded by
  * ADR-045: one sequential load, one owner, and a loading screen over it.
  *
- * Every failure path ends in the bundled set rather than an error state — a kiosk
+ * Every failure path ends in a picture rather than an error state — a kiosk
  * showing a different picture beats a kiosk showing an error
  * (project-overview.md non-negotiable 4).
  */
-export async function loadRandomArtwork(
+export async function loadHomeArtwork(
   rng: () => number = Math.random,
   recent: readonly number[] = [],
 ): Promise<LoadedArtwork> {
+  try {
+    return await loadFeaturedArtwork();
+  } catch (error) {
+    console.info('[puzzle] featured artwork unavailable; picking another', error);
+  }
+
   try {
     return await loadCollectionArtwork(rng, recent);
   } catch (error) {
@@ -162,7 +228,7 @@ export async function loadRandomArtwork(
  * behind the build scrim. Widening it means randomising `page` across
  * `pagination.last_page` and accepting that cost.
  *
- * Throws on any failure; `loadRandomArtwork` is what degrades to the bundled set.
+ * Throws on any failure; `loadHomeArtwork` is what degrades to the bundled set.
  */
 export async function loadCollectionArtwork(
   rng: () => number = Math.random,

@@ -269,6 +269,16 @@ build instead of ~1 ms from the 24 h Rust cache (ADR-030), now paid in front of 
 visitor behind the build scrim. Worth revisiting if the client wants more variety and
 will accept the wait.
 
+### Home screen pinned to one artwork (2026-08-04)
+
+| # | Item | Status | Notes |
+|---|---|---|---|
+| C40 | Home screen must always show one specific artwork | **DONE** | ADR-051. Client gave a URL; `id 2824` / `MAC.00468` / "Universe" were all read back from the **live API** via the new `check:api -- -Query MAC.00468` flag, not inferred. Lookup is `q=<accession>` since the API has no fetch-by-id route, then the id selects the exact record. `loadRandomArtwork` became `loadHomeArtwork`, a three-tier chain: featured -> random collection -> bundled offline. **Verified in both orientations**: landscape 6 consecutive home builds, portrait 4, every one "Universe" |
+
+Tier 2 (random collection) is what keeps ADR-047's recency rule alive rather than
+dead code — and if MAC.00468 is ever withdrawn the kiosk still shows real MAP artwork
+with a real title instead of falling to the untitled offline set.
+
 ### Suggestions round (2026-08-04)
 
 | # | Item | Status | Notes |

@@ -74,6 +74,52 @@ appears when an editable element gains focus, disappears when it loses it. So:
 
 ---
 
+## ADR-051 — The home screen is pinned to one featured artwork
+
+**Date:** 2026-08-04 · **Status:** Accepted (client directive) · **Narrows ADR-047**
+
+**Context.** The home screen picked a random collection artwork on every build. The
+client wants one specific piece every time, given as a URL:
+
+```
+https://map-india.org/collections/cumulus/modern-contemporary-art/MAC.00468/?id=2824
+```
+
+**Decision.** `FEATURED_HOME_ARTWORK` in `loadArtwork.ts` holds `id 2824`,
+accession `MAC.00468`, title `Universe` — **all three read back from the live API**,
+not inferred from the URL. `check-api.ps1` gained a `-Query` flag for this and
+returned exactly one record: id 2824, accession MAC.00468, department "Modern &
+Contemporary Art", title "Universe", image present. The `id` matches the URL's
+`?id=`.
+
+Lookup goes through `q=<accession>` because the collection API has **no fetch-by-id
+route**; the `id` then selects the exact record from the results, with the accession
+as a second check.
+
+`loadHomeArtwork` (renamed from `loadRandomArtwork`) is a three-tier chain:
+
+1. the featured artwork,
+2. a random collection piece if that record cannot be fetched,
+3. the bundled offline set if the collection is unreachable.
+
+**Consequences.**
+- Verified live in **both orientations** against a stub that only returns the record
+  for `q=MAC.00468`: landscape 6 consecutive home builds and portrait 4, every one
+  titled "Universe", never a random piece.
+- **Tier 2 is why ADR-047's recency rule survives.** Random selection is no longer
+  the normal path, but it is still the fallback, so `pickArtwork` and the
+  `recentIds` exclusion remain live rather than becoming dead code — and if
+  MAC.00468 is ever withdrawn the kiosk shows real MAP artwork with a real title
+  instead of dropping to the untitled offline set.
+- The `q=MAC.00468` request is cached 24 h by Rust (ADR-030), so only the first boot
+  pays the ~8 s; the rest resolve in ~1 ms, behind the build scrim either way.
+- `title` in the constant is **not read by anything** — it is there so a diff makes
+  it obvious if MAC.00468 is ever re-catalogued. `featuredArtwork.test.ts` pins all
+  three fields, because a wrong id does not error: it quietly shows a different
+  artwork or silently falls through to tier 2.
+
+---
+
 ## ADR-050 — "Select The Collection" sits between ImageSelect and Browse
 
 **Date:** 2026-08-04 · **Status:** Accepted (client directive)

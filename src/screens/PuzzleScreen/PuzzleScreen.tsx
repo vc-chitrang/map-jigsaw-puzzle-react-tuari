@@ -22,7 +22,7 @@ import { SpriteButton } from '../../ui/SpriteButton';
 import { highScoreStore } from '../../storage/localStore';
 import { Board } from './Board';
 import { useAutoShuffle, useGameTimer, useMoveSettler, useWinDelay } from './hooks';
-import { adoptPreparedArtwork, loadRandomArtwork, type LoadedArtwork } from './loadArtwork';
+import { adoptPreparedArtwork, loadHomeArtwork, type LoadedArtwork } from './loadArtwork';
 import { LoadingOverlay } from '../../ui/LoadingOverlay';
 import { WinScreen } from '../WinScreen/WinScreen';
 import styles from './PuzzleScreen.module.css';
@@ -71,10 +71,11 @@ interface PuzzleScreenProps {
  * 0.3. The first tile or arrow tap switches to gameplay, which swaps START for
  * the timer and enables the footer.
  *
- * Artwork comes from the collection when it is reachable and from the bundled
- * textures when it is not — `loadRandomArtwork` decides, and never surfaces an
- * error state, because a kiosk showing a different picture beats a kiosk showing
- * an error (project-overview.md non-negotiable 4).
+ * The home screen always shows one FIXED artwork (`FEATURED_HOME_ARTWORK`, client
+ * directive 2026-08-04), falling back to a random collection piece and then to the
+ * bundled textures — `loadHomeArtwork` decides, and never surfaces an error state,
+ * because a kiosk showing a different picture beats a kiosk showing an error
+ * (project-overview.md non-negotiable 4).
  */
 export function PuzzleScreen({
   preparedArtwork = null,
@@ -135,11 +136,11 @@ export function PuzzleScreen({
 
     void (async () => {
       try {
-        // Collection FIRST, bundled set on any failure — `loadRandomArtwork`
-        // decides, and never surfaces an error state.
+        // The pinned featured artwork, then a random collection piece, then the
+        // bundled set — `loadHomeArtwork` decides and never surfaces an error.
         const loaded = preparedArtwork
           ? adoptPreparedArtwork(preparedArtwork.url, preparedArtwork.title)
-          : await loadRandomArtwork(Math.random, recentIds.current);
+          : await loadHomeArtwork(Math.random, recentIds.current);
 
         if (cancelled) {
           loaded.release();
