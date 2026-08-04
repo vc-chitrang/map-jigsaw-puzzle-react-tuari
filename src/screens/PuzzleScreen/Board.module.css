@@ -108,19 +108,23 @@
 }
 
 /*
- * ONE line, truncated with an ellipsis — never wrapped.
+ * ONE line, cut with a literal "..." — never wrapped.
  *
  * Real collection titles run long ("Ram with Sita, Lakshman and Hanuman (Ram
  * Darbar)"), and a second line pushed the title band into the board's top edge.
- * TMP truncates rather than ellipsising, but the client asked for the ellipsis.
  *
- * `min-width: 0` is load-bearing: a flex item defaults to `min-width: auto`, which
- * refuses to shrink below its content, so the text would overflow the band instead
- * of being clipped and no ellipsis would ever appear.
+ * **No `text-overflow: ellipsis` here.** That property takes its glyph from the
+ * font, and Conduit ITC's U+2026 renders as a stray mark instead of three dots.
+ * `TruncatedText` measures and appends three real full stops instead; see
+ * `src/ui/truncate.ts`.
+ *
+ * `overflow: hidden` stays as a backstop for the frame before the first measure,
+ * and `min-width: 0` with it — a flex item defaults to `min-width: auto` and
+ * refuses to shrink below its content, so without it the text would push out of
+ * the band rather than being clipped.
  */
 .artworkTitleText {
   min-width: 0;
   overflow: hidden;
   white-space: nowrap;
-  text-overflow: ellipsis;
 }

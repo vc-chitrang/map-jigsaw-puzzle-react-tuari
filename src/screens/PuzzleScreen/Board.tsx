@@ -15,6 +15,7 @@ import {
 import { PUZZLE_CHROME } from '../../layout/chrome';
 import { ORIENTATION } from '../../canvas/reference';
 import { rectStyle, textStyle } from '../../layout/rect';
+import { TruncatedText } from '../../ui/TruncatedText';
 import styles from './Board.module.css';
 
 interface BoardProps {
@@ -200,10 +201,12 @@ export function Board({
             ...textStyle(CHROME.artworkTitleText),
           }}
         >
-          {/* Wrapped so the ellipsis has something to clip: `text-overflow` needs
-              an overflowing BLOCK, and a bare text node inside a flex box becomes
-              an anonymous flex item that ignores it. */}
-          <span className={styles.artworkTitleText}>{state.identity.artworkTitle ?? ''}</span>
+          {/* Cut in JS with literal "..." rather than `text-overflow: ellipsis`,
+              which would use Conduit ITC's U+2026 — a glyph that renders wrong. */}
+          <TruncatedText
+            className={styles.artworkTitleText}
+            text={state.identity.artworkTitle ?? ''}
+          />
         </div>
       </div>
     </>
