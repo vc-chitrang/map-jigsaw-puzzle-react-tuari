@@ -269,6 +269,23 @@ build instead of ~1 ms from the 24 h Rust cache (ADR-030), now paid in front of 
 visitor behind the build scrim. Worth revisiting if the client wants more variety and
 will accept the wait.
 
+### Home artwork: random logic removed (2026-08-04)
+
+| # | Item | Status | Notes |
+|---|---|---|---|
+| C41 | Returning from gameplay still loaded a random artwork | **DONE** | ADR-052. Root cause was ADR-051's middle tier: `StrictMode` double-invokes the load effect, `fetchCollection`'s module-global request-id guard makes the older call throw `StaleResponseError`, and the featured loader read that as "unavailable" and fell through to the RANDOM tier. Home-from-gameplay is two renders (clearing `preparedArtwork`, then bumping `buildToken`), so it issues two loads and either could be the stale one |
+| C42 | Remove the random artwork logic entirely | **DONE** | Deleted `loadCollectionArtwork`, `pickArtwork` + its 15 tests, the `recentIds` ref and `LoadedArtwork.collectionId`. `loadHomeArtwork` is now featured -> bundled only. `StaleResponseError` is rethrown so a newer load wins instead of the offline image stomping it. The offline fallback uses a fixed rng, so even that is the same picture every time |
+
+**Verified in both orientations** with a stub where any non-featured load is titled
+`RANDOM n`: play a browsed artwork, then Home — landscape 3/3, portrait 2/2 back to
+"Universe", `anyRandomOnHome: false`. A browsed artwork still stays put while the
+visitor plays it, and Play Again still re-shuffles that same piece.
+
+**Measurement lesson.** The first run looked like the bug survived. It had not — the
+harness read the title while the old board was still mounted, before the rebuild
+scrim appeared. Waiting for the scrim to appear *and then* clear flipped the result.
+A poll that can succeed before the action starts is not a test of the action.
+
 ### Home screen pinned to one artwork (2026-08-04)
 
 | # | Item | Status | Notes |

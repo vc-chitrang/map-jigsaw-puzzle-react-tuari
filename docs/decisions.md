@@ -74,6 +74,53 @@ appears when an editable element gains focus, disappears when it loses it. So:
 
 ---
 
+## ADR-052 — No random artwork anywhere on the home path
+
+**Date:** 2026-08-04 · **Status:** Accepted (client directive) · **Supersedes ADR-047, tightens ADR-051**
+
+**Context.** The client reported that returning from gameplay still loaded a random
+artwork, and asked for the random logic to be removed outright.
+
+ADR-051 left a middle tier: featured -> **random collection piece** -> bundled. That
+tier is what produced the bug. `StrictMode` double-invokes the Puzzle screen's load
+effect, so two `fetchCollection` calls go out; `fetchCollection` carries a
+module-global request-id guard, so the older one throws `StaleResponseError`. The
+featured loader treated that benign staleness as "the featured artwork is
+unavailable" and fell through to the random tier — putting an unexpected artwork on
+the home board. Home-from-gameplay makes it worse, because clearing
+`preparedArtwork` and bumping `buildToken` are two separate renders, so that path
+issues two loads and either could be the stale one.
+
+**Decision.**
+- **The random tier is gone.** `loadHomeArtwork` is featured, else the bundled offline
+  image. `loadCollectionArtwork`, `pickArtwork` and its 15 tests, the `recentIds`
+  ref and `LoadedArtwork.collectionId` are all deleted — nothing selects at random
+  any more, so no code path can put an unexpected artwork on the home board.
+- **`StaleResponseError` is rethrown, not absorbed.** A superseded request means a
+  NEWER load is already running; falling back would let the offline image stomp the
+  featured one about to arrive. The Puzzle screen swallows it silently, since under
+  StrictMode it is expected rather than a fault.
+- **Even the offline fallback is deterministic** — `loadFallbackArtwork(() => 0)`, so
+  it is always the first bundled image rather than one of three at random.
+
+**Consequences.**
+- Verified live in **both orientations** with a stub where any non-featured load is
+  titled `RANDOM n`: play a browsed artwork, then Home — landscape 3/3 and portrait
+  2/2 returned to "Universe", `anyRandomOnHome: false`. Home-from-gameplay is
+  observably two `MAC.00468` requests and both now resolve to the featured piece.
+- **A cropped or browsed artwork still wins while the visitor is playing it**, and
+  Play Again still re-shuffles that same piece (ADR-048). "Home shows one artwork"
+  applies to the home path only, not to the visitor's own choice.
+- ADR-047's recency rule is **retired**, not merely unused: with nothing random left,
+  there is nothing to avoid repeating.
+- **A measurement lesson.** The first test run appeared to show the bug surviving. It
+  had not — the harness sampled the title while the OLD board was still mounted,
+  before the rebuild scrim appeared, so it read a stale value. Waiting for the scrim
+  to appear *and then* clear changed the result. A poll that can succeed before the
+  action starts is not a test of the action.
+
+---
+
 ## ADR-051 — The home screen is pinned to one featured artwork
 
 **Date:** 2026-08-04 · **Status:** Accepted (client directive) · **Narrows ADR-047**
