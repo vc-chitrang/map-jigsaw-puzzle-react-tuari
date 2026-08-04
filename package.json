@@ -1,7 +1,7 @@
 {
   "name": "map-jigsaw-puzzle",
   "private": true,
-  "version": "0.1.33",
+  "version": "0.1.35",
   "description": "MAP Sliding Puzzle kiosk — React + Tauri port of the Unity build",
   "type": "module",
   "scripts": {
@@ -9,6 +9,7 @@
     "build:fonts": "powershell -ExecutionPolicy Bypass -File scripts/build-fonts.ps1",
     "build:icons": "powershell -ExecutionPolicy Bypass -File scripts/make-icon.ps1 && tauri icon src-tauri/icon-source.png",
     "extract:api-config": "powershell -ExecutionPolicy Bypass -File scripts/extract-api-config.ps1",
+    "check:api": "powershell -ExecutionPolicy Bypass -File scripts/check-api.ps1",
     "predev": "npm run copy:assets",
     "dev": "vite",
     "prebuild": "npm run copy:assets",
