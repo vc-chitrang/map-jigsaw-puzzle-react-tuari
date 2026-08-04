@@ -97,6 +97,18 @@ and Back must unwind through it.
 - **`useCollection(initialSelection)`** seeds the department as INITIAL state only.
   Browse unmounts when the router leaves it, so a new choice arrives as a fresh
   mount; the visitor can still change or clear the filter from inside Browse.
+- **The dropdown option lists come from an UNFILTERED response, always.** The API
+  narrows `filters` to match the query, and populating the lists from the first
+  response was safe only while Browse opened unfiltered. Opening it with a department
+  applied meant the reply described just that one department, so the Department
+  dropdown offered a single option and the other four were narrowed to whatever that
+  department contains. `isUnfilteredQuery` now gates it: an unfiltered opening query
+  populates from its own response, otherwise the full lists are fetched separately.
+  That extra request is **sequenced after** the grid request, never concurrent —
+  `fetchCollection` carries a module-wide request-id guard, so two in flight would
+  make the older one throw `StaleResponseError` and lose its response. It is the same
+  `{ page: 1 }` query the attract-mode artwork loader already makes, so the 24 h Rust
+  cache usually answers it in ~1 ms.
 - **Header chrome is reused from `IMAGE_SELECT_*`, not from the reference** (client:
   "make sure the design is match with existing app design"). The reference draws the
   logo top-centre and large with a ~228 px back button; that was built, then reverted

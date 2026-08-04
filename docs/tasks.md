@@ -296,6 +296,8 @@ Two things found while building it:
 **Client assets converted PNG -> JPEG: 6.25 MB -> 0.92 MB**, all seven checked fully
 opaque first so no alpha was discarded.
 
+| C36 | Department dropdown showed only the selected option | **DONE** | Regression from C31, reported by the client. The API **narrows `filters` to match the query**, and `useCollection` populated the dropdowns from the first response — which was now already department-filtered, so the reply described just that one department. All five dropdowns were affected, not only Department (Artist/Maker was narrowed to that department's artists too). `isUnfilteredQuery` now gates it; when the opening query is filtered the full lists are fetched separately, **sequenced after** the grid request because `fetchCollection`'s request-id guard makes concurrent calls lose one response. Verified live with a stub that narrows like the real API: **7 department options with the right one ticked**, and Artist/Maker back to its full list |
+
 **Open question the client has not answered:** every route into Browse now forces a
 Department, so there is no "browse everything" entry point. Clearing the Department
 dropdown inside Browse still widens it, so no artwork is unreachable.

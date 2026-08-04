@@ -61,6 +61,24 @@ export interface CollectionActions {
 const EMPTY_ITEMS: readonly ResultsData[] = [];
 
 /**
+ * True when a query carries no filters at all, so its `filters` block is the FULL
+ * set of options rather than the subset matching a narrower query.
+ *
+ * Sort and page are excluded deliberately: neither changes which options the API
+ * returns, so a sorted or paged query still yields complete lists.
+ */
+export function isUnfilteredQuery(selection: FilterSelection, committedSearch: string): boolean {
+  return (
+    committedSearch === '' &&
+    selection.department <= 0 &&
+    selection.classification <= 0 &&
+    selection.artist <= 0 &&
+    selection.culture === '' &&
+    selection.date === ''
+  );
+}
+
+/**
  * @param initialSelection Filters to start with — the "Select The Collection"
  * screen passes the department the visitor chose. Read ONCE, as the initial state:
  * a later change must not clobber a filter the visitor has since edited in the
@@ -117,12 +135,47 @@ export function useCollection(
         console.log(`[browse] collection page ${page} loaded in ${duration}ms`);
 
         setData(result);
-        if (!filtersPopulated.current && result.filters) {
-          setFilters(result.filters);
-          filtersPopulated.current = true;
-        }
         setErrorMessage('');
         setStatus('ready');
+
+        // ---- Dropdown options, populated exactly once -----------------------
+        //
+        // The API narrows `filters` to match the query, so the lists may only be
+        // taken from an UNFILTERED response. Populating them from the first
+        // response was fine while Browse always opened unfiltered, but the
+        // "Select The Collection" screen now opens it with a department already
+        // applied — and the reply then contains that ONE department, so the
+        // Department dropdown offered a single option and the other four were
+        // narrowed to whatever that department contains.
+        //
+        // When the opening query is filtered, fetch the full lists separately.
+        // Sequenced AFTER the grid request on purpose: `fetchCollection` carries a
+        // module-wide request-id guard, so two in flight at once would make the
+        // older one throw `StaleResponseError` and lose its response.
+        if (!filtersPopulated.current) {
+          if (isUnfilteredQuery(selection, committedSearch)) {
+            if (result.filters) {
+              setFilters(result.filters);
+              filtersPopulated.current = true;
+            }
+          } else {
+            try {
+              const all = await fetchCollection({ page: 1 }, { signal: controller.signal });
+              if (controller.signal.aborted) return;
+              if (all.filters) {
+                setFilters(all.filters);
+                filtersPopulated.current = true;
+              }
+            } catch (filterError) {
+              // Non-fatal: the grid is already on screen. The dropdowns stay
+              // narrowed to this department rather than empty, and the next
+              // unfiltered query will fill them.
+              if (!(filterError instanceof StaleResponseError)) {
+                console.warn('[browse] could not load the full filter lists', filterError);
+              }
+            }
+          }
+        }
       } catch (error) {
         // A superseded request must not touch state at all.
         if (error instanceof StaleResponseError) return;
