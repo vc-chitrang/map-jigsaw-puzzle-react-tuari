@@ -87,7 +87,7 @@
   font-weight: 400;
   line-height: 1;
   white-space: nowrap;
-  /* The collage behind is busy and only 30% dimmed (the client's figure), so the
+  /* the collage behind is busy and only half dimmed, so the
      amber title needs its own separation to stay readable over pale artwork. */
   text-shadow: 0 4px 18px rgb(0 0 0 / 0.7);
   pointer-events: none;

@@ -124,10 +124,10 @@ and Back must unwind through it.
   Horizontal tiling would be sharper on 4K (the source is 1080 px wide) but the image
   is only guaranteed seamless vertically, so softness under the scrim is the better
   trade.
-- **The scrim is 0.3 as specified, which is lighter than the reference looks** (~0.6).
-  The client gave an explicit number, so the number won; `banner.scrimColour` is the
-  one value to change. The title gained a text-shadow to stay readable over pale
-  artwork at 0.3.
+- **The scrim is 0.5 black.** Specified as 0.3, which read far lighter than the
+  reference; the client raised it to 0.5 on review. `banner.scrimColour` is the one
+  value to change. The title keeps a text-shadow so it stays readable over pale
+  artwork regardless.
 - Client assets converted PNG → JPEG: **6.25 MB → 0.92 MB**, all seven verified fully
   opaque first so no alpha was discarded.
 
