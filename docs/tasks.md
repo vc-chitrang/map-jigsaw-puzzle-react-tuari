@@ -269,6 +269,37 @@ build instead of ~1 ms from the 24 h Rust cache (ADR-030), now paid in front of 
 visitor behind the build scrim. Worth revisiting if the client wants more variety and
 will accept the wait.
 
+### New screen — "Select The Collection" (2026-08-04)
+
+| # | Item | Status | Notes |
+|---|---|---|---|
+| C29 | New "Select The Collection" screen, 6 department tiles | **DONE** | ADR-050. New router `ScreenId` `'collection'`. Landscape from the client's 1920x1080 reference (exactly half the landscape canvas, so values double); portrait derived at 2x3, delegated by the client |
+| C30 | "Add from MAP's collection" opens it instead of Browse | **DONE** | `ImageSelectScreen.onBrowseCollection` -> `go('collection')` |
+| C31 | Each tile opens Browse pre-filtered to its Department | **DONE** | `useCollection(initialSelection)` seeds the department as INITIAL state only, so the visitor can still change or clear it inside Browse. **All 6 verified live in both orientations**: correct id sent AND the dropdown shows the matching label |
+| C32 | Back chain: Browse -> Collection -> ImageSelect | **DONE** | Browse used to return to ImageSelect. Verified end to end: `browse -> collection -> select -> puzzle` |
+| C33 | Seamless slow vertical scrolling collage + 0.3 black scrim | **DONE** | `background-size: 100% auto` + `repeat-y`, keyframe travelling exactly one tile height (6827 px landscape / 3840 px portrait, computed in JS since CSS cannot derive it). 90 s / 50 s so perceived speed matches |
+| C34 | Back button + MAP logo match the existing app design | **DONE** | Reference draws the logo top-centre and large with a ~228 px button; that was built then **reverted** on the client's instruction to match the existing app. Chrome now comes straight from `IMAGE_SELECT_*` |
+| C35 | Centre the title and the 6 buttons on screen | **DONE** | Centred as one block, diverging from the reference's below-centre grid. Verified: landscape 483/483, portrait 950/950 |
+
+Two things found while building it:
+
+* **The portrait grid width is capped by the back button, not by taste.** A
+  full-bleed 1896-wide grid centres at left 132 while the button occupies x 40..164,
+  so the first tile sat on top of it and swallowed taps meant for Back. Narrowed to
+  1736 (tiles 820x474, reference aspect preserved) for a 48 px gap. Verified the
+  button is the topmost element at its own centre.
+* **Department ids are not sequential** — 28, 5, 4, 6, 29, 13 — so nothing may derive
+  them from display order. Read off the live API, pinned in `departments.test.ts`,
+  and `check-api.ps1` now prints `id -> dept` for re-verification. A wrong id does not
+  error; it silently returns a grid filtered to something else.
+
+**Client assets converted PNG -> JPEG: 6.25 MB -> 0.92 MB**, all seven checked fully
+opaque first so no alpha was discarded.
+
+**Open question the client has not answered:** every route into Browse now forces a
+Department, so there is no "browse everything" entry point. Clearing the Department
+dropdown inside Browse still widens it, so no artwork is unreachable.
+
 ### Seventh round — Play Again replays the SAME puzzle
 
 | # | Item | Status | Notes |

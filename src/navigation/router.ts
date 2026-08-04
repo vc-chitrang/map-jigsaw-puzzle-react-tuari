@@ -32,7 +32,7 @@
  * it — cross-fading to black would hide exactly what the visitor just finished.
  * It renders as an overlay inside the Puzzle screen instead.
  */
-export type ScreenId = 'puzzle' | 'select' | 'browse' | 'crop';
+export type ScreenId = 'puzzle' | 'select' | 'collection' | 'browse' | 'crop';
 
 export type TransitionPhase = 'idle' | 'fadingOut' | 'fadingIn';
 
@@ -165,13 +165,19 @@ export function navReducer(state: NavState, action: NavAction): NavState {
 }
 
 /**
- * What Back does. Custom rules, transcribed from docs/game-logic.md §6.3:
+ * What Back does. Custom rules, from docs/game-logic.md §6.3 plus the Select The
+ * Collection screen the client added on 2026-08-04:
  *
  *   | From        | Back goes to                                      |
- *   | Browse      | ImageSelectOrUpload                               |
+ *   | Browse      | SelectCollection                                  |
+ *   | Collection  | ImageSelectOrUpload                               |
  *   | Crop        | Browse if it came from Browse, else ImageSelect    |
  *   | ImageSelect | Puzzle, resetting to launch mode                  |
  *   | Puzzle      | reset to launch mode if mid-game, else QUIT       |
+ *
+ * Browse used to go back to ImageSelect. It now goes to Collection, because
+ * Collection is the only way into Browse — returning past it would skip the
+ * screen that chose the department currently filtering the grid.
  */
 export type BackOutcome =
   | { kind: 'navigate'; to: ScreenId; resetToLaunch: boolean }
@@ -188,6 +194,9 @@ export interface BackContext {
 export function resolveBack(state: NavState, context: BackContext): BackOutcome {
   switch (state.current) {
     case 'browse':
+      return { kind: 'navigate', to: 'collection', resetToLaunch: false };
+
+    case 'collection':
       return { kind: 'navigate', to: 'select', resetToLaunch: false };
 
     case 'crop':

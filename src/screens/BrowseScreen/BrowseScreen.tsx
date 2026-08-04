@@ -41,12 +41,20 @@ const B = BROWSE_LAYOUT[ORIENTATION];
 
 interface BrowseScreenProps {
   readonly onBack: () => void;
+  /**
+   * Department to filter by on entry, chosen on the "Select The Collection"
+   * screen. Applied as the INITIAL selection only, so the visitor can still change
+   * or clear it from the Department dropdown once they are here.
+   */
+  readonly initialDepartment?: number | undefined;
   /** A card was tapped — Phase 4 takes this to the Crop screen. */
   readonly onSelectArtwork: (item: ResultsData) => void;
 }
 
-export function BrowseScreen({ onBack, onSelectArtwork }: BrowseScreenProps) {
-  const collection = useCollection();
+export function BrowseScreen({ onBack, initialDepartment, onSelectArtwork }: BrowseScreenProps) {
+  const collection = useCollection(
+    initialDepartment !== undefined ? { department: initialDepartment } : {},
+  );
   const { actions } = collection;
 
   /**

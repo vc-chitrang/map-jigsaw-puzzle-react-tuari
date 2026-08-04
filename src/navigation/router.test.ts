@@ -207,12 +207,37 @@ describe('resolveBack — the custom rules from game-logic §6.3', () => {
     cropCameFromBrowse,
   });
 
-  it('Browse goes back to ImageSelect', () => {
+  /**
+   * Browse used to return to ImageSelect. The "Select The Collection" screen
+   * (2026-08-04) is now the only route into Browse, so skipping back past it would
+   * bypass the screen that chose the department filtering the grid.
+   */
+  it('Browse goes back to Select The Collection', () => {
     expect(resolveBack(at('browse'), { puzzleMidGame: false })).toEqual({
+      kind: 'navigate',
+      to: 'collection',
+      resetToLaunch: false,
+    });
+  });
+
+  it('Select The Collection goes back to ImageSelect', () => {
+    expect(resolveBack(at('collection'), { puzzleMidGame: false })).toEqual({
       kind: 'navigate',
       to: 'select',
       resetToLaunch: false,
     });
+  });
+
+  /** The full chain the visitor walks out through, one step at a time. */
+  it('unwinds Browse -> Collection -> ImageSelect -> Puzzle', () => {
+    const fromBrowse = resolveBack(at('browse'), { puzzleMidGame: false });
+    expect(fromBrowse).toMatchObject({ to: 'collection' });
+
+    const fromCollection = resolveBack(at('collection'), { puzzleMidGame: false });
+    expect(fromCollection).toMatchObject({ to: 'select' });
+
+    const fromSelect = resolveBack(at('select'), { puzzleMidGame: false });
+    expect(fromSelect).toMatchObject({ to: 'puzzle', resetToLaunch: true });
   });
 
   it('Crop goes back to Browse when it came from Browse', () => {

@@ -180,6 +180,17 @@ try {
                 Write-Host ("  {0,-15} ABSENT" -f $name) -ForegroundColor Yellow
             }
         }
+
+        # Departments in full. The "Select The Collection" screen maps one button to
+        # each, and the button must send the department's real ID -- a label typo
+        # would silently return an unfiltered grid rather than an error.
+        if ($f.PSObject.Properties.Name -contains 'department') {
+            Write-Host ''
+            Write-Host 'Departments (id -> dept), the Select-The-Collection mapping:'
+            foreach ($d in $f.department) {
+                Write-Host ("  {0,4} -> {1}" -f $d.id, $d.dept)
+            }
+        }
     }
     else {
         Write-Host 'No "filters" object in the response - the dropdowns will be empty.' -ForegroundColor Yellow

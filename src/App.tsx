@@ -5,6 +5,7 @@ import { ParityHarness } from './dev/ParityHarness';
 import { PuzzleScreen } from './screens/PuzzleScreen/PuzzleScreen';
 import { BrowseScreen } from './screens/BrowseScreen/BrowseScreen';
 import { ImageSelectScreen } from './screens/ImageSelectScreen/ImageSelectScreen';
+import { SelectCollectionScreen } from './screens/SelectCollectionScreen/SelectCollectionScreen';
 import { CropScreen } from './screens/CropScreen/CropScreen';
 import { ScreenRouter } from './navigation/ScreenRouter';
 import {
@@ -44,6 +45,14 @@ export function App() {
   const [cropSource, setCropSource] = useState<CropSource | null>(null);
   const [preparedArtwork, setPreparedArtwork] = useState<CropSource | null>(null);
   const [uploadReady, setUploadReady] = useState(false);
+  /**
+   * Department chosen on "Select The Collection", used as Browse's opening filter.
+   *
+   * Browse unmounts whenever the router leaves it, so a new choice arrives as a
+   * fresh mount and `useCollection` picks it up as its initial selection — no need
+   * to push the change into a live Browse screen.
+   */
+  const [selectedDepartment, setSelectedDepartment] = useState<number | undefined>(undefined);
   /** Bumped to force the Puzzle screen back to attract mode with a new artwork. */
   const [resetToken, setResetToken] = useState(0);
   /** Set by the Puzzle screen so the Back rule can tell attract from mid-game. */
@@ -247,11 +256,25 @@ export function App() {
     nav.current === 'select' ? (
       <ImageSelectScreen
         onBack={handleBack}
-        onBrowseCollection={() => go('browse')}
+        // "Add from MAP's collection" now opens the department chooser rather than
+        // Browse directly (client, 2026-08-04).
+        onBrowseCollection={() => go('collection')}
         uploadReady={uploadReady}
       />
+    ) : nav.current === 'collection' ? (
+      <SelectCollectionScreen
+        onBack={handleBack}
+        onSelectDepartment={(department) => {
+          setSelectedDepartment(department.id);
+          go('browse');
+        }}
+      />
     ) : nav.current === 'browse' ? (
-      <BrowseScreen onBack={handleBack} onSelectArtwork={handleSelectArtwork} />
+      <BrowseScreen
+        onBack={handleBack}
+        initialDepartment={selectedDepartment}
+        onSelectArtwork={handleSelectArtwork}
+      />
     ) : nav.current === 'crop' && cropSource ? (
       <CropScreen
         imageUrl={cropSource.url}

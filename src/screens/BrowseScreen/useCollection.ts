@@ -60,10 +60,21 @@ export interface CollectionActions {
 
 const EMPTY_ITEMS: readonly ResultsData[] = [];
 
-export function useCollection(): CollectionState & { actions: CollectionActions } {
+/**
+ * @param initialSelection Filters to start with — the "Select The Collection"
+ * screen passes the department the visitor chose. Read ONCE, as the initial state:
+ * a later change must not clobber a filter the visitor has since edited in the
+ * dropdowns, and they are free to widen or change it from inside Browse.
+ */
+export function useCollection(
+  initialSelection: Partial<FilterSelection> = {},
+): CollectionState & { actions: CollectionActions } {
   const [searchText, setSearchText] = useState('');
   const [committedSearch, setCommittedSearch] = useState('');
-  const [selection, setSelection] = useState<FilterSelection>(NO_FILTERS);
+  const [selection, setSelection] = useState<FilterSelection>(() => ({
+    ...NO_FILTERS,
+    ...initialSelection,
+  }));
   const [sortIndex, setSortIndex] = useState<SortModeIndex>(0);
   const [page, setPage] = useState(1);
   const [reloadToken, setReloadToken] = useState(0);

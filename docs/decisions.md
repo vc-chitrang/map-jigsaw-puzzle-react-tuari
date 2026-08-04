@@ -74,6 +74,65 @@ appears when an editable element gains focus, disappears when it loses it. So:
 
 ---
 
+## ADR-050 — "Select The Collection" sits between ImageSelect and Browse
+
+**Date:** 2026-08-04 · **Status:** Accepted (client directive)
+
+**Context.** The client added a screen offering the six MAP departments as artwork
+tiles, supplied as a 1920×1080 reference image plus seven PNGs. "Add from MAP's
+collection" must open it, a tile must open Browse pre-filtered to that department,
+and Back must unwind through it.
+
+**Decision.**
+
+- **New `ScreenId` `'collection'`**, with Back rules `browse → collection` and
+  `collection → select`. Browse previously returned to ImageSelect; it now returns to
+  Collection, because Collection is the only route into Browse and skipping back past
+  it would bypass the screen that chose the department currently filtering the grid.
+- **`COLLECTION_DEPARTMENTS` in `api/departments.ts` is the single place the ids
+  live.** They were read off the live API, not guessed: `28, 5, 4, 6, 29, 13`. They
+  are **not sequential**, so nothing may derive them from display order — a test pins
+  that specifically, because a wrong id does not error, it silently returns a grid
+  filtered to something else.
+- **`useCollection(initialSelection)`** seeds the department as INITIAL state only.
+  Browse unmounts when the router leaves it, so a new choice arrives as a fresh
+  mount; the visitor can still change or clear the filter from inside Browse.
+- **Header chrome is reused from `IMAGE_SELECT_*`, not from the reference** (client:
+  "make sure the design is match with existing app design"). The reference draws the
+  logo top-centre and large with a ~228 px back button; that was built, then reverted
+  on that instruction. Only the grid, title and background come from the reference.
+
+**Consequences.**
+- **No Unity scene exists for this screen**, so `layout/collection.ts` is the one
+  table in `src/layout/` not transcribed from scene YAML. The reference is 1920×1080
+  and the landscape canvas is 3840×2160 — exactly 2× — so tile and gap values are the
+  reference measurement doubled: tiles **726×420**, gaps **96/94**, grid **2370×934**.
+- **Title and grid are centred vertically as ONE BLOCK**, which diverges from the
+  reference (it places the grid below centre). Client asked for centred, 2026-08-04.
+  Verified live — landscape **483 px above / 483 below**, portrait **950 / 950**.
+- **Portrait is a derivation** (client delegated it) at 2 columns × 3 rows, tiles
+  820×474 — the reference ASPECT of 1.729 preserved so the artwork crops identically.
+  Measured 1.730.
+- **The portrait grid width is capped by the back button, not by taste.** A
+  full-bleed 1896-wide grid centres at left 132 while the button occupies x 40…164,
+  so the first tile sat on top of it and swallowed taps meant for Back. 1736 leaves a
+  48 px gap. Widening the tiles again must move the button first.
+- **The scrolling collage is seamless by construction.** `background-size: 100% auto`
+  + `repeat-y`, with the keyframe travelling exactly one tile height — computed in JS
+  (`REF.w × 1920/1080`) because CSS cannot derive it from a background image. 6827 px
+  landscape, 3840 px portrait; durations 90 s / 50 s so perceived speed matches.
+  Horizontal tiling would be sharper on 4K (the source is 1080 px wide) but the image
+  is only guaranteed seamless vertically, so softness under the scrim is the better
+  trade.
+- **The scrim is 0.3 as specified, which is lighter than the reference looks** (~0.6).
+  The client gave an explicit number, so the number won; `banner.scrimColour` is the
+  one value to change. The title gained a text-shadow to stay readable over pale
+  artwork at 0.3.
+- Client assets converted PNG → JPEG: **6.25 MB → 0.92 MB**, all seven verified fully
+  opaque first so no alpha was discarded.
+
+---
+
 ## ADR-048 — Play Again re-shuffles the artwork just played; it does not load a new one
 
 **Date:** 2026-07-31 · **Status:** Accepted (client directive) · **Corrects the premise of ADR-047**
