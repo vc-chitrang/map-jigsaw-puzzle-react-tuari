@@ -18,6 +18,7 @@
         "height": 960,
         "resizable": true,
         "decorations": true,
+        "visible": false,
         "fullscreen": false,
         "alwaysOnTop": false,
         "center": true,
