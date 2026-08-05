@@ -1,0 +1,145 @@
+/* Reference px throughout — inside <ScaledCanvas>. */
+
+.screen {
+  overflow: hidden;
+}
+
+.background {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+}
+
+/*
+ * Scrolling collage.
+ *
+ * `background-size: 100% auto` + `repeat-y` is what makes the loop seamless: the
+ * tile spans the full width and repeats DOWNWARD only, so the single seam is the
+ * one the artwork was authored to hide. Animating `background-position-y` by
+ * exactly one tile height means the frame after the last is pixel-identical to the
+ * first, so there is no jump.
+ *
+ * Tiling horizontally as well would be sharper on a 4K landscape panel (the source
+ * is 1080 px wide and gets scaled to 3840), but the image is only guaranteed
+ * seamless vertically — a horizontal repeat would put a visible edge down the
+ * screen. Softness under a 30% scrim is the better trade.
+ *
+ * `translateZ(0)` promotes it so the animation runs on the compositor rather than
+ * repainting a 4K background every frame.
+ */
+.banner {
+  position: absolute;
+  inset: 0;
+  background-repeat: repeat-y;
+  background-size: 100% auto;
+  background-position: 50% 0;
+  transform: translateZ(0);
+  will-change: background-position;
+  pointer-events: none;
+  animation: collage-scroll linear infinite;
+}
+
+@keyframes collage-scroll {
+  from {
+    background-position: 50% 0;
+  }
+  to {
+    /* One full tile height. `100%` of the ELEMENT would not line up. */
+    background-position: 50% calc(-1 * var(--collage-tile-height));
+  }
+}
+
+/* Client asked for a light black wash over the collage. */
+.scrim {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.logo {
+  object-fit: contain;
+  pointer-events: none;
+}
+
+.iconButton {
+  appearance: none;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.iconButton img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-weight: 400;
+  line-height: 1;
+  white-space: nowrap;
+  /* the collage behind is busy and only half dimmed, so the
+     amber title needs its own separation to stay readable over pale artwork. */
+  text-shadow: 0 4px 18px rgb(0 0 0 / 0.7);
+  pointer-events: none;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Columns, rows and gaps all come from the layout table. */
+.grid {
+  display: grid;
+}
+
+/*
+ * One collection tile: the client's pre-tinted artwork with the label drawn over
+ * it in the app's own font. The artwork already carries its colour, so nothing is
+ * tinted here.
+ */
+.tile {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  appearance: none;
+  border: 0;
+  padding: 0;
+  overflow: hidden;
+  background-color: var(--map-kohl);
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 120ms var(--ease-out-cubic), filter 120ms var(--ease-out-cubic);
+}
+
+.tile:active {
+  /* Same press language as the collection cards on the Browse screen. */
+  transform: scale(0.98);
+  filter: brightness(1.15);
+}
+
+.tileLabel {
+  position: relative;
+  font-family: var(--font-display);
+  font-weight: 700;
+  line-height: 1.15;
+  text-align: center;
+  /* The labels are authored with an explicit line break. */
+  white-space: pre-line;
+  padding: 0 24px;
+  /* Keeps the label legible over the busiest part of an artwork. */
+  text-shadow: 0 2px 12px rgb(0 0 0 / 0.55);
+  pointer-events: none;
+  -webkit-font-smoothing: antialiased;
+}

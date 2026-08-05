@@ -1,6 +1,5 @@
-import { fetchCollection, fetchImageAsBlobUrl } from '../../api/client';
-import type { ResultsData } from '../../api/types';
-import { pickArtwork } from './pickArtwork';
+import { StaleResponseError, fetchCollection, fetchImageAsBlobUrl } from '../../api/client';
+import { hasImage, type ResultsData } from '../../api/types';
 import { cropToSquare, pickFallbackArtwork, releaseArtwork } from '../../image/cropToSquare';
 import type { ArtworkIdentity } from '../../game';
 
@@ -23,14 +22,6 @@ export interface LoadedArtwork {
   readonly url: string;
   /** Display data — the name above the board. */
   readonly identity: ArtworkIdentity;
-  /**
-   * Collection record id, when it came from the collection.
-   *
-   * Fed back as `exclude` on the next load so "Play Again" cannot serve the piece
-   * just finished. Kept off `identity` on purpose: that is display data, and the
-   * high score has been global since ADR-041.
-   */
-  readonly collectionId?: number;
   /** Where it came from, for logging and for the offline notice. */
   readonly source: 'collection' | 'fallback';
   /** Releases every blob URL this load created. */
@@ -87,7 +78,6 @@ export async function loadArtworkFromCollection(item: ResultsData): Promise<Load
   return {
     url: cropped,
     identity: { artworkTitle: item.title ?? '' },
-    collectionId: item.id,
     source: 'collection',
     release,
   };
@@ -109,69 +99,85 @@ export async function loadFallbackArtwork(rng: () => number = Math.random): Prom
 }
 
 /**
- * Boot / "New Image" / "Play Again" artwork: a collection piece, falling back to
- * the bundled set.
+ * The artwork the HOME screen always shows.
  *
- * **Collection FIRST, and awaited.** An earlier version returned the bundled
- * image immediately and let a second effect swap in the collection piece
- * afterwards (ADR-043). That gave two owners for one piece of board state and
- * they raced: the bundled load always carries a title-less identity, so whenever
- * it settled second — which the warm Rust caches make common, since a cached
- * collection page resolves in ~1 ms while cropping a bundled JPEG does not — it
- * overwrote the titled identity and the artwork name vanished. Superseded by
- * ADR-045: one sequential load, one owner, and a loading screen over it.
+ * Client directive, 2026-08-04: the home screen must present this one piece every
+ * time rather than a random collection artwork.
  *
- * Every failure path ends in the bundled set rather than an error state — a kiosk
- * showing a different picture beats a kiosk showing an error
- * (project-overview.md non-negotiable 4).
+ *   https://map-india.org/collections/cumulus/modern-contemporary-art/MAC.00468/?id=2824
+ *
+ * All three fields were read back from the live API (`npm run check:api --
+ * -Query MAC.00468`), which returns exactly one record: `id` 2824, accession
+ * MAC.00468, department "Modern & Contemporary Art", title "Universe", image
+ * present. `id` matches the `?id=` in that URL.
+ *
+ * The lookup goes through `q=<accession>` because the collection API has no
+ * fetch-by-id route; `id` is then used to pick the exact record out of the result,
+ * with the accession as a second check. `title` is here only so a mismatch is
+ * obvious in a diff if MAC.00468 is ever re-catalogued — nothing reads it.
  */
-export async function loadRandomArtwork(
-  rng: () => number = Math.random,
-  recent: readonly number[] = [],
-): Promise<LoadedArtwork> {
-  try {
-    return await loadCollectionArtwork(rng, recent);
-  } catch (error) {
-    console.info('[puzzle] collection unavailable; using the bundled artwork', error);
-    return loadFallbackArtwork(rng);
+export const FEATURED_HOME_ARTWORK = {
+  id: 2824,
+  accession: 'MAC.00468',
+  title: 'Universe',
+} as const;
+
+/**
+ * Fetch the one artwork the home screen is pinned to.
+ *
+ * Throws if it cannot be found or has no image, so `loadHomeArtwork` can fall
+ * through rather than leaving the board empty.
+ */
+export async function loadFeaturedArtwork(): Promise<LoadedArtwork> {
+  const data = await fetchCollection({ q: FEATURED_HOME_ARTWORK.accession });
+  const playable = data.results.data.filter(hasImage);
+
+  // Prefer the id, since a `q` search could in principle match more than one
+  // record; fall back to the accession in case ids are ever renumbered.
+  const item =
+    playable.find((candidate) => candidate.id === FEATURED_HOME_ARTWORK.id) ??
+    playable.find(
+      (candidate) => candidate.accession_number === FEATURED_HOME_ARTWORK.accession,
+    );
+
+  if (!item) {
+    throw new Error(
+      `featured artwork ${FEATURED_HOME_ARTWORK.accession} (id ${FEATURED_HOME_ARTWORK.id}) not found or has no image`,
+    );
   }
+
+  return loadArtworkFromCollection(item);
 }
 
 /**
- * A random collection artwork.
+ * Artwork for the HOME screen — boot, Home, and any return to attract mode.
  *
- * Mirrors Unity's launch mode — `GameManager.OnAPIDataForLaunch` picks a random
- * API result and takes `chosen.title`, which is why its attract board carries an
- * artwork name and the bundled images do not.
+ * **There is no random tier, deliberately.** The home screen shows
+ * `FEATURED_HOME_ARTWORK` or, if the collection cannot be reached at all, the FIRST
+ * bundled offline image. Nothing here picks at random.
  *
- * **Prefers an item that actually has a title.** Not every collection record has
- * one, and picking blind meant the name above the board was sometimes empty on a
- * perfectly good image — indistinguishable from the bug above. Falls back to any
- * playable item if the whole page is untitled, since a picture with no name still
- * beats no picture.
+ * That is not just the client's preference, it fixes a real bug. A previous version
+ * fell back to a random collection piece when the featured fetch failed, and
+ * `StrictMode` double-invokes this screen's load effect — two `fetchCollection`
+ * calls, and `fetchCollection`'s module-global request-id guard makes the older one
+ * throw `StaleResponseError`. That benign staleness was being treated as "the
+ * featured artwork is unavailable", so the home screen loaded a RANDOM artwork.
+ * With no random tier, no code path can put an unexpected artwork on the board.
  *
- * **`recent` is a guarantee, not a nudge.** Random selection alone gave "Play
- * Again" a 1-in-40 chance of handing back the artwork just finished. The caller
- * passes the recently-played ids, most recent first, and `pickArtwork` relaxes
- * that window from the OLD end — so the artwork just played is the very last thing
- * it will reconsider.
+ * `StaleResponseError` is now rethrown rather than absorbed: a superseded request
+ * means a NEWER load is already running, so falling back here would let the offline
+ * image stomp the featured one that is about to arrive.
  *
- * **Known limitation:** only page 1 is fetched, so the kiosk draws from 40 records
- * out of ~32,300. That keeps every load on the 24 h Rust cache (~1 ms) instead of
- * an ~8 s uncached page fetch per build, which matters now that the visitor waits
- * behind the build scrim. Widening it means randomising `page` across
- * `pagination.last_page` and accepting that cost.
- *
- * Throws on any failure; `loadRandomArtwork` is what degrades to the bundled set.
+ * The bundled fallback is picked with a FIXED rng so even the offline board is the
+ * same picture every time.
  */
-export async function loadCollectionArtwork(
-  rng: () => number = Math.random,
-  recent: readonly number[] = [],
-): Promise<LoadedArtwork> {
-  const data = await fetchCollection({ page: 1 });
-
-  const item = pickArtwork(data.results.data, rng, recent);
-  if (!item) throw new Error('the collection returned no artwork with an image');
-
-  return loadArtworkFromCollection(item);
+export async function loadHomeArtwork(): Promise<LoadedArtwork> {
+  try {
+    return await loadFeaturedArtwork();
+  } catch (error) {
+    if (error instanceof StaleResponseError) throw error;
+    console.info('[puzzle] featured artwork unavailable; using the bundled image', error);
+    // `() => 0` -> always the first bundled image, never a random one.
+    return loadFallbackArtwork(() => 0);
+  }
 }

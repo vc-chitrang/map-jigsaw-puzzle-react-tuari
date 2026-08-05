@@ -31,6 +31,23 @@ native browser default that raises TabTip, and any code-driven focus risks fight
 it. If TabTip's known flakiness (ADR-006's double-fire) becomes a problem again, the
 fix is on the Windows/registry side, not a return to an in-app keyboard.
 
+**A "Select The Collection" screen now sits between ImageSelect and Browse
+(ADR-050).** Six department tiles; picking one opens Browse pre-filtered. Back
+unwinds `browse → collection → select`, so **Browse no longer returns to ImageSelect**.
+
+Three things to know before touching it:
+
+* **`api/departments.ts` is the only place the department ids live, and they are NOT
+  sequential** (28, 5, 4, 6, 29, 13). Read off the live API and pinned in
+  `departments.test.ts`. A wrong id does not error — it silently returns a grid
+  filtered to something else. `npm run check:api` prints `id -> dept` to re-verify.
+* **`layout/collection.ts` is the one layout table NOT transcribed from scene YAML**
+  — no Unity scene exists for this screen. Landscape comes from a 1920×1080 reference
+  which is exactly half the landscape canvas, so values are doubled. Portrait is a
+  derivation the client delegated.
+* **The portrait grid width is capped by the back button.** Widen the tiles and the
+  first one covers Back and eats its taps; there is 48 px of clearance today.
+
 **Play Again re-shuffles the artwork just played (ADR-048) — do not "fix" it back.**
 It deliberately diverges from Unity's `ResetToLaunchMode(true)`. The seventh round
 (C27–C28) also fixed the reason it appeared to "go to the home screen": it dispatched

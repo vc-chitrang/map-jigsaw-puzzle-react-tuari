@@ -15,6 +15,7 @@ import {
 import { PUZZLE_CHROME } from '../../layout/chrome';
 import { ORIENTATION } from '../../canvas/reference';
 import { rectStyle, textStyle } from '../../layout/rect';
+import { TruncatedText } from '../../ui/TruncatedText';
 import styles from './Board.module.css';
 
 interface BoardProps {
@@ -200,7 +201,12 @@ export function Board({
             ...textStyle(CHROME.artworkTitleText),
           }}
         >
-          {state.identity.artworkTitle ?? ''}
+          {/* Cut in JS with literal "..." rather than `text-overflow: ellipsis`,
+              which would use Conduit ITC's U+2026 — a glyph that renders wrong. */}
+          <TruncatedText
+            className={styles.artworkTitleText}
+            text={state.identity.artworkTitle ?? ''}
+          />
         </div>
       </div>
     </>

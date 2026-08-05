@@ -18,7 +18,10 @@
 [CmdletBinding()]
 param(
     [string] $EnvFile = '',
-    [int]    $Limit   = 3
+    [int]    $Limit   = 3,
+    # Optional `q` search. Used to confirm a specific record exists and to read back
+    # its id / accession / image before hard-coding it anywhere.
+    [string] $Query   = ''
 )
 
 $ErrorActionPreference = 'Stop'
@@ -59,6 +62,9 @@ if ([string]::IsNullOrWhiteSpace($baseUrl) -or [string]::IsNullOrWhiteSpace($api
 }
 
 $uri = "$($baseUrl.TrimEnd('/'))/$($path.TrimStart('/'))?key=$apiKey&limit=$Limit&page=1"
+if (-not [string]::IsNullOrWhiteSpace($Query)) {
+    $uri += "&q=$([uri]::EscapeDataString($Query))"
+}
 
 # ---------------------------------------------------------------------------
 # Step 1 - OAuth login.
@@ -168,6 +174,18 @@ try {
         Write-Host ("  first title        : {0}" -f $items[0].title)
     }
 
+    # With -Query, list the matches in full so a specific record can be identified.
+    if (-not [string]::IsNullOrWhiteSpace($Query)) {
+        Write-Host ''
+        Write-Host ("Matches for q='{0}':" -f $Query)
+        foreach ($it in $items) {
+            Write-Host ("  id={0}  acc={1}  dept={2}" -f $it.id, $it.accession_number, $it.department)
+            Write-Host ("     title : {0}" -f $it.title)
+            $img = if ([string]::IsNullOrWhiteSpace($it.primary_image)) { '(none)' } else { 'present' }
+            Write-Host ("     image : {0}" -f $img)
+        }
+    }
+
     if ($data.PSObject.Properties.Name -contains 'filters') {
         $f = $data.filters
         Write-Host ''
@@ -178,6 +196,17 @@ try {
             }
             else {
                 Write-Host ("  {0,-15} ABSENT" -f $name) -ForegroundColor Yellow
+            }
+        }
+
+        # Departments in full. The "Select The Collection" screen maps one button to
+        # each, and the button must send the department's real ID -- a label typo
+        # would silently return an unfiltered grid rather than an error.
+        if ($f.PSObject.Properties.Name -contains 'department') {
+            Write-Host ''
+            Write-Host 'Departments (id -> dept), the Select-The-Collection mapping:'
+            foreach ($d in $f.department) {
+                Write-Host ("  {0,4} -> {1}" -f $d.id, $d.dept)
             }
         }
     }

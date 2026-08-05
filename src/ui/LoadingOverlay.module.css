@@ -27,6 +27,15 @@
   pointer-events: auto;
 }
 
+/*
+ * Above a screen's own layers — the Browse dropdown popups sit at 60 and its
+ * keyboard dock at 100. Still below the router's transition overlay (2000), which
+ * must always be the last thing drawn.
+ */
+.elevated {
+  z-index: 120;
+}
+
 .spinner {
   background-image: url('/assets/common/loading.png');
   background-size: 600% 600%;

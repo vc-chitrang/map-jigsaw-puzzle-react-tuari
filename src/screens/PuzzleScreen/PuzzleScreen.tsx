@@ -22,7 +22,8 @@ import { SpriteButton } from '../../ui/SpriteButton';
 import { highScoreStore } from '../../storage/localStore';
 import { Board } from './Board';
 import { useAutoShuffle, useGameTimer, useMoveSettler, useWinDelay } from './hooks';
-import { adoptPreparedArtwork, loadRandomArtwork, type LoadedArtwork } from './loadArtwork';
+import { adoptPreparedArtwork, loadHomeArtwork, type LoadedArtwork } from './loadArtwork';
+import { StaleResponseError } from '../../api/client';
 import { LoadingOverlay } from '../../ui/LoadingOverlay';
 import { WinScreen } from '../WinScreen/WinScreen';
 import styles from './PuzzleScreen.module.css';
@@ -33,8 +34,8 @@ const IS_LANDSCAPE = ORIENTATION === 'landscape';
 
 interface PuzzleScreenProps {
   /**
-   * An already-square image from the Crop screen. `null` means "pick one" — a
-   * random collection piece, falling back to the bundled offline set.
+   * An already-square image from the Crop screen. `null` means "use the featured
+   * home artwork" — never a random one.
    *
    * **Read only.** `App` created this blob URL and `App` revokes it (ADR-023);
    * this screen must not, or a remount adopts an already-revoked URL and the board
@@ -53,8 +54,8 @@ interface PuzzleScreenProps {
    */
   readonly onMidGameChange?: (midGame: boolean) => void;
   /**
-   * Increment to force `ResetToLaunchMode()`: abandon the game, load a new random
-   * artwork, return to attract mode.
+   * Increment to force `ResetToLaunchMode()`: abandon the game, reload the featured
+   * home artwork, return to attract mode.
    *
    * A token rather than a boolean because the owner needs to trigger a reset even
    * when nothing else about the props changed — Home mid-game with no prepared
@@ -71,10 +72,11 @@ interface PuzzleScreenProps {
  * 0.3. The first tile or arrow tap switches to gameplay, which swaps START for
  * the timer and enables the footer.
  *
- * Artwork comes from the collection when it is reachable and from the bundled
- * textures when it is not — `loadRandomArtwork` decides, and never surfaces an
- * error state, because a kiosk showing a different picture beats a kiosk showing
- * an error (project-overview.md non-negotiable 4).
+ * The home screen always shows one FIXED artwork (`FEATURED_HOME_ARTWORK`, client
+ * directive 2026-08-04) — never a random one. Only the bundled offline image stands
+ * in for it, and only when the collection cannot be reached, because a kiosk showing
+ * a different picture beats a kiosk showing an error
+ * (project-overview.md non-negotiable 4).
  */
 export function PuzzleScreen({
   preparedArtwork = null,
@@ -97,20 +99,6 @@ export function PuzzleScreen({
    * Drives the loading scrim.
    */
   const [building, setBuilding] = useState(true);
-
-  /**
-   * Collection ids played this session, most recent first.
-   *
-   * Passed to the loader as an exclusion set so a new artwork cannot repeat one
-   * the visitor has just had — "Play Again" handing back the piece they only just
-   * solved is the complaint this exists for. A random pick over the 40 records on
-   * page 1 makes an immediate repeat a 1-in-40 roll; excluding is a guarantee.
-   *
-   * A ref, not state: it must not trigger a render, and the load effect reads it
-   * when it runs rather than closing over a snapshot.
-   */
-  const recentIds = useRef<number[]>([]);
-  const RECENT_LIMIT = 12;
 
   // ---- Load artwork, then build a shuffled board ----------------------------
   /**
@@ -135,22 +123,15 @@ export function PuzzleScreen({
 
     void (async () => {
       try {
-        // Collection FIRST, bundled set on any failure — `loadRandomArtwork`
-        // decides, and never surfaces an error state.
+        // The home screen is pinned to ONE artwork; nothing here is random.
+        // A cropped image from the visitor takes precedence over it.
         const loaded = preparedArtwork
           ? adoptPreparedArtwork(preparedArtwork.url, preparedArtwork.title)
-          : await loadRandomArtwork(Math.random, recentIds.current);
+          : await loadHomeArtwork();
 
         if (cancelled) {
           loaded.release();
           return;
-        }
-
-        // Remember it so the next load cannot pick it again. Bounded, so a long
-        // kiosk day cannot exhaust the 40-record pool and force the loader to
-        // fall back to allowing repeats.
-        if (loaded.collectionId !== undefined) {
-          recentIds.current = [loaded.collectionId, ...recentIds.current].slice(0, RECENT_LIMIT);
         }
 
         setArtwork((previous) => {
@@ -171,7 +152,12 @@ export function PuzzleScreen({
         });
         startGameplayImmediately.current = false;
       } catch (error) {
-        // Even the bundled set failed, so an asset is missing — a packaging fault.
+        // A superseded request is expected, not a fault: StrictMode double-invokes
+        // this effect, so the older of the two loads is always stale. A NEWER load
+        // is already running and will set the artwork.
+        if (error instanceof StaleResponseError) return;
+        // Otherwise even the bundled set failed, so an asset is missing — a
+        // packaging fault.
         console.error('[puzzle] artwork load failed', error);
       } finally {
         // Lifts the scrim even on failure. A spinner that never clears is worse

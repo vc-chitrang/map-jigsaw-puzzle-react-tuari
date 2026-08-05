@@ -74,6 +74,170 @@ appears when an editable element gains focus, disappears when it loses it. So:
 
 ---
 
+## ADR-052 — No random artwork anywhere on the home path
+
+**Date:** 2026-08-04 · **Status:** Accepted (client directive) · **Supersedes ADR-047, tightens ADR-051**
+
+**Context.** The client reported that returning from gameplay still loaded a random
+artwork, and asked for the random logic to be removed outright.
+
+ADR-051 left a middle tier: featured -> **random collection piece** -> bundled. That
+tier is what produced the bug. `StrictMode` double-invokes the Puzzle screen's load
+effect, so two `fetchCollection` calls go out; `fetchCollection` carries a
+module-global request-id guard, so the older one throws `StaleResponseError`. The
+featured loader treated that benign staleness as "the featured artwork is
+unavailable" and fell through to the random tier — putting an unexpected artwork on
+the home board. Home-from-gameplay makes it worse, because clearing
+`preparedArtwork` and bumping `buildToken` are two separate renders, so that path
+issues two loads and either could be the stale one.
+
+**Decision.**
+- **The random tier is gone.** `loadHomeArtwork` is featured, else the bundled offline
+  image. `loadCollectionArtwork`, `pickArtwork` and its 15 tests, the `recentIds`
+  ref and `LoadedArtwork.collectionId` are all deleted — nothing selects at random
+  any more, so no code path can put an unexpected artwork on the home board.
+- **`StaleResponseError` is rethrown, not absorbed.** A superseded request means a
+  NEWER load is already running; falling back would let the offline image stomp the
+  featured one about to arrive. The Puzzle screen swallows it silently, since under
+  StrictMode it is expected rather than a fault.
+- **Even the offline fallback is deterministic** — `loadFallbackArtwork(() => 0)`, so
+  it is always the first bundled image rather than one of three at random.
+
+**Consequences.**
+- Verified live in **both orientations** with a stub where any non-featured load is
+  titled `RANDOM n`: play a browsed artwork, then Home — landscape 3/3 and portrait
+  2/2 returned to "Universe", `anyRandomOnHome: false`. Home-from-gameplay is
+  observably two `MAC.00468` requests and both now resolve to the featured piece.
+- **A cropped or browsed artwork still wins while the visitor is playing it**, and
+  Play Again still re-shuffles that same piece (ADR-048). "Home shows one artwork"
+  applies to the home path only, not to the visitor's own choice.
+- ADR-047's recency rule is **retired**, not merely unused: with nothing random left,
+  there is nothing to avoid repeating.
+- **A measurement lesson.** The first test run appeared to show the bug surviving. It
+  had not — the harness sampled the title while the OLD board was still mounted,
+  before the rebuild scrim appeared, so it read a stale value. Waiting for the scrim
+  to appear *and then* clear changed the result. A poll that can succeed before the
+  action starts is not a test of the action.
+
+---
+
+## ADR-051 — The home screen is pinned to one featured artwork
+
+**Date:** 2026-08-04 · **Status:** Accepted (client directive) · **Narrows ADR-047**
+
+**Context.** The home screen picked a random collection artwork on every build. The
+client wants one specific piece every time, given as a URL:
+
+```
+https://map-india.org/collections/cumulus/modern-contemporary-art/MAC.00468/?id=2824
+```
+
+**Decision.** `FEATURED_HOME_ARTWORK` in `loadArtwork.ts` holds `id 2824`,
+accession `MAC.00468`, title `Universe` — **all three read back from the live API**,
+not inferred from the URL. `check-api.ps1` gained a `-Query` flag for this and
+returned exactly one record: id 2824, accession MAC.00468, department "Modern &
+Contemporary Art", title "Universe", image present. The `id` matches the URL's
+`?id=`.
+
+Lookup goes through `q=<accession>` because the collection API has **no fetch-by-id
+route**; the `id` then selects the exact record from the results, with the accession
+as a second check.
+
+`loadHomeArtwork` (renamed from `loadRandomArtwork`) is a three-tier chain:
+
+1. the featured artwork,
+2. a random collection piece if that record cannot be fetched,
+3. the bundled offline set if the collection is unreachable.
+
+**Consequences.**
+- Verified live in **both orientations** against a stub that only returns the record
+  for `q=MAC.00468`: landscape 6 consecutive home builds and portrait 4, every one
+  titled "Universe", never a random piece.
+- **Tier 2 is why ADR-047's recency rule survives.** Random selection is no longer
+  the normal path, but it is still the fallback, so `pickArtwork` and the
+  `recentIds` exclusion remain live rather than becoming dead code — and if
+  MAC.00468 is ever withdrawn the kiosk shows real MAP artwork with a real title
+  instead of dropping to the untitled offline set.
+- The `q=MAC.00468` request is cached 24 h by Rust (ADR-030), so only the first boot
+  pays the ~8 s; the rest resolve in ~1 ms, behind the build scrim either way.
+- `title` in the constant is **not read by anything** — it is there so a diff makes
+  it obvious if MAC.00468 is ever re-catalogued. `featuredArtwork.test.ts` pins all
+  three fields, because a wrong id does not error: it quietly shows a different
+  artwork or silently falls through to tier 2.
+
+---
+
+## ADR-050 — "Select The Collection" sits between ImageSelect and Browse
+
+**Date:** 2026-08-04 · **Status:** Accepted (client directive)
+
+**Context.** The client added a screen offering the six MAP departments as artwork
+tiles, supplied as a 1920×1080 reference image plus seven PNGs. "Add from MAP's
+collection" must open it, a tile must open Browse pre-filtered to that department,
+and Back must unwind through it.
+
+**Decision.**
+
+- **New `ScreenId` `'collection'`**, with Back rules `browse → collection` and
+  `collection → select`. Browse previously returned to ImageSelect; it now returns to
+  Collection, because Collection is the only route into Browse and skipping back past
+  it would bypass the screen that chose the department currently filtering the grid.
+- **`COLLECTION_DEPARTMENTS` in `api/departments.ts` is the single place the ids
+  live.** They were read off the live API, not guessed: `28, 5, 4, 6, 29, 13`. They
+  are **not sequential**, so nothing may derive them from display order — a test pins
+  that specifically, because a wrong id does not error, it silently returns a grid
+  filtered to something else.
+- **`useCollection(initialSelection)`** seeds the department as INITIAL state only.
+  Browse unmounts when the router leaves it, so a new choice arrives as a fresh
+  mount; the visitor can still change or clear the filter from inside Browse.
+- **The dropdown option lists come from an UNFILTERED response, always.** The API
+  narrows `filters` to match the query, and populating the lists from the first
+  response was safe only while Browse opened unfiltered. Opening it with a department
+  applied meant the reply described just that one department, so the Department
+  dropdown offered a single option and the other four were narrowed to whatever that
+  department contains. `isUnfilteredQuery` now gates it: an unfiltered opening query
+  populates from its own response, otherwise the full lists are fetched separately.
+  That extra request is **sequenced after** the grid request, never concurrent —
+  `fetchCollection` carries a module-wide request-id guard, so two in flight would
+  make the older one throw `StaleResponseError` and lose its response. It is the same
+  `{ page: 1 }` query the attract-mode artwork loader already makes, so the 24 h Rust
+  cache usually answers it in ~1 ms.
+- **Header chrome is reused from `IMAGE_SELECT_*`, not from the reference** (client:
+  "make sure the design is match with existing app design"). The reference draws the
+  logo top-centre and large with a ~228 px back button; that was built, then reverted
+  on that instruction. Only the grid, title and background come from the reference.
+
+**Consequences.**
+- **No Unity scene exists for this screen**, so `layout/collection.ts` is the one
+  table in `src/layout/` not transcribed from scene YAML. The reference is 1920×1080
+  and the landscape canvas is 3840×2160 — exactly 2× — so tile and gap values are the
+  reference measurement doubled: tiles **726×420**, gaps **96/94**, grid **2370×934**.
+- **Title and grid are centred vertically as ONE BLOCK**, which diverges from the
+  reference (it places the grid below centre). Client asked for centred, 2026-08-04.
+  Verified live — landscape **483 px above / 483 below**, portrait **950 / 950**.
+- **Portrait is a derivation** (client delegated it) at 2 columns × 3 rows, tiles
+  820×474 — the reference ASPECT of 1.729 preserved so the artwork crops identically.
+  Measured 1.730.
+- **The portrait grid width is capped by the back button, not by taste.** A
+  full-bleed 1896-wide grid centres at left 132 while the button occupies x 40…164,
+  so the first tile sat on top of it and swallowed taps meant for Back. 1736 leaves a
+  48 px gap. Widening the tiles again must move the button first.
+- **The scrolling collage is seamless by construction.** `background-size: 100% auto`
+  + `repeat-y`, with the keyframe travelling exactly one tile height — computed in JS
+  (`REF.w × 1920/1080`) because CSS cannot derive it from a background image. 6827 px
+  landscape, 3840 px portrait; durations 90 s / 50 s so perceived speed matches.
+  Horizontal tiling would be sharper on 4K (the source is 1080 px wide) but the image
+  is only guaranteed seamless vertically, so softness under the scrim is the better
+  trade.
+- **The scrim is 0.5 black.** Specified as 0.3, which read far lighter than the
+  reference; the client raised it to 0.5 on review. `banner.scrimColour` is the one
+  value to change. The title keeps a text-shadow so it stays readable over pale
+  artwork regardless.
+- Client assets converted PNG → JPEG: **6.25 MB → 0.92 MB**, all seven verified fully
+  opaque first so no alpha was discarded.
+
+---
+
 ## ADR-048 — Play Again re-shuffles the artwork just played; it does not load a new one
 
 **Date:** 2026-07-31 · **Status:** Accepted (client directive) · **Corrects the premise of ADR-047**

@@ -5,6 +5,7 @@ import { ParityHarness } from './dev/ParityHarness';
 import { PuzzleScreen } from './screens/PuzzleScreen/PuzzleScreen';
 import { BrowseScreen } from './screens/BrowseScreen/BrowseScreen';
 import { ImageSelectScreen } from './screens/ImageSelectScreen/ImageSelectScreen';
+import { SelectCollectionScreen } from './screens/SelectCollectionScreen/SelectCollectionScreen';
 import { CropScreen } from './screens/CropScreen/CropScreen';
 import { ScreenRouter } from './navigation/ScreenRouter';
 import {
@@ -15,6 +16,7 @@ import {
   type ScreenId,
 } from './navigation/router';
 import { VersionBadge } from './ui/VersionBadge';
+import { LoadingOverlay } from './ui/LoadingOverlay';
 import { fetchImageAsBlobUrl } from './api/client';
 import { connectUploadSocket, type UploadSocket } from './api/socket';
 import type { ResultsData } from './api/types';
@@ -44,6 +46,16 @@ export function App() {
   const [cropSource, setCropSource] = useState<CropSource | null>(null);
   const [preparedArtwork, setPreparedArtwork] = useState<CropSource | null>(null);
   const [uploadReady, setUploadReady] = useState(false);
+  /**
+   * Department chosen on "Select The Collection", used as Browse's opening filter.
+   *
+   * Browse unmounts whenever the router leaves it, so a new choice arrives as a
+   * fresh mount and `useCollection` picks it up as its initial selection — no need
+   * to push the change into a live Browse screen.
+   */
+  const [selectedDepartment, setSelectedDepartment] = useState<number | undefined>(undefined);
+  /** True while a full-resolution master is downloading, before Crop can open. */
+  const [preparingCrop, setPreparingCrop] = useState(false);
   /** Bumped to force the Puzzle screen back to attract mode with a new artwork. */
   const [resetToken, setResetToken] = useState(0);
   /** Set by the Puzzle screen so the Back rule can tell attract from mid-game. */
@@ -98,6 +110,11 @@ export function App() {
    */
   const openCropWith = useCallback(
     async (imageUrl: string, title: string) => {
+      // `primary_image` is a 4-7 MB master, so this can take seconds on a cold
+      // cache. Without the scrim the visitor taps a card and NOTHING happens, so
+      // they tap again — the overlay is the feedback and it also swallows those
+      // repeat taps.
+      setPreparingCrop(true);
       try {
         const blobUrl = await fetchImageAsBlobUrl(imageUrl);
         replaceCropSource({ url: blobUrl, title });
@@ -106,6 +123,10 @@ export function App() {
         // Staying put is the right failure mode: the visitor keeps the screen they
         // were on rather than landing on an empty crop stage.
         console.error('[app] could not load the image for cropping', error);
+      } finally {
+        // Cleared even on failure, or a dead network would leave a permanent scrim
+        // with no way back.
+        setPreparingCrop(false);
       }
     },
     [replaceCropSource],
@@ -247,11 +268,25 @@ export function App() {
     nav.current === 'select' ? (
       <ImageSelectScreen
         onBack={handleBack}
-        onBrowseCollection={() => go('browse')}
+        // "Add from MAP's collection" now opens the department chooser rather than
+        // Browse directly (client, 2026-08-04).
+        onBrowseCollection={() => go('collection')}
         uploadReady={uploadReady}
       />
+    ) : nav.current === 'collection' ? (
+      <SelectCollectionScreen
+        onBack={handleBack}
+        onSelectDepartment={(department) => {
+          setSelectedDepartment(department.id);
+          go('browse');
+        }}
+      />
     ) : nav.current === 'browse' ? (
-      <BrowseScreen onBack={handleBack} onSelectArtwork={handleSelectArtwork} />
+      <BrowseScreen
+        onBack={handleBack}
+        initialDepartment={selectedDepartment}
+        onSelectArtwork={handleSelectArtwork}
+      />
     ) : nav.current === 'crop' && cropSource ? (
       <CropScreen
         imageUrl={cropSource.url}
@@ -275,7 +310,12 @@ export function App() {
   return (
     <>
       <ScreenRouter state={nav} dispatch={dispatchNav}>
-        <ScaledCanvas>{screen}</ScaledCanvas>
+        <ScaledCanvas>
+          {screen}
+          {/* Inside the canvas so it scales with everything else, and `elevated`
+              so it also covers the Browse screen's dropdown popups and keyboard. */}
+          {preparingCrop ? <LoadingOverlay label="Loading the artwork..." elevated /> : null}
+        </ScaledCanvas>
       </ScreenRouter>
       <VersionBadge />
       {/* Debug aid: the phase is on the overlay's data-phase attribute, and this

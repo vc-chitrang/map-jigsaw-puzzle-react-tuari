@@ -269,6 +269,88 @@ build instead of ~1 ms from the 24 h Rust cache (ADR-030), now paid in front of 
 visitor behind the build scrim. Worth revisiting if the client wants more variety and
 will accept the wait.
 
+### Home artwork: random logic removed (2026-08-04)
+
+| # | Item | Status | Notes |
+|---|---|---|---|
+| C41 | Returning from gameplay still loaded a random artwork | **DONE** | ADR-052. Root cause was ADR-051's middle tier: `StrictMode` double-invokes the load effect, `fetchCollection`'s module-global request-id guard makes the older call throw `StaleResponseError`, and the featured loader read that as "unavailable" and fell through to the RANDOM tier. Home-from-gameplay is two renders (clearing `preparedArtwork`, then bumping `buildToken`), so it issues two loads and either could be the stale one |
+| C42 | Remove the random artwork logic entirely | **DONE** | Deleted `loadCollectionArtwork`, `pickArtwork` + its 15 tests, the `recentIds` ref and `LoadedArtwork.collectionId`. `loadHomeArtwork` is now featured -> bundled only. `StaleResponseError` is rethrown so a newer load wins instead of the offline image stomping it. The offline fallback uses a fixed rng, so even that is the same picture every time |
+
+**Verified in both orientations** with a stub where any non-featured load is titled
+`RANDOM n`: play a browsed artwork, then Home — landscape 3/3, portrait 2/2 back to
+"Universe", `anyRandomOnHome: false`. A browsed artwork still stays put while the
+visitor plays it, and Play Again still re-shuffles that same piece.
+
+**Measurement lesson.** The first run looked like the bug survived. It had not — the
+harness read the title while the old board was still mounted, before the rebuild
+scrim appeared. Waiting for the scrim to appear *and then* clear flipped the result.
+A poll that can succeed before the action starts is not a test of the action.
+
+### Home screen pinned to one artwork (2026-08-04)
+
+| # | Item | Status | Notes |
+|---|---|---|---|
+| C40 | Home screen must always show one specific artwork | **DONE** | ADR-051. Client gave a URL; `id 2824` / `MAC.00468` / "Universe" were all read back from the **live API** via the new `check:api -- -Query MAC.00468` flag, not inferred. Lookup is `q=<accession>` since the API has no fetch-by-id route, then the id selects the exact record. `loadRandomArtwork` became `loadHomeArtwork`, a three-tier chain: featured -> random collection -> bundled offline. **Verified in both orientations**: landscape 6 consecutive home builds, portrait 4, every one "Universe" |
+
+Tier 2 (random collection) is what keeps ADR-047's recency rule alive rather than
+dead code — and if MAC.00468 is ever withdrawn the kiosk still shows real MAP artwork
+with a real title instead of falling to the untitled offline set.
+
+### Suggestions round (2026-08-04)
+
+| # | Item | Status | Notes |
+|---|---|---|---|
+| C37 | Loading screen while a tapped artwork downloads | **DONE** | `primary_image` is a 4-7 MB master, so `openCropWith` could sit for seconds with NO feedback — the visitor taps a card and nothing happens, so they tap again. `App` now shows the shared `LoadingOverlay` for the whole fetch, `elevated` (z-index 120) so it also covers Browse's dropdown popups (60) and keyboard dock (100), and it swallows the repeat taps. Cleared in a `finally`, so a dead network cannot leave a permanent scrim. Verified with a 4 s stubbed delay: scrim shown at z-index 120, swallowing taps, gone on arrival at Crop |
+| C38 | Long artwork titles ellipsise instead of wrapping | **DONE** | `.artworkTitleText` — `nowrap` + `overflow: hidden` + `text-overflow: ellipsis`. The text needed wrapping in a span: `text-overflow` is ignored on a bare text node inside a flex box, which becomes an anonymous flex item. `min-width: 0` is also load-bearing — a flex item defaults to `min-width: auto` and refuses to shrink below its content, so the text would overflow instead of clipping. Verified with a 108-char title: one line, clipped, stays inside the band |
+
+| C39 | The ellipsis rendered as a wrong glyph | **DONE** | `text-overflow: ellipsis` takes its glyph from the FONT, and Conduit ITC's U+2026 draws as a stray mark. Replaced with `ui/TruncatedText`, which measures on a canvas and appends three literal FULL STOPs — a glyph the font has (0.57 em, against 1.02 em for its U+2026). Verified live: rendered text ends `"in the..."`, contains no U+2026, one line, no overflow |
+
+**How C38 was got wrong first.** The initial fix used `text-overflow: ellipsis` and an
+A/B against `text-overflow: clip` was read as proof it worked — clip cut mid-word with
+no mark, ellipsis replaced ~2 characters with one glyph, so *something* was painting.
+That confirmed only that a glyph was drawn, **not that it was the right glyph**, which
+is exactly what the client could see and the test could not. Lesson: an A/B that
+distinguishes "drew something" from "drew nothing" says nothing about correctness —
+for a glyph, look at it, or assert on text content rather than on CSS state.
+
+`TruncatedText` re-fits on three triggers, and missing any one leaves stale text: the
+text changing, the container resizing (orientation or canvas rescale), and
+`document.fonts.ready` — `font-display: block` means the real face lands after first
+paint, so the first measure would otherwise use a fallback's metrics.
+
+### New screen — "Select The Collection" (2026-08-04)
+
+| # | Item | Status | Notes |
+|---|---|---|---|
+| C29 | New "Select The Collection" screen, 6 department tiles | **DONE** | ADR-050. New router `ScreenId` `'collection'`. Landscape from the client's 1920x1080 reference (exactly half the landscape canvas, so values double); portrait derived at 2x3, delegated by the client |
+| C30 | "Add from MAP's collection" opens it instead of Browse | **DONE** | `ImageSelectScreen.onBrowseCollection` -> `go('collection')` |
+| C31 | Each tile opens Browse pre-filtered to its Department | **DONE** | `useCollection(initialSelection)` seeds the department as INITIAL state only, so the visitor can still change or clear it inside Browse. **All 6 verified live in both orientations**: correct id sent AND the dropdown shows the matching label |
+| C32 | Back chain: Browse -> Collection -> ImageSelect | **DONE** | Browse used to return to ImageSelect. Verified end to end: `browse -> collection -> select -> puzzle` |
+| C33 | Seamless slow vertical scrolling collage + black scrim | **DONE** | Scrim specified as 0.3, raised to **0.5** by the client on review. `background-size: 100% auto` + `repeat-y`, keyframe travelling exactly one tile height (6827 px landscape / 3840 px portrait, computed in JS since CSS cannot derive it). 90 s / 50 s so perceived speed matches |
+| C34 | Back button + MAP logo match the existing app design | **DONE** | Reference draws the logo top-centre and large with a ~228 px button; that was built then **reverted** on the client's instruction to match the existing app. Chrome now comes straight from `IMAGE_SELECT_*` |
+| C35 | Centre the title and the 6 buttons on screen | **DONE** | Centred as one block, diverging from the reference's below-centre grid. Verified: landscape 483/483, portrait 950/950 |
+
+Two things found while building it:
+
+* **The portrait grid width is capped by the back button, not by taste.** A
+  full-bleed 1896-wide grid centres at left 132 while the button occupies x 40..164,
+  so the first tile sat on top of it and swallowed taps meant for Back. Narrowed to
+  1736 (tiles 820x474, reference aspect preserved) for a 48 px gap. Verified the
+  button is the topmost element at its own centre.
+* **Department ids are not sequential** — 28, 5, 4, 6, 29, 13 — so nothing may derive
+  them from display order. Read off the live API, pinned in `departments.test.ts`,
+  and `check-api.ps1` now prints `id -> dept` for re-verification. A wrong id does not
+  error; it silently returns a grid filtered to something else.
+
+**Client assets converted PNG -> JPEG: 6.25 MB -> 0.92 MB**, all seven checked fully
+opaque first so no alpha was discarded.
+
+| C36 | Department dropdown showed only the selected option | **DONE** | Regression from C31, reported by the client. The API **narrows `filters` to match the query**, and `useCollection` populated the dropdowns from the first response — which was now already department-filtered, so the reply described just that one department. All five dropdowns were affected, not only Department (Artist/Maker was narrowed to that department's artists too). `isUnfilteredQuery` now gates it; when the opening query is filtered the full lists are fetched separately, **sequenced after** the grid request because `fetchCollection`'s request-id guard makes concurrent calls lose one response. Verified live with a stub that narrows like the real API: **7 department options with the right one ticked**, and Artist/Maker back to its full list |
+
+**Open question the client has not answered:** every route into Browse now forces a
+Department, so there is no "browse everything" entry point. Clearing the Department
+dropdown inside Browse still widens it, so no artwork is unreachable.
+
 ### Seventh round — Play Again replays the SAME puzzle
 
 | # | Item | Status | Notes |

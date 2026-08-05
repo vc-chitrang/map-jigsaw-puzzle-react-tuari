@@ -1,6 +1,6 @@
 [package]
 name = "map-jigsaw-puzzle"
-version = "0.1.27"
+version = "0.1.35"
 description = "MAP Sliding Puzzle kiosk"
 authors = ["ViitorCloud"]
 edition = "2021"
