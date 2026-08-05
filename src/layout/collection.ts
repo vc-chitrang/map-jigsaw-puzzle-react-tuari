@@ -47,7 +47,7 @@ export interface CollectionLayout {
     readonly sprite: string;
     /** One full tile pass. Tuned per orientation so the PERCEIVED speed matches. */
     readonly scrollDurationMs: number;
-    /** Black scrim over the collage. Client raised 0.3 -> 0.5 -> 0.75 on review. */
+    /** Black scrim over the collage. Client raised 0.3 -> 0.5 -> 0.85 on review. */
     readonly scrimColour: string;
   };
   readonly title: { readonly rect: LayoutRect; readonly text: TextSpec };
@@ -82,7 +82,7 @@ const LANDSCAPE: CollectionLayout = {
      * pass is 3840 * (1920/1080) = 6827 ref px. 90 s gives ~76 ref px/s.
      */
     scrollDurationMs: 90_000,
-    scrimColour: 'rgb(0 0 0 / 0.75)',
+    scrimColour: 'rgb(0 0 0 / 0.85)',
   },
   title: {
     rect: {
@@ -153,7 +153,7 @@ const PORTRAIT: CollectionLayout = {
      * exactly one screen height. 50 s gives ~77 ref px/s, matching landscape.
      */
     scrollDurationMs: 50_000,
-    scrimColour: 'rgb(0 0 0 / 0.75)',
+    scrimColour: 'rgb(0 0 0 / 0.85)',
   },
   title: {
     rect: {
