@@ -430,3 +430,11 @@ Phases 2–6: see [roadmap.md](roadmap.md); expand into tasks when each phase st
 | U4 | Font migration: Geometria/ArchivoNarrow → Conduit ITC in Landscape scene | **TODO** | `Tools ▸ MAP ▸ Swap Fonts (Active Scene)` |
 | U5 | Move the hardcoded API key out of `Scripts/API/API.cs` | **TODO** | Security — also rotate the key. **AND the OAuth `client_secret`**, which is serialized in the scene YAML and therefore also in git history (ADR-016). Both must be rotated |
 | U6 | Decide final on-screen-keyboard approach | **BLOCKED** | OS keyboard (osk/TabTip) proved unreliable; in-app keyboard recommended |
+
+---
+
+## UI Polish — loading overlay dots (2026-08-05)
+
+| # | Task | Status | Notes |
+|---|---|---|---|
+| CP1 | Match splash screen animation to in-app `LoadingOverlay` | **DONE** | Replaced 3-dot amber pulse in `index.html` with the same 27-frame `loading.png` sprite-sheet (`splash-spritesheet` keyframe, 1.2s steps(1)). `LoadingOverlay.tsx`/`.module.css` unchanged. |

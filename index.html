@@ -12,8 +12,130 @@
          URI stops the webview requesting /favicon.ico and logging a 404. -->
     <link rel="icon" href="data:," />
     <title>MAP Jigsaw Puzzle</title>
+
+    <!--
+      SPLASH SCREEN.
+
+      Deliberately INLINE and static — no external stylesheet, no JavaScript. It
+      has to paint on the webview's very first frame, before the module bundle is
+      even fetched, which is the whole point: the window is revealed on that first
+      paint (`visible: false` + `kiosk::reveal`), and without this the visitor saw
+      a black screen while the bundle, `global.css` and the background image loaded.
+
+      Black specifically, because `global.css` paints `html, body` with
+      `--map-kohl`, which is #000000. The grey below is the AVERAGE COLOUR of the
+      home screen's own background image (sampled: rgb(31,31,31)), so the splash
+      and the app agree even before that image has decoded.
+
+      Faded out and removed by `src/main.tsx` once React has painted.
+    -->
+    <style>
+      #splash {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        /* Solid colour first, so frame one is never black; the real home-screen
+           texture layers over it as soon as it decodes. */
+        background-color: #1f1f1f;
+        background-image: url('/assets/common/background-portrait.png');
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        transition: opacity 300ms ease-out;
+      }
+
+      /* The landscape product gets the landscape texture. Selected by aspect ratio
+         rather than a build flag, so one index.html serves both installers. */
+      @media (min-aspect-ratio: 1/1) {
+        #splash {
+          background-image: url('/assets/common/background-landscape.png');
+        }
+      }
+
+      #splash[data-hidden='true'] {
+        opacity: 0;
+      }
+
+      /* 38vmin is ~820 px on a 4K panel in either orientation, which is the size
+         the logo already has on the home screen. */
+      #splash-logo {
+        width: 38vmin;
+        max-width: 900px;
+        height: auto;
+        user-select: none;
+      }
+
+      #splash-spinner {
+        /* 38vmin matches the logo width so the spinner is a similar visual weight.
+           background-size: 600% 600% shows one frame of the 6×6 grid sheet. */
+        width: 22vmin;
+        height: 22vmin;
+        max-width: 320px;
+        max-height: 320px;
+        background-image: url('/assets/common/loading.png');
+        background-size: 600% 600%;
+        background-repeat: no-repeat;
+        animation: splash-spritesheet 1.2s steps(1) infinite;
+        margin-top: 6vmin;
+        user-select: none;
+      }
+
+      @keyframes splash-spritesheet {
+        0%   { background-position: 0%   0%; }
+        3.7% { background-position: 20%  0%; }
+        7.4% { background-position: 40%  0%; }
+        11.1%{ background-position: 60%  0%; }
+        14.8%{ background-position: 80%  0%; }
+        18.5%{ background-position: 100% 0%; }
+        22.2%{ background-position: 0%   20%; }
+        25.9%{ background-position: 20%  20%; }
+        29.6%{ background-position: 40%  20%; }
+        33.3%{ background-position: 60%  20%; }
+        37.0%{ background-position: 80%  20%; }
+        40.7%{ background-position: 100% 20%; }
+        44.4%{ background-position: 0%   40%; }
+        48.1%{ background-position: 20%  40%; }
+        51.8%{ background-position: 40%  40%; }
+        55.5%{ background-position: 60%  40%; }
+        59.2%{ background-position: 80%  40%; }
+        62.9%{ background-position: 100% 40%; }
+        66.6%{ background-position: 0%   60%; }
+        70.3%{ background-position: 20%  60%; }
+        74.0%{ background-position: 40%  60%; }
+        77.7%{ background-position: 60%  60%; }
+        81.4%{ background-position: 80%  60%; }
+        85.1%{ background-position: 100% 60%; }
+        88.8%{ background-position: 0%   80%; }
+        92.5%{ background-position: 20%  80%; }
+        96.2%{ background-position: 40%  80%; }
+        100% { background-position: 0%   0%; }
+      }
+
+      /* Honoured here as global.css honours it for the arrow pulse: keep the
+         spinner visible, just still (first frame). */
+      @media (prefers-reduced-motion: reduce) {
+        #splash-spinner {
+          animation: none;
+        }
+      }
+    </style>
   </head>
   <body>
+    <div id="splash">
+      <img
+        id="splash-logo"
+        src="/assets/gameplay/map-logo.svg"
+        alt="Museum of Art &amp; Photography"
+      />
+      <!-- Spinner: same 27-frame loading.png sprite-sheet as the in-app
+           LoadingOverlay — identical animation before and after React mounts. -->
+      <div id="splash-spinner" role="status" aria-label="Loading"></div>
+    </div>
+
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
