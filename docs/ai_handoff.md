@@ -3,7 +3,27 @@
 State for the next agent. Read this first, then [architecture.md](architecture.md),
 [roadmap.md](roadmap.md).
 
-**Last updated:** 2026-07-31
+**Last updated:** 2026-08-05
+
+## 0a. Most recent work — splash screen spinner (2026-08-05)
+
+The splash screen (`index.html`) now shows the **same 27-frame sprite-sheet animation**
+(`/assets/common/loading.png`) as the in-app `LoadingOverlay`, replacing the previous
+3-dot amber pulse. This creates visual continuity: the animation is identical before
+React mounts and after.
+
+**What changed (index.html only):**
+- `#splash-dots` / `span` rules and `@keyframes splash-pulse` → **removed**
+- `#splash-spinner` div with `background-image: url('/assets/common/loading.png')`,
+  `background-size: 600% 600%`, `animation: splash-spritesheet 1.2s steps(1) infinite` → **added**
+- `@keyframes splash-spritesheet` (27 steps, identical to `LoadingOverlay.module.css`) → **added**
+- Reduced-motion: `animation: none` on `#splash-spinner` (shows first frame, still)
+
+**`LoadingOverlay.tsx` / `LoadingOverlay.module.css` are unchanged.**
+
+**Not committed** — awaiting user verification.
+
+---
 
 ## 0. Most recent work — client feedback round (2026-07-31)
 

@@ -48,7 +48,8 @@ pub fn apply(app: &tauri::AppHandle) {
     lock_down(&window);
 }
 
-fn lock_down(window: &WebviewWindow) {
+/// Apply the window flags. Idempotent and silent, so it is safe to call twice.
+fn enforce(window: &WebviewWindow) {
     // Order matters: drop decorations before going fullscreen, or Windows can
     // leave a one-frame title bar artefact on the way in.
     if let Err(error) = window.set_decorations(false) {
@@ -63,12 +64,62 @@ fn lock_down(window: &WebviewWindow) {
     if let Err(error) = window.set_always_on_top(true) {
         log::error!("set_always_on_top(true) failed: {error}");
     }
+}
+
+fn lock_down(window: &WebviewWindow) {
+    enforce(window);
     if let Err(error) = window.set_focus() {
         log::error!("set_focus() failed: {error}");
     }
 
     log::info!("kiosk mode applied: fullscreen, undecorated, always-on-top");
     log_monitor(window);
+}
+
+/// Show the window. Called once the UI has painted, or by the startup timeout.
+///
+/// **The window is created hidden** (`visible: false` in `tauri.conf.json`) and
+/// only revealed here. Without this the visitor saw the raw window for about a
+/// second on launch: Tauri shows it at its declared 960x540 WITH decorations, then
+/// `apply` promotes it to fullscreen from `setup` — which runs after the window is
+/// already on screen — and WebView2 had not painted yet, so the frame was white.
+/// Hiding it until the first paint removes both halves of that flash at once.
+///
+/// Idempotent: a second call is a no-op, which is what lets the readiness signal
+/// and the timeout below race each other harmlessly.
+pub fn reveal(app: &tauri::AppHandle) {
+    let Some(window) = app.get_webview_window("main") else {
+        log::error!("no window labelled \"main\"; cannot reveal it");
+        return;
+    };
+
+    if matches!(window.is_visible(), Ok(true)) {
+        return;
+    }
+
+    // Re-apply the flags BEFORE showing. Some of them do not stick on a hidden
+    // window on Windows, and applying them after `show()` would put back the
+    // small-decorated-frame flash this whole change exists to remove.
+    if kiosk_requested() {
+        enforce(&window);
+    }
+
+    if let Err(error) = window.show() {
+        log::error!("show() failed: {error}");
+    }
+    if let Err(error) = window.set_focus() {
+        log::error!("set_focus() on reveal failed: {error}");
+    }
+
+    log::info!("window revealed");
+}
+
+/// The renderer reports that it has painted, so the window can be shown.
+///
+/// Invoked from `src/main.tsx` after React's first frame.
+#[tauri::command]
+pub fn app_ready(app: tauri::AppHandle) {
+    reveal(&app);
 }
 
 /// Log the display the kiosk actually landed on.
