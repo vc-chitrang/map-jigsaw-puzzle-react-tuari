@@ -18,17 +18,20 @@ export function buildUploadUrl(uploadBaseUrl: string, kioskToken: string): strin
  * `data:` URLs are already permitted by the CSP's `img-src` (`tauri.conf.json`
  * already lists `data:` there for other reasons), so this needs no CSP change.
  *
- * White light / black dark, no margin beyond the library's own quiet-zone
- * default, matching the plain-white-square design the static sprite used
- * (`docs/decisions.md` ADR-026): "the QR sprite is black-on-transparent, so it
- * sits on its own plain white square". `.qrCode`'s CSS already supplies that
- * white background and the rounded corner — this just needs to produce a clean
- * black-on-white code to sit on top of it.
+ * White light / black dark, no margin override — the library's real default
+ * (`margin: 4`, see `qrcode/lib/renderer/utils.js`) applies, giving a proper
+ * quiet zone around the finder patterns. That matters here because `.qrCode`
+ * has a `border-radius` (see `ImageSelectScreen.module.css`): too thin a quiet
+ * zone risks the rounded corners clipping into the code and breaking phone
+ * scans. This also matches the plain-white-square design the static sprite
+ * used (`docs/decisions.md` ADR-026): "the QR sprite is black-on-transparent,
+ * so it sits on its own plain white square". `.qrCode`'s CSS already supplies
+ * that white background and the rounded corner — this just needs to produce a
+ * clean black-on-white code to sit on top of it.
  */
 export function generateQrDataUrl(text: string): Promise<string> {
   return QRCode.toDataURL(text, {
     width: 1024,
-    margin: 1,
     color: { dark: '#000000', light: '#FFFFFF' },
   });
 }

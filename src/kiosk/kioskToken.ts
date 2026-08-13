@@ -84,6 +84,18 @@ let cached: Promise<string> | null = null;
 
 /** Memoised for the life of the process — every caller gets the same token. */
 export function getKioskToken(): Promise<string> {
-  cached ??= createStore().then(resolveKioskToken);
+  cached ??= createStore()
+    .then(resolveKioskToken)
+    .catch((error) => {
+      // A store failure (IPC error, corrupt kiosk.json, a capability regression)
+      // must not permanently wedge the feature: `useKioskToken()` has no
+      // `.catch()`, so an uncaught rejection here would leave `token` stuck at
+      // `null` for the rest of the process's life and take the QR, badge, and
+      // socket subscribe down with it. Falling back to a session-only token
+      // keeps the feature alive for this run at the cost of not surviving a
+      // restart.
+      console.error('[kiosk] token store failed; using a session-only token', error);
+      return generateKioskToken();
+    });
   return cached;
 }

@@ -47,6 +47,12 @@ export function ImageSelectScreen({
 
   useEffect(() => {
     if (!kioskToken || !uploadBaseUrl) {
+      // Only warn once the token has actually resolved: while both are still
+      // loading on mount, `!kioskToken` alone accounts for it and that's normal,
+      // not a misconfiguration.
+      if (kioskToken && !uploadBaseUrl) {
+        console.warn('[image-select] upload URL not configured; QR will not render');
+      }
       setQrDataUrl(null);
       return;
     }

@@ -15,9 +15,8 @@ import styles from './KioskTokenBadge.module.css';
  * purpose.
  */
 export function KioskTokenBadge() {
-  if (import.meta.env.VITE_HIDE_VERSION === '1') return null;
-
   const token = useKioskToken();
+  if (import.meta.env.VITE_HIDE_VERSION === '1') return null;
   if (!token) return null;
 
   return (
