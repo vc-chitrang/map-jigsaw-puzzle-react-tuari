@@ -2,12 +2,24 @@ import { io, type Socket } from 'socket.io-client';
 import { getPublicConfig } from './client';
 
 /**
- * QR phone upload — Socket.IO `new-upload`.
+ * QR phone upload — Socket.IO `new-upload`, routed per kiosk.
  *
- * Ports `SocketConnection` (docs/game-logic.md §9):
+ * Ports `SocketConnection` (docs/game-logic.md §9), extended with per-kiosk
+ * routing: the server used to broadcast every upload to every connected kiosk;
+ * it now delivers an upload only to the kiosk whose token (`src/kiosk/kioskToken.ts`)
+ * matches the one encoded in the QR that was scanned (`src/api/qr.ts`). There is
+ * deliberately no broadcast fallback — a kiosk that never subscribes receives
+ * nothing.
  *
  *   URL   : https://i-am-puzzle.map-india.org  (from the Rust `public_config`)
- *   event : "new-upload" -> payload carrying an image URL
+ *   event : "new-upload" -> payload carrying an image URL and the routed `kiosk` token
+ *
+ * SUBSCRIBE ON EVERY CONNECT, NOT JUST THE FIRST. Socket.IO does not restore room
+ * membership after a reconnect, so the `subscribe` emit lives inside the
+ * `connect` handler (fires again on every reconnect) rather than next to socket
+ * creation. Skipping this is the single most common way to reintroduce the bug
+ * this module exists to fix: the kiosk looks connected, but a network blip
+ * silently drops it out of its room and no more uploads arrive.
  *
  * `transports: ['polling']` matches the Unity client. WebSocket would be more
  * efficient, but the Unity build has been running against this server on polling,
@@ -98,6 +110,7 @@ export interface UploadSocket {
  * so this must never surface as a blocking error.
  */
 export async function connectUploadSocket(
+  kioskToken: string,
   handlers: UploadSocketHandlers,
 ): Promise<UploadSocket | null> {
   const config = await getPublicConfig();
@@ -124,6 +137,18 @@ export async function connectUploadSocket(
   socket.on('connect', () => {
     console.info('[socket] connected');
     handlers.onStatus?.(true);
+    // Fires on first connect AND on every reconnect — Socket.IO does not restore
+    // room membership across a reconnect, so re-subscribing here (not once at
+    // setup) is what keeps this kiosk's uploads arriving after a network blip.
+    socket.emit('subscribe', kioskToken);
+  });
+
+  socket.on('subscribed', (result: { status?: string; kiosk?: string; message?: string }) => {
+    if (result?.status === 'ok') {
+      console.info('[socket] subscribed to', result.kiosk ?? kioskToken);
+    } else {
+      console.error('[socket] subscribe rejected:', result?.message);
+    }
   });
 
   socket.on('disconnect', (reason) => {
