@@ -17,6 +17,9 @@ src-tauri/.env.*
 # Pixel-parity captures (large binaries, regenerate locally)
 captures/
 
+# Subagent-driven-development scratch workspace (ledgers, briefs, review packages)
+.superpowers/
+
 # editor / os
 .vscode/*
 !.vscode/extensions.json
