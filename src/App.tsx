@@ -18,8 +18,9 @@ import {
 import { VersionBadge } from './ui/VersionBadge';
 import { KioskTokenBadge } from './ui/KioskTokenBadge';
 import { LoadingOverlay } from './ui/LoadingOverlay';
-import { fetchImageAsBlobUrl } from './api/client';
+import { fetchImageAsBlobUrl, getPublicConfig } from './api/client';
 import { connectUploadSocket, type UploadSocket } from './api/socket';
+import { useKioskToken } from './kiosk/useKioskToken';
 import type { ResultsData } from './api/types';
 
 /**
@@ -47,6 +48,11 @@ export function App() {
   const [cropSource, setCropSource] = useState<CropSource | null>(null);
   const [preparedArtwork, setPreparedArtwork] = useState<CropSource | null>(null);
   const [uploadReady, setUploadReady] = useState(false);
+  /** From `getPublicConfig().uploadUrl`, fetched once; empty until it resolves
+   *  (or forever, when the upload feature is not configured server-side). */
+  const [uploadBaseUrl, setUploadBaseUrl] = useState('');
+  /** `null` until this kiosk's per-device token resolves. */
+  const kioskToken = useKioskToken();
   /**
    * Department chosen on "Select The Collection", used as Browse's opening filter.
    *
@@ -132,6 +138,11 @@ export function App() {
     },
     [replaceCropSource],
   );
+
+  // ---- Public config (upload base URL for the QR) --------------------------
+  useEffect(() => {
+    void getPublicConfig().then((config) => setUploadBaseUrl(config.uploadUrl));
+  }, []);
 
   // ---- QR upload socket ----------------------------------------------------
   useEffect(() => {
@@ -273,6 +284,8 @@ export function App() {
         // Browse directly (client, 2026-08-04).
         onBrowseCollection={() => go('collection')}
         uploadReady={uploadReady}
+        kioskToken={kioskToken}
+        uploadBaseUrl={uploadBaseUrl}
       />
     ) : nav.current === 'collection' ? (
       <SelectCollectionScreen

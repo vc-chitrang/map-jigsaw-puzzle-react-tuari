@@ -1,6 +1,8 @@
+import { useEffect, useState } from 'react';
 import { ORIENTATION } from '../../canvas/reference';
 import { IMAGE_SELECT_LAYOUT } from '../../layout/screens';
 import { rectStyle, textStyle } from '../../layout/rect';
+import { buildUploadUrl, generateQrDataUrl } from '../../api/qr';
 import styles from './ImageSelectScreen.module.css';
 
 /**
@@ -9,9 +11,9 @@ import styles from './ImageSelectScreen.module.css';
  *
  * Two choices either side of a divider: in portrait they are two 682² squares
  * stacked vertically, in landscape two fractional panels side by side. The QR
- * itself is a STATIC bundled sprite (`QR_Code_1-1024.png`); the phone-side upload
- * page is a separate service, and the kiosk learns about the result over the
- * `new-upload` socket event rather than by generating a code.
+ * is generated per kiosk from `kioskToken` + `uploadBaseUrl` (see `api/qr.ts`);
+ * the phone-side upload page is a separate service, and the kiosk learns about
+ * the result over the `new-upload` socket event rather than by polling.
  *
  * The instruction line changes PARENT between orientations — panel in portrait,
  * screen in landscape — so it is rendered from `descriptionParent` rather than
@@ -28,9 +30,42 @@ interface ImageSelectScreenProps {
    * shown clean, with no offline/dimmed state (per design correction).
    */
   readonly uploadReady?: boolean;
+  /** `null` until resolved; the QR does not render until this is available. */
+  readonly kioskToken: string | null;
+  /** From `getPublicConfig().uploadUrl`. Empty when the upload feature is not
+   *  configured server-side — the QR does not render in that case either. */
+  readonly uploadBaseUrl: string;
 }
 
-export function ImageSelectScreen({ onBack, onBrowseCollection }: ImageSelectScreenProps) {
+export function ImageSelectScreen({
+  onBack,
+  onBrowseCollection,
+  kioskToken,
+  uploadBaseUrl,
+}: ImageSelectScreenProps) {
+  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!kioskToken || !uploadBaseUrl) {
+      setQrDataUrl(null);
+      return;
+    }
+
+    let disposed = false;
+    const url = buildUploadUrl(uploadBaseUrl, kioskToken);
+    void generateQrDataUrl(url)
+      .then((dataUrl) => {
+        if (!disposed) setQrDataUrl(dataUrl);
+      })
+      .catch((error) => {
+        console.error('[image-select] could not generate the upload QR', error);
+      });
+
+    return () => {
+      disposed = true;
+    };
+  }, [kioskToken, uploadBaseUrl]);
+
   const description = (
     <span
       className={styles.description}
@@ -118,17 +153,23 @@ export function ImageSelectScreen({ onBack, onBrowseCollection }: ImageSelectScr
         <img className={styles.divider} style={rectStyle(S.dividerRect)} src={S.dividerSprite} alt="" draggable={false} />
 
         {/* ---- QR upload ----
-            The QR sprite is black-on-transparent, so it renders on its own plain
-            white square (`.qrCode` background). No circular pill and no
-            offline/dimmed treatment: the code is always shown clean. */}
+            Generated per kiosk (see the effect above); it renders black-on-white
+            directly onto `.qrCode`'s own white rounded background. No circular
+            pill and no offline/dimmed treatment: the code is always shown clean.
+            Until the token/base URL resolve, the plain `<div>` fallback keeps that
+            same white square visible instead of a broken-image icon. */}
         <div className={styles.qrPanel} style={rectStyle(S.qrPanel.rect)}>
-          <img
-            className={styles.qrCode}
-            style={rectStyle(S.qrPanel.codeRect)}
-            src={S.qrPanel.codeSprite}
-            alt="QR code to upload your own image"
-            draggable={false}
-          />
+          {qrDataUrl ? (
+            <img
+              className={styles.qrCode}
+              style={rectStyle(S.qrPanel.codeRect)}
+              src={qrDataUrl}
+              alt="QR code to upload your own image"
+              draggable={false}
+            />
+          ) : (
+            <div className={styles.qrCode} style={rectStyle(S.qrPanel.codeRect)} />
+          )}
           <span
             className={styles.captionText}
             style={{ ...rectStyle(S.qrPanel.captionRect), ...textStyle(S.qrPanel.caption) }}
