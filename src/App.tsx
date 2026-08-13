@@ -146,11 +146,14 @@ export function App() {
 
   // ---- QR upload socket ----------------------------------------------------
   useEffect(() => {
+    // Nothing to subscribe with yet — the effect re-runs once the token resolves.
+    if (!kioskToken) return;
+
     let socket: UploadSocket | null = null;
     let disposed = false;
 
     void (async () => {
-      const connection = await connectUploadSocket({
+      const connection = await connectUploadSocket(kioskToken, {
         onStatus: setUploadReady,
         onImageUrl: (url) => {
           // Accept an upload ONLY while ImageSelect or Crop is showing
@@ -178,7 +181,7 @@ export function App() {
       disposed = true;
       socket?.disconnect();
     };
-  }, [openCropWith]);
+  }, [openCropWith, kioskToken]);
 
   // Release both owned blob URLs when the app goes away.
   useEffect(
