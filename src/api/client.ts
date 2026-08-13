@@ -43,6 +43,8 @@ const isTauri = (): boolean =>
 export interface PublicConfig {
   readonly socketUrl: string;
   readonly collectionAvailable: boolean;
+  /** Empty when the upload feature is not configured server-side. */
+  readonly uploadUrl: string;
 }
 
 let publicConfigPromise: Promise<PublicConfig> | null = null;
@@ -52,19 +54,22 @@ export function getPublicConfig(): Promise<PublicConfig> {
   if (!isTauri()) {
     // Browser development: there is no Rust side, so the collection is absent
     // and the app takes its offline path. That is the correct behaviour, not an error.
-    return Promise.resolve({ socketUrl: '', collectionAvailable: false });
+    return Promise.resolve({ socketUrl: '', collectionAvailable: false, uploadUrl: '' });
   }
 
-  publicConfigPromise ??= invoke<{ socket_url: string; collection_available: boolean }>(
-    'public_config',
-  )
+  publicConfigPromise ??= invoke<{
+    socket_url: string;
+    collection_available: boolean;
+    upload_url: string;
+  }>('public_config')
     .then((raw) => ({
       socketUrl: raw.socket_url,
       collectionAvailable: raw.collection_available,
+      uploadUrl: raw.upload_url,
     }))
     .catch((error) => {
       console.error('[api] public_config failed', error);
-      return { socketUrl: '', collectionAvailable: false };
+      return { socketUrl: '', collectionAvailable: false, uploadUrl: '' };
     });
 
   return publicConfigPromise;

@@ -440,6 +440,9 @@ pub struct PublicConfig {
     /// Whether the collection API is configured, so the UI can pick the offline
     /// path up front instead of after a failed request.
     pub collection_available: bool,
+    /// Full URL the QR code encodes, before this kiosk's `?k=<token>` is
+    /// appended. Empty when the upload feature is not configured server-side.
+    pub upload_url: String,
 }
 
 #[tauri::command]
@@ -448,5 +451,6 @@ pub fn public_config() -> PublicConfig {
     PublicConfig {
         socket_url: config.socket_url.clone(),
         collection_available: config.is_usable(),
+        upload_url: config.upload_url.clone(),
     }
 }

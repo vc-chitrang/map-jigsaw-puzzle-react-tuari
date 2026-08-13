@@ -49,6 +49,11 @@ pub struct ApiConfig {
     pub collection_path: String,
     pub login_path: String,
     pub socket_url: String,
+    /// Full URL the QR code encodes (before the `?k=` token is appended). Empty
+    /// when unconfigured — there is no safe default, unlike `socket_url`, because
+    /// the path segment is a deliberately obfuscated, server-assigned value (see
+    /// the doc comment in `.env.example`).
+    pub upload_url: String,
     pub oauth: OAuthCredentials,
 }
 
@@ -143,6 +148,7 @@ fn load() -> ApiConfig {
                 url
             }
         },
+        upload_url: var("MAP_UPLOAD_URL", option_env!("MAP_UPLOAD_URL")),
         oauth: OAuthCredentials {
             grant_type: {
                 let grant = var("MAP_OAUTH_GRANT_TYPE", option_env!("MAP_OAUTH_GRANT_TYPE"));
@@ -170,13 +176,14 @@ fn load() -> ApiConfig {
     };
 
     log::info!(
-        "API config: base_url {}, key {}, client_id {}, client_secret {}, collection_path {}, grant {}",
+        "API config: base_url {}, key {}, client_id {}, client_secret {}, collection_path {}, grant {}, upload_url {}",
         describe(&config.base_url),
         describe(&config.key),
         describe(&config.oauth.client_id),
         describe(&config.oauth.client_secret),
         config.collection_path,
         config.oauth.grant_type,
+        describe(&config.upload_url),
     );
 
     if !config.is_usable() {
