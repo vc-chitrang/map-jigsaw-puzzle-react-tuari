@@ -373,13 +373,25 @@ fn cache_dir(app: &tauri::AppHandle) -> Result<PathBuf, ApiError> {
 pub async fn image_fetch(app: tauri::AppHandle, url: String) -> Result<Response, ApiError> {
     let parsed = reqwest::Url::parse(&url).map_err(|_| ApiError::Request("bad URL".into()))?;
 
-    if parsed.scheme() != "https" {
-        return Err(ApiError::HostNotAllowed(parsed.scheme().to_string()));
-    }
-    if !host_allowed(&parsed) {
-        return Err(ApiError::HostNotAllowed(
-            parsed.host_str().unwrap_or("unknown").to_string(),
-        ));
+    // DEV/TEST ONLY — the local upload rig has no HTTPS in front of it yet.
+    // Scoped to the exact host+port+scheme (not "any http host"), so it can't
+    // be used to reach an arbitrary internal address the way a blanket http
+    // allowance could. Every other host still goes through the https + host
+    // allow-list checks below. Remove once the upload server has a real TLS
+    // cert (2026-08-13, per client request — see docs/decisions.md).
+    let is_dev_test_upload_host = parsed.scheme() == "http"
+        && parsed.host_str() == Some("192.168.1.28")
+        && parsed.port() == Some(8000);
+
+    if !is_dev_test_upload_host {
+        if parsed.scheme() != "https" {
+            return Err(ApiError::HostNotAllowed(parsed.scheme().to_string()));
+        }
+        if !host_allowed(&parsed) {
+            return Err(ApiError::HostNotAllowed(
+                parsed.host_str().unwrap_or("unknown").to_string(),
+            ));
+        }
     }
 
     // 1. Serve from the cache if we already have it.
