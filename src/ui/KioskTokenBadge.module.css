@@ -1,0 +1,21 @@
+/*
+ * Viewport-fixed, so these are DEVICE px — not reference px. Outside the scaled
+ * canvas on purpose, same reasoning as VersionBadge.
+ */
+.badge {
+  position: fixed;
+  right: 12px;
+  bottom: 10px;
+  z-index: 1000;
+
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 1;
+  letter-spacing: 0.02em;
+
+  color: rgb(255 255 255 / 0.45);
+
+  pointer-events: none;
+  user-select: none;
+}

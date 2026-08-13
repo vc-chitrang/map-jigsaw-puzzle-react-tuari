@@ -16,6 +16,7 @@ import {
   type ScreenId,
 } from './navigation/router';
 import { VersionBadge } from './ui/VersionBadge';
+import { KioskTokenBadge } from './ui/KioskTokenBadge';
 import { LoadingOverlay } from './ui/LoadingOverlay';
 import { fetchImageAsBlobUrl } from './api/client';
 import { connectUploadSocket, type UploadSocket } from './api/socket';
@@ -318,6 +319,7 @@ export function App() {
         </ScaledCanvas>
       </ScreenRouter>
       <VersionBadge />
+      <KioskTokenBadge />
       {/* Debug aid: the phase is on the overlay's data-phase attribute, and this
           mirrors it for the parity harness / DOM assertions. */}
       <span hidden data-nav-phase={nav.phase} data-nav-screen={nav.current} data-blocked={blocked} />
