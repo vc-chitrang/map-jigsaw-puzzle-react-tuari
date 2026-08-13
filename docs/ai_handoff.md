@@ -3,7 +3,51 @@
 State for the next agent. Read this first, then [architecture.md](architecture.md),
 [roadmap.md](roadmap.md).
 
-**Last updated:** 2026-08-05
+**Last updated:** 2026-08-13
+
+## 0b. Most recent work — per-kiosk upload token (2026-08-13)
+
+The upload socket used to broadcast every `new-upload` to every connected kiosk, so
+a photo scanned on one screen appeared on all of them. This nine-task round fixes
+that: each kiosk now generates and persists its own token
+(`crypto.randomUUID()`, dashes stripped, `src/kiosk/kioskToken.ts`, via
+`@tauri-apps/plugin-store` — never `localStorage`, so a webview cache wipe cannot
+desync the token from the QR already on screen), encodes it in a **live-generated**
+QR code (`src/api/qr.ts`, replacing what used to be a static bundled sprite) wired
+into `ImageSelectScreen`, and — the actual bug fix — `src/api/socket.ts` now emits
+`subscribe` inside the socket's `connect` handler, so a reconnect re-subscribes to
+the kiosk's room automatically instead of silently going deaf (Socket.IO does not
+restore room membership across a reconnect on its own). The token is also surfaced
+in a small always-on debug-corner badge (`KioskTokenBadge`, bottom-right, mirroring
+`VersionBadge`'s bottom-left) so support can read it off a live screen. One ADR:
+**ADR-053**. Full task table in [tasks.md](tasks.md) "Per-kiosk upload token,
+2026-08-13" (P4.12–P4.15).
+
+**This is a breaking change with no broadcast fallback, by design** — a kiosk that
+never implements the subscribe handshake receives nothing. It ships as one unit
+with the required server-side routing change; there is no partial-rollout path.
+
+**Not verified from this environment — required before shipping:**
+- **The two-kiosk / network-blip end-to-end check** from the ticket's own "how to
+  verify" section (two kiosks with different tokens should only light up on their
+  own scan; killing and restoring the network on one kiosk should still deliver an
+  upload afterward) needs real hardware or two live browser sessions against the
+  real upload server. This single dev machine has no access to that server, so it
+  could not be run here — P4.15 in tasks.md is left **TODO** for exactly this
+  reason, not overlooked.
+- **`cargo check` could not be run to completion in this session** — this
+  environment is missing a working MSVC linker (a pre-existing, environment-only
+  gap, unrelated to any code in this feature). The Rust-touching parts of Tasks 1
+  and 4 were verified by manual code review only, never by a real build. Get a
+  clean `cargo check` / `cargo tauri dev` on a machine with working MSVC Build
+  Tools before treating this as shipped.
+
+**Recommended next task:** run the two-kiosk / network-blip verification against
+the real upload server, and get a real `cargo check` / `cargo tauri dev` pass on
+hardware with working MSVC Build Tools. Neither could be confirmed from this
+environment — do not sign this branch off as shipped until both are done.
+
+---
 
 ## 0a. Most recent work — splash screen spinner (2026-08-05)
 

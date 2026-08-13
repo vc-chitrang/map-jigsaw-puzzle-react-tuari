@@ -115,6 +115,19 @@ Status: `TODO` · `WIP` · `DONE` · `BLOCKED`
 | P4.10 | End-to-end verification | **DONE** | Full flow walked at 540×960; measurements in [roadmap.md](roadmap.md) |
 | P4.11 | Verify against a real phone upload | **TODO** | Needs the phone-side upload page and a device on the same network — cannot be exercised here |
 
+### Per-kiosk upload token, 2026-08-13
+
+The old socket broadcast every `new-upload` to every connected kiosk. The server
+now routes an upload only to the kiosk whose QR was scanned, keyed on a token the
+kiosk generates and persists itself — ADR-053.
+
+| # | Task | Status | Notes |
+|---|---|---|---|
+| P4.12 | Per-machine kiosk token, generated once and persisted | **DONE** | ADR-053. `crypto.randomUUID()` with dashes stripped, `src/kiosk/kioskToken.ts`; persisted via `@tauri-apps/plugin-store`, not `localStorage`. Visible in a debug-corner `KioskTokenBadge` (bottom-right) |
+| P4.13 | QR code is now generated live from the token | **DONE** | ADR-053. `src/api/qr.ts`, encoding `?k=<token>`; replaces P4.7's static bundled sprite — the first client-side-generated QR in this app. Wired into `ImageSelectScreen` |
+| P4.14 | Socket re-subscribes to the kiosk's room on every reconnect | **DONE** | ADR-053. `src/api/socket.ts` emits `subscribe` inside the `connect` handler — Socket.IO does not restore room membership across a reconnect on its own. This is the actual fix for the cross-kiosk broadcast bug |
+| P4.15 | Two-kiosk / network-blip end-to-end verification | **TODO** — needs kiosk hardware / server access | Two kiosks with different tokens should only light up on their own scan; killing and restoring the network on one kiosk should still deliver an upload afterward. Cannot be exercised from this single dev machine with no access to the real upload server — same hardware-gated pattern as P6.10. Required before this ships |
+
 ## Phase 5 — Win screen, router, keyboard
 
 | # | Task | Status | Notes |

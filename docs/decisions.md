@@ -9,6 +9,45 @@ Architectural decisions, newest first. Each entry: context → decision → cons
 
 ---
 
+## ADR-053 — Per-kiosk upload token (breaking change, no broadcast fallback)
+
+**Date:** 2026-08-13 · **Status:** Accepted (required server-side change)
+
+**Context.** The upload socket used to broadcast every `new-upload` to every
+connected kiosk, so a photo scanned on one screen appeared on all of them. The
+server was changed to route an upload only to the kiosk whose QR was scanned,
+keyed on a "kiosk token" the kiosk itself generates, persists, and encodes in its
+own QR code. There is deliberately no fallback to the old broadcast — a kiosk
+that never implements the subscribe handshake receives nothing.
+
+**Decision.** Generate a token once per machine (`crypto.randomUUID()` with the
+dashes stripped, `src/kiosk/kioskToken.ts`), persist it via
+`@tauri-apps/plugin-store` (never `localStorage` — a webview cache wipe must not
+silently desync the token from the QR already on screen), encode it in the QR as
+`?k=<token>` (`src/api/qr.ts` — this app had never generated a QR client-side
+before this; it was always a static bundled sprite, see ADR-026), and emit
+`subscribe` inside the socket's `connect` handler so a reconnect re-subscribes
+automatically (`src/api/socket.ts` — Socket.IO does not restore room membership
+across a reconnect on its own).
+
+**Consequences.**
+- Ships as one unit with the server deploy — there is no partial-rollout path,
+  by design (no broadcast fallback).
+- The token is visible in a small always-on debug corner (`KioskTokenBadge`,
+  bottom-right, mirroring `VersionBadge`'s bottom-left) so support can read it
+  off a live screen.
+- `src/storage/localStore.ts`'s header comment already flagged the Tauri store
+  plugin as planned for a future high-score migration; this ADR is the first
+  actual use of that plugin, scoped to the kiosk token only. The high-score
+  store itself is unchanged.
+- **Not yet verified end to end** (docs/tasks.md): the two-kiosk / network-blip
+  check — two kiosks with different tokens only lighting up on their own scan,
+  and a killed-and-restored network on one kiosk still receiving an upload
+  afterward — needs real hardware and the live upload server, neither reachable
+  from this dev environment. Required before this ships; see `ai_handoff.md`.
+
+---
+
 ## ADR-049 — The in-app on-screen keyboard is removed; TabTip is the only keyboard
 
 **Date:** 2026-07-31 · **Status:** Accepted (client directive) · **Reverses:** ADR-006
