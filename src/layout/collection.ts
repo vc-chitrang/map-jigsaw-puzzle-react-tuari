@@ -121,35 +121,47 @@ const LANDSCAPE: CollectionLayout = {
 /**
  * Portrait — derived, not authored.
  *
- * **Three columns x two rows (2026-08-10 revision).** Matches the reference
- * design's actual reading order — `departments.ts` already lists the six tiles
- * "three across, two down" — reversing the original 2x3 portrait derivation.
+ * **Fixed 600x370 tile size (2026-08-14 revision), 3 columns x 2 rows.**
+ * Client specified the tile size directly rather than deriving it from a grid
+ * footprint, which flips the old derivation around: the tile size is now the
+ * INPUT and the grid footprint is computed FROM it, not the other way round.
  *
- * Grid width is kept at the SAME 1736 footprint as the old 2x3 layout (that
- * width was itself `2160 - 2*212`, i.e. centred with a 212 px margin each side)
- * and re-split into three columns instead of two:
+ * **This is a tight fit against the back button, and the arithmetic is exact,
+ * not approximate — read this before changing any of the three numbers below.**
+ * The back button occupies x 40..164 (anchor 0, pos 40, size 124). Three
+ * 600 px tiles alone are already 1800 px — on a 2160 px canvas that leaves only
+ * 360 px total for both side margins plus both column gaps combined. Centring
+ * demands equal margins, so at most 180 px per side is available, and that
+ * figure only survives if the column gap is 0:
  *
- *   tileW = (1736 - 2*88) / 3 = 520      (88 px column gap)
- *   tileH = round(520 * 420/726) = 301   (keeps the 726:420 reference aspect)
- *   grid height = 2*301 + 94 = 696       (94 px row gap, unchanged from 2x3)
+ *   gridWidth = 3*600 + 2*0 = 1800
+ *   margin    = (2160 - 1800) / 2 = 180
+ *   clearance from the back button = 180 - 164 = 16 px
  *
- * **The left margin is still capped by the BACK BUTTON, not by taste** (ADR
- * context above the old 2x3 table): the button occupies x 40..164, so anything
- * starting left of 212 re-swallows its taps. Reusing 1736 keeps that same
- * 48 px clearance without re-deriving it.
+ * Any nonzero column gap eats directly into that 16 px (e.g. an 8 px gap drops
+ * clearance to 8 px; a 16 px gap would put the grid flush against the button).
+ * 16 px is therefore the MAXIMUM safe clearance obtainable with this tile size,
+ * this column count, and true centring — not a stylistic choice. If a visible
+ * gap between tiles is wanted later, it has to come out of this margin, and the
+ * back button would need to move or shrink to keep clearance positive.
  *
- * **The GRID's vertical centre is aligned to the BACK BUTTON's vertical
- * centre** (client, 2026-08-10, marked up on a screenshot with a guide line
- * through the button). Not the same as the raw screen centre: the button's
- * `pos.y: 60` offsets it off true-middle, landing its centre at ref y 1860
- * (measured live: device rect y 899..961 at 1080x1920 scale 0.5 -> ref
- * 1798..1922, centre 1860), 60 px above 1920.
+ * Row gap has no such constraint (rows are the unconstrained axis — two 370 px
+ * rows plus a real gap still leaves ~3000 px of vertical slack), so it keeps
+ * the 94 px used throughout this file:
  *
- * Grid top = 1860 - 696/2 = 1512, bottom = 2208. Title sits above with the
- * same 150 px gap: title bottom = 1512 - 150 = 1362, title top = 1362 - 180 =
- * 1182. Both clear of the top-centre logo (ends at y 453) and of the back
- * button itself (x 40..164, entirely left of the grid's x 212..1948, so its
- * y range never intersects the grid's x range).
+ *   gridHeight = 2*370 + 94 = 834
+ *
+ * **The GRID's vertical centre stays aligned to the BACK BUTTON's vertical
+ * centre** (unchanged from the previous revision — the button's `pos.y: 60`
+ * offsets it off true screen-middle, landing its centre at ref y 1860). Since
+ * the grid's left edge (x 180) is entirely clear of the button's right edge
+ * (x 164) on the X axis alone, the two rectangles cannot intersect regardless
+ * of vertical position — the 16 px clearance above is what actually prevents
+ * overlap, not the vertical alignment.
+ *
+ * Grid top = 1860 - 834/2 = 1443, bottom = 2277. Title sits above with the
+ * same 150 px gap: title bottom = 1443 - 150 = 1293, title top = 1293 - 180 =
+ * 1113. Both clear of the top-centre logo (ends at y 453).
  */
 const PORTRAIT: CollectionLayout = {
   screen: {
@@ -173,7 +185,7 @@ const PORTRAIT: CollectionLayout = {
       anchorY: 1,
       anchorMinX: 0,
       anchorMaxX: 1,
-      pos: { x: 0, y: -1182 },
+      pos: { x: 0, y: -1113 },
       size: { x: 0, y: 180 },
       pivot: { x: 0.5, y: 1 },
     } satisfies LayoutRect,
@@ -187,20 +199,21 @@ const PORTRAIT: CollectionLayout = {
     rect: {
       kind: 'point',
       anchor: { x: 0, y: 1 },
-      pos: { x: 212, y: -1512 },
-      size: { x: 1736, y: 696 },
+      pos: { x: 180, y: -1443 },
+      size: { x: 1800, y: 834 },
       pivot: { x: 0, y: 1 },
     } satisfies LayoutRect,
     columns: 3,
     rows: 2,
-    gapXPx: 88,
+    gapXPx: 0,
     gapYPx: 94,
     radiusPx: 16,
   },
-  /** Smaller than the old 2x3 tile's 68: these tiles are ~40% shorter, and the
-   *  longest label line ("Textiles, Craft &") still fits inside the 520 px
-   *  column width with room to spare at this size. */
-  tileLabel: { fontSizePx: 48, colour: 'var(--map-white)' } satisfies TextSpec,
+  /** Tiles are wider now (600 vs 520), so this comes back up from 48. The
+   *  longest label line ("Textiles, Craft &", 17 chars) still fits inside the
+   *  600 px column with room to spare: at 52px, ~0.55em/char is ~486px against
+   *  a 552px usable width (600 minus the tile's 24px horizontal padding). */
+  tileLabel: { fontSizePx: 52, colour: 'var(--map-white)' } satisfies TextSpec,
 };
 
 export const COLLECTION_LAYOUT: Record<Orientation, CollectionLayout> = {
