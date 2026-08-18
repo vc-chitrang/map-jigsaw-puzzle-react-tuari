@@ -121,23 +121,35 @@ const LANDSCAPE: CollectionLayout = {
 /**
  * Portrait — derived, not authored.
  *
- * Two columns x three rows: six tiles across a 2160-wide canvas would leave each
- * about 660 px wide with the reference's proportions, too small to read at arm's
- * length on a 4K panel. Tiles keep the reference ASPECT (726:420 = 1.729) at
- * 820x474, so the artwork crops identically to landscape.
+ * **Three columns x two rows (2026-08-10 revision).** Matches the reference
+ * design's actual reading order — `departments.ts` already lists the six tiles
+ * "three across, two down" — reversing the original 2x3 portrait derivation.
  *
- * Grid width 2*820 + 96 = 1736, centred -> left 212. Height 3*474 + 2*94 = 1610.
+ * Grid width is kept at the SAME 1736 footprint as the old 2x3 layout (that
+ * width was itself `2160 - 2*212`, i.e. centred with a 212 px margin each side)
+ * and re-split into three columns instead of two:
  *
- * **The width is capped by the BACK BUTTON, not by taste.** Portrait's button
- * occupies x 40..164 (anchor 0, pos 40, size 124), and a full-bleed 1896-wide grid
- * centres at left 132 — so the first tile sat on top of it and swallowed taps meant
- * for Back. 1736 leaves a 48 px gap. Widening the tiles again must move the button
- * or it will re-break.
+ *   tileW = (1736 - 2*88) / 3 = 520      (88 px column gap)
+ *   tileH = round(520 * 420/726) = 301   (keeps the 726:420 reference aspect)
+ *   grid height = 2*301 + 94 = 696       (94 px row gap, unchanged from 2x3)
  *
- * Title and grid are centred as one block, as in landscape: block = title 180 +
- * gap 150 + grid 1610 = 1940, starting at (3840 - 1940) / 2 = 950. Title 950..1130,
- * grid 1280..2890 — clear of the top-centre logo (ends at y 453) and of the back
- * button (vertical centre 1860, but only 164 px wide).
+ * **The left margin is still capped by the BACK BUTTON, not by taste** (ADR
+ * context above the old 2x3 table): the button occupies x 40..164, so anything
+ * starting left of 212 re-swallows its taps. Reusing 1736 keeps that same
+ * 48 px clearance without re-deriving it.
+ *
+ * **The GRID's vertical centre is aligned to the BACK BUTTON's vertical
+ * centre** (client, 2026-08-10, marked up on a screenshot with a guide line
+ * through the button). Not the same as the raw screen centre: the button's
+ * `pos.y: 60` offsets it off true-middle, landing its centre at ref y 1860
+ * (measured live: device rect y 899..961 at 1080x1920 scale 0.5 -> ref
+ * 1798..1922, centre 1860), 60 px above 1920.
+ *
+ * Grid top = 1860 - 696/2 = 1512, bottom = 2208. Title sits above with the
+ * same 150 px gap: title bottom = 1512 - 150 = 1362, title top = 1362 - 180 =
+ * 1182. Both clear of the top-centre logo (ends at y 453) and of the back
+ * button itself (x 40..164, entirely left of the grid's x 212..1948, so its
+ * y range never intersects the grid's x range).
  */
 const PORTRAIT: CollectionLayout = {
   screen: {
@@ -161,7 +173,7 @@ const PORTRAIT: CollectionLayout = {
       anchorY: 1,
       anchorMinX: 0,
       anchorMaxX: 1,
-      pos: { x: 0, y: -950 },
+      pos: { x: 0, y: -1182 },
       size: { x: 0, y: 180 },
       pivot: { x: 0.5, y: 1 },
     } satisfies LayoutRect,
@@ -175,17 +187,20 @@ const PORTRAIT: CollectionLayout = {
     rect: {
       kind: 'point',
       anchor: { x: 0, y: 1 },
-      pos: { x: 212, y: -1280 },
-      size: { x: 1736, y: 1610 },
+      pos: { x: 212, y: -1512 },
+      size: { x: 1736, y: 696 },
       pivot: { x: 0, y: 1 },
     } satisfies LayoutRect,
-    columns: 2,
-    rows: 3,
-    gapXPx: 96,
+    columns: 3,
+    rows: 2,
+    gapXPx: 88,
     gapYPx: 94,
     radiusPx: 16,
   },
-  tileLabel: { fontSizePx: 68, colour: 'var(--map-white)' } satisfies TextSpec,
+  /** Smaller than the old 2x3 tile's 68: these tiles are ~40% shorter, and the
+   *  longest label line ("Textiles, Craft &") still fits inside the 520 px
+   *  column width with room to spare at this size. */
+  tileLabel: { fontSizePx: 48, colour: 'var(--map-white)' } satisfies TextSpec,
 };
 
 export const COLLECTION_LAYOUT: Record<Orientation, CollectionLayout> = {
