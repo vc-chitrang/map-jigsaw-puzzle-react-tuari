@@ -121,47 +121,44 @@ const LANDSCAPE: CollectionLayout = {
 /**
  * Portrait — derived, not authored.
  *
- * **Fixed 600x370 tile size (2026-08-14 revision), 3 columns x 2 rows.**
- * Client specified the tile size directly rather than deriving it from a grid
- * footprint, which flips the old derivation around: the tile size is now the
- * INPUT and the grid footprint is computed FROM it, not the other way round.
+ * **Fixed 600x370 tile size, 3 columns x 2 rows, WITH a real column gap
+ * (2026-08-14 second revision).** The previous revision centred the grid
+ * exactly (equal margins) and found that a real fixed 600px x3 tile row only
+ * leaves 360px total slack on a 2160px canvas — not enough room for both a
+ * visible gap AND a symmetric, safely-clear-of-the-back-button margin at the
+ * same time (0 gap was the only way to keep both a full centring AND a safe
+ * margin). Client asked for a real gap between tiles and explicitly OK'd
+ * shifting the block off dead-centre to make room — so this revision keeps
+ * the internal grid still tile-by-tile evenly spaced (equal column gaps,
+ * looks centred as a unit), but the block's LEFT margin is now bigger than
+ * its RIGHT margin, shifted toward the side with nothing to clear:
  *
- * **This is a tight fit against the back button, and the arithmetic is exact,
- * not approximate — read this before changing any of the three numbers below.**
- * The back button occupies x 40..164 (anchor 0, pos 40, size 124). Three
- * 600 px tiles alone are already 1800 px — on a 2160 px canvas that leaves only
- * 360 px total for both side margins plus both column gaps combined. Centring
- * demands equal margins, so at most 180 px per side is available, and that
- * figure only survives if the column gap is 0:
+ *   gapX      = 48                              (a real, visible gap)
+ *   gridWidth = 3*600 + 2*48 = 1896
+ *   leftMargin  = 212   -> clearance from the back button (x 40..164) = 48px,
+ *                          reusing the exact 48px figure this file has used
+ *                          for back-button clearance since the very first
+ *                          portrait revision — not a new number invented here
+ *   rightMargin = 2160 - 212 - 1896 = 52         -> nothing sits there, so a
+ *                                                    thinner margin is safe
  *
- *   gridWidth = 3*600 + 2*0 = 1800
- *   margin    = (2160 - 1800) / 2 = 180
- *   clearance from the back button = 180 - 164 = 16 px
+ * The back button occupies x 40..164 (anchor 0, pos 40, size 124); the grid's
+ * left edge at x 212 clears it by the same 48px this file has always used.
+ * The right side of the canvas has no button or chrome to protect, so a
+ * smaller 52px margin there carries no overlap risk.
  *
- * Any nonzero column gap eats directly into that 16 px (e.g. an 8 px gap drops
- * clearance to 8 px; a 16 px gap would put the grid flush against the button).
- * 16 px is therefore the MAXIMUM safe clearance obtainable with this tile size,
- * this column count, and true centring — not a stylistic choice. If a visible
- * gap between tiles is wanted later, it has to come out of this margin, and the
- * back button would need to move or shrink to keep clearance positive.
- *
- * Row gap has no such constraint (rows are the unconstrained axis — two 370 px
- * rows plus a real gap still leaves ~3000 px of vertical slack), so it keeps
- * the 94 px used throughout this file:
+ * Row gap is unaffected by any of this (rows are the unconstrained axis) and
+ * keeps the 94px used throughout this file:
  *
  *   gridHeight = 2*370 + 94 = 834
  *
  * **The GRID's vertical centre stays aligned to the BACK BUTTON's vertical
- * centre** (unchanged from the previous revision — the button's `pos.y: 60`
- * offsets it off true screen-middle, landing its centre at ref y 1860). Since
- * the grid's left edge (x 180) is entirely clear of the button's right edge
- * (x 164) on the X axis alone, the two rectangles cannot intersect regardless
- * of vertical position — the 16 px clearance above is what actually prevents
- * overlap, not the vertical alignment.
- *
- * Grid top = 1860 - 834/2 = 1443, bottom = 2277. Title sits above with the
- * same 150 px gap: title bottom = 1443 - 150 = 1293, title top = 1293 - 180 =
- * 1113. Both clear of the top-centre logo (ends at y 453).
+ * centre** (unchanged from every prior revision — the button's `pos.y: 60`
+ * offsets it off true screen-middle, landing its centre at ref y 1860).
+ * Grid top = 1860 - 834/2 = 1443, bottom = 2277 — unchanged from the previous
+ * revision, since only the horizontal numbers moved. Title sits above with
+ * the same 150px gap: title bottom = 1443 - 150 = 1293, title top = 1293 -
+ * 180 = 1113. Both clear of the top-centre logo (ends at y 453).
  */
 const PORTRAIT: CollectionLayout = {
   screen: {
@@ -199,13 +196,13 @@ const PORTRAIT: CollectionLayout = {
     rect: {
       kind: 'point',
       anchor: { x: 0, y: 1 },
-      pos: { x: 180, y: -1443 },
-      size: { x: 1800, y: 834 },
+      pos: { x: 212, y: -1443 },
+      size: { x: 1896, y: 834 },
       pivot: { x: 0, y: 1 },
     } satisfies LayoutRect,
     columns: 3,
     rows: 2,
-    gapXPx: 0,
+    gapXPx: 48,
     gapYPx: 94,
     radiusPx: 16,
   },
