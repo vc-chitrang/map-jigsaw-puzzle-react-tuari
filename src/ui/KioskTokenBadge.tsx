@@ -4,19 +4,17 @@ import styles from './KioskTokenBadge.module.css';
 /**
  * Bottom-right corner — the kiosk's own upload token, in the clear.
  *
- * Support needs to read this off a live screen to diagnose "why is nothing
- * appearing on kiosk 3" (compare it against the `kiosks` map from the server's
- * `GET /` diagnostic endpoint), so it is shown in full, not truncated.
- *
- * Hidden by the same `VITE_HIDE_VERSION` flag as `VersionBadge` for the same
- * reason: a pixel-parity capture is diffed against a Unity build that has no
- * such concept, so any always-on debug chrome counts against that budget. One
- * flag for "hide the debug corner" rather than a second env var for the same
- * purpose.
+ * OFF by default (client request, 2026-08-14) — the token stays visible in
+ * the console regardless (`[socket] subscribed to <token>`, `src/api/socket.ts`),
+ * so support can still retrieve it from logs without this on-screen badge.
+ * Set `VITE_SHOW_KIOSK_TOKEN=1` to opt back into the on-screen badge if a
+ * future debugging session needs to read it directly off a live kiosk screen
+ * (compare it against the `kiosks` map from the server's `GET /` diagnostic
+ * endpoint) without pulling logs.
  */
 export function KioskTokenBadge() {
   const token = useKioskToken();
-  if (import.meta.env.VITE_HIDE_VERSION === '1') return null;
+  if (import.meta.env.VITE_SHOW_KIOSK_TOKEN !== '1') return null;
   if (!token) return null;
 
   return (
